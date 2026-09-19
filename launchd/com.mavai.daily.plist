@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mavai.daily</string>
+
+  <!--
+    Daily batch at 03:00. Runs every active ad-watch (with a 10s cool-down
+    between watches and 3s between scrape pages) followed by every active
+    shell channel refresh. If ATC sends a /sorry/ bot challenge mid-batch,
+    runAllWatches aborts the remainder and we pick back up tomorrow night
+    — that's worked far better in practice than spreading calls across
+    the day, which kept the cooldown perpetually warm.
+  -->
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/YOUR_USERNAME/.local/node/bin/npx</string>
+    <string>tsx</string>
+    <string>scripts/run-tracked.ts</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/PATH/TO/mav-ai</string>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+
+  <!-- Make sure the runner can find Node -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/Users/YOUR_USERNAME/.local/node/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <!-- Logs (rotate manually if they grow) -->
+  <key>StandardOutPath</key>
+  <string>/PATH/TO/mav-ai/launchd/run-tracked.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/PATH/TO/mav-ai/launchd/run-tracked.err.log</string>
+
+  <!-- One-shot daily — don't run on plist load -->
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>

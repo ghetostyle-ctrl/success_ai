@@ -1,0 +1,362 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  keyword     String
+  kind        String   @default("ad")  // 'ad' | 'youtube'
+  status      String   // 대기 중 | 진행 중 | 완료 | 실패
+  errorMsg    String?
+  resultCount Int      @default(0)
+  adCount     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  videos      Video[]
+  ads         Ad[]
+
+  @@index([createdAt])
+  @@index([kind])
+}
+
+model Ad {
+  id              String   @id @default(cuid())
+  advertiserId    String
+  advertiserName  String
+  creativeId      String   @unique // ATC creative ID (CR...)
+  type            String   // image | video | other
+  region          String   @default("KR")
+  firstSeen       String?  // unix timestamp seconds (string)
+  lastSeen        String?
+  previewUrl      String?  // for video/HTML5 ads — the content.js URL
+  imageHtml       String?  // for image ads — the HTML snippet
+  obfuscatedCustomerId String?
+  keyword         String
+
+  // 수집 경로 — 도메인 검색(예: brand-d.co.kr) 일 때 광고가 어느 stage 에서
+  // 들어왔는지. "domain" = Stage1, 그 도메인 직접 광고 (ATC 사이트 검색
+  // 결과와 동일). "advertiser" = Stage3 advertiser fan-out (같은 광고주의
+  // 형제 brand 광고, e.g. 모브랜드사 산하 브랜드E/브랜드F). null = 레거시 또는
+  // 이름 검색. UI 의 "🎯 이 도메인만" 토글이 via="domain" 만 필터.
+  via             String?
+
+  // YouTube enrichment (when the ad is a YouTube video ad)
+  youtubeId       String?  // 11-char YouTube video ID, if extracted
+  ytTitle         String?
+  ytChannel       String?
+  ytPublishedAt   String?  // YYYY-MM-DD
+  ytViews         Int?
+  ytLikes         Int?
+  ytComments      Int?
+  ytDurationSec   Int?
+  ytFetchedAt     DateTime?
+
+  // Captured creative thumbnail (for image / rich-media / "기타" ads)
+  // — extracted from the rendered ad iframe during Playwright visit.
+  previewImage    String?
+
+  // Ad copy text extracted from content.js (Google Ads template data).
+  // — falls back to these when YouTube title is missing or for non-YT ads.
+  adHeadline      String?
+  adLongHeadline  String?
+  adDescription   String?
+
+  jobId           String?
+  job             Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  savedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  stats           AdStat[]
+
+  @@index([advertiserId])
+  @@index([keyword])
+  @@index([savedAt])
+  @@index([youtubeId])
+}
+
+/// A "watch" — a saved (keyword, kind) pair that the auto-tracking
+/// scheduler re-runs every day. Lets the time-series classifications
+/// (가속도 / 스파이크 / 피로도) actually accumulate without the user
+/// re-searching by hand.
+model Watch {
+  id            String   @id @default(cuid())
+  keyword       String
+  kind          String   // 'ad' | 'youtube'
+  region        String   @default("KR")
+  active        Boolean  @default(true)
+  /// 추적 빈도 티어. false(기본) = 격일(마지막 실행 후 40h+ 지나야 cron
+  /// 이 다시 돌림 → 트래픽 절반). true = 매일(중요 brand). 사이드바
+  /// 토글로 brand 별 지정. IPRoyal 트래픽 소진 방지용 (2026-05-21).
+  daily         Boolean  @default(false)
+  /// 중요도 그룹 (레퍼런스 도구 벤치마크 2026-07-13). "A1"(레드·최우선) |
+  /// "A2"(오렌지) | "A3"(옐로우) | null(미지정). 사이드바 색 chip + 필터.
+  tier          String?
+  /// 자유 태그 (JSON 배열 문자열, 예: ["식이섬유","수면"]). SQLite 라
+  /// 배열 타입 없음 → JSON.stringify 로 저장, 앱에서 parse.
+  tags          String?
+  createdAt     DateTime @default(now())
+  lastRunAt     DateTime?
+  lastRunStatus String?  // '완료' | '실패' | null
+  lastRunNote   String?  // brief note like "광고 240개, YouTube 82개"
+
+  @@unique([keyword, kind, region])
+  @@index([active])
+}
+
+/// Time-series snapshot of an ad's YouTube stats. One row per (ad, day).
+/// Captured each time the user re-runs a search that includes this ad —
+/// over time builds up a daily history we can use for 가속도 / 스파이크 /
+/// 피로도 classifications and mini-sparkline charts.
+model AdStat {
+  id            String   @id @default(cuid())
+  creativeId    String
+  ad            Ad       @relation(fields: [creativeId], references: [creativeId], onDelete: Cascade)
+  capturedDate  String   // YYYY-MM-DD
+  capturedAt    DateTime @default(now())
+  views         Int
+  likes         Int
+  comments      Int
+
+  @@unique([creativeId, capturedDate])
+  @@index([creativeId])
+  @@index([capturedDate])
+}
+
+/// A registered "watch" for daily Meta Ad Library re-scrape. Same role
+/// as the ATC Watch model — the launchd cron iterates active rows
+/// every night and enqueues a MetaJob per entry. Keyword can be a
+/// brand search term ("example.co.kr", "예시브랜드") or a `page:<id>`
+/// directive for direct page-scoped collection.
+model MetaWatch {
+  id            String   @id @default(cuid())
+  keyword       String
+  region        String   @default("KR")
+  active        Boolean  @default(true)
+  /// Anchor brand this watch belongs to. The brand-keyword watch
+  /// itself is its own anchor (e.g. "example.co.kr" → anchor="example.co.kr").
+  /// Auto-discovered + manually-added page:* watches set this to the
+  /// originating brand keyword so the sidebar can group sock-puppet
+  /// pages under one brand card.
+  anchorKeyword String?
+  /// 'manual' (user added), 'auto' (stage 1.5 discovered), or 'seed'
+  /// (initial brand keyword the user typed).
+  source        String   @default("manual")
+  /// Meta's own "결과 ~N개" — total ads count Meta shows for this
+  /// brand-keyword search. Captured during library-signals enrichment.
+  /// Higher = brand is running a bigger / wider Meta operation right
+  /// now, regardless of how many we deduped into MetaAd.
+  metaResultCount Int?
+  createdAt     DateTime @default(now())
+  lastRunAt     DateTime?
+  lastRunStatus String?
+  lastRunNote   String?
+
+  @@unique([keyword, region])
+  @@index([active])
+  @@index([anchorKeyword])
+}
+
+/// One run of Meta (Facebook + Instagram) Ad Library collection for a
+/// single brand keyword. Uses Graph API /ads_archive in two passes
+/// (search_terms then search_page_ids) so the URL-hidden / shortened
+/// long-tail gets picked up alongside the obvious copy matches.
+///
+/// Unlike Google ATC, Meta's archive does NOT expose impression or
+/// view counts for KR commercial ads — we capture creative copy +
+/// page identity + delivery window + platform mix instead.
+model MetaJob {
+  id          String   @id @default(cuid())
+  keyword     String
+  region      String   @default("KR")
+  status      String   // 'queued' | 'in_progress' | 'complete' | 'error'
+  errorMsg    String?
+  adCount     Int      @default(0)
+  pageCount   Int      @default(0)
+  logs        String?  // newline-joined progress log
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ads         MetaAd[]
+
+  @@index([keyword])
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// A single Meta ad-archive entry. Note: keyword is denormalized off
+/// MetaJob so that brand-level filtering matches the same pattern we
+/// use for ATC ads (the sidebar groups by `keyword`).
+model MetaAd {
+  id                       String   @id @default(cuid())
+  adArchiveId              String   @unique // Meta's ad archive id
+  pageId                   String
+  pageName                 String
+  bodies                   String?  // JSON-encoded string[] (creative bodies)
+  linkTitles               String?  // JSON-encoded string[]
+  linkDescriptions         String?  // JSON-encoded string[]
+  linkCaptions             String?  // JSON-encoded string[]
+  snapshotUrl              String?  // ad_snapshot_url (preview iframe)
+  startTime                String?  // ISO 8601
+  stopTime                 String?  // null = still active
+  languages                String?  // JSON-encoded string[]
+  publisherPlatforms       String?  // JSON-encoded string[]
+  // Web-scrape extras: creative thumb, page avatar, decoded destination
+  // URL (l.facebook.com → real LP), and the per-ad-unit UTM tags. These
+  // turn the card from text-only into a real preview.
+  mediaUrl                 String?  // 600x600 fbcdn creative image
+  mediaType                String?  // 'video' | 'image' (web-scrape detection)
+  avatarUrl                String?  // 60x60 page avatar
+  lpUrl                    String?  // full destination URL (with UTM)
+  lpDomain                 String?  // hostname of lpUrl
+  utmCampaign              String?
+  utmTerm                  String?
+  utmContent               String?
+  // Phase-2 enrichment — Meta-direct signals scraped from the library
+  // detail page. Engagement (likes/comments/shares) is intentionally
+  // not exposed by Meta for KR commercial ads, so we instead capture:
+  //   - metaVariantCount = the integer in "광고 N개에서 이 크리에이티브
+  //     및 문구를 사용합니다". Meta's own variant fan-out count, way
+  //     more accurate than the body-hash heuristic we computed before.
+  //   - librarySignalsFetchedAt distinguishes "never tried" (null) from
+  //     "tried, no fan-out text shown" (timestamp + metaVariantCount=1).
+  metaVariantCount         Int?
+  librarySignalsFetchedAt  DateTime?
+  // Phase-3a: BIT.LY / shortener resolution. Direct-response Meta ads
+  // route through 단축 URL → product page or YouTube video. Without
+  // unwrapping the redirect we can't match these ads to ATC YouTube
+  // ads we already index. resolvedLpUrl is the FINAL URL after all
+  // redirects (or same as lpUrl if it wasn't shortened); resolvedYoutubeId
+  // is the 11-char id when the chain ends on a YouTube watch/shorts URL.
+  resolvedLpUrl            String?
+  resolvedLpDomain         String?
+  resolvedYoutubeId        String?
+  region                   String   @default("KR")
+  keyword                  String   // brand keyword (matches ATC Ad.keyword for unified sidebar)
+
+  jobId                    String?
+  job                      MetaJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  savedAt                  DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([pageId])
+  @@index([keyword])
+  @@index([savedAt])
+  @@index([lpDomain])
+}
+
+/// Brand → Meta page roster discovered during denseCollect. Stored so
+/// future runs can skip the search_terms pass and go straight to page
+/// scoping (cheaper + denser).
+model MetaPage {
+  id           String   @id @default(cuid())
+  pageId       String   @unique
+  pageName     String
+  brandKeyword String
+  adsLastSeen  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([brandKeyword])
+}
+
+/// One run of "ad dissection": yt-dlp → ffmpeg scene split → Whisper
+/// voice transcript → (optional) Claude Vision OCR + category. Triggered
+/// from an Ad row in the dashboard or by a raw YouTube URL.
+///
+/// Inspired by the standalone "똑같이만들기" tool — but persisted directly
+/// on the Ad so transcripts and scene cuts are queryable across the whole
+/// catalog (brand-level hook/CTA pattern mining).
+model Dissection {
+  id           String   @id @default(cuid())
+  url          String   // YouTube URL we dissected
+  youtubeId    String?  // 11-char id parsed from url, when applicable
+  adCreativeId String?  // optional link to Ad.creativeId — null = ad-hoc URL
+  title        String?
+  duration     Int?     // total seconds
+  resolution   String?  // e.g. "360x640"
+  status       String   // 'queued' | 'in_progress' | 'complete' | 'error'
+  error        String?
+  workdir      String?  // host filesystem path holding video + thumbs
+  logs         String?  // newline-joined progress log
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  rows         DissectionRow[]
+
+  @@index([youtubeId])
+  @@index([adCreativeId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model DissectionRow {
+  id             String   @id @default(cuid())
+  dissectionId   String
+  dissection     Dissection @relation(fields: [dissectionId], references: [id], onDelete: Cascade)
+  seq            Int      // 1-based scene index
+  startSec       Float
+  endSec         Float
+  script         String   // Whisper voice transcript for this scene
+  visibleText    String?  // Claude Vision OCR — text overlaid on frame
+  shotType       String   @default("video") // 'video' | 'image'
+  thumbnailPath  String?  // relative path under workdir, e.g. "thumbs/3.jpg"
+  category       String?  // AI영상 | 연예인 | 파트너쉽 | 샤오홍슈 | 셀프캠 | 기타
+  requestNote    String?  // free-form user memo / GPT prompt seed
+
+  @@unique([dissectionId, seq])
+  @@index([dissectionId])
+}
+
+/// A YouTube "shell" channel — a sock-puppet upload channel that hosts
+/// paid ad creatives for one or more brands. ATC's domain-mode index
+/// misses these (the destination URL is on a different domain), so we
+/// pull the channel's uploads via YouTube Data API and register each
+/// video as an Ad row tagged with the brandKeyword.
+///
+/// run-tracked.ts iterates active rows daily, refreshes channel
+/// uploads, applies titleFilter, and upserts new videos + AdStat rows.
+model ShellChannel {
+  id           String   @id @default(cuid())
+  channelId    String   @unique // YouTube channel ID (UCxxx…)
+  channelTitle String
+  brandKeyword String   // links to Ad.keyword so sidebar groups them under the brand
+  region       String   @default("KR")
+  titleFilter  String?  // optional regex (case-insensitive); null = take every video
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  lastRunAt    DateTime?
+  lastRunStatus String? // '완료' | '실패'
+  lastRunNote  String?
+
+  @@index([brandKeyword])
+  @@index([active])
+}
+
+model Video {
+  id          String   @id // YouTube video ID
+  title       String
+  channel     String
+  youtube     String
+  thumbnail   String
+  type        String   // 영상 | 쇼츠
+  publishedAt String
+  views       Int      @default(0)
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+  keyword     String
+  jobId       String?
+  job         Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  savedAt     DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([keyword])
+  @@index([views])
+  @@index([savedAt])
+}

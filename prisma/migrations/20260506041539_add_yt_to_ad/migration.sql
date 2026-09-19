@@ -1,0 +1,13 @@
+-- AlterTable
+ALTER TABLE "Ad" ADD COLUMN "youtubeId" TEXT;
+ALTER TABLE "Ad" ADD COLUMN "ytChannel" TEXT;
+ALTER TABLE "Ad" ADD COLUMN "ytComments" INTEGER;
+ALTER TABLE "Ad" ADD COLUMN "ytDurationSec" INTEGER;
+ALTER TABLE "Ad" ADD COLUMN "ytFetchedAt" DATETIME;
+ALTER TABLE "Ad" ADD COLUMN "ytLikes" INTEGER;
+ALTER TABLE "Ad" ADD COLUMN "ytPublishedAt" TEXT;
+ALTER TABLE "Ad" ADD COLUMN "ytTitle" TEXT;
+ALTER TABLE "Ad" ADD COLUMN "ytViews" INTEGER;
+
+-- CreateIndex
+CREATE INDEX "Ad_youtubeId_idx" ON "Ad"("youtubeId");

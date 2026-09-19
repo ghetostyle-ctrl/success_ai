@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/* ===========================================================
+   마브AI 디자인 토큰.
+
+   레퍼런스 아카이브형 레이아웃 — 왼쪽 아이콘 레일 + 네비 사이드바,
+   가운데는 연한 파랑 캔버스 위에 떠 있는 흰 카드들.
+
+   액센트는 블루. 캔버스(--bg-base)가 이미 파랑 계열이라 카드(흰색)와
+   액센트가 같은 색온도로 묶이고, 상태 배지(라임/바이올렛/틸/퓨시아)는
+   색상환에서 충분히 떨어져 카드 위에서 또렷하게 읽힌다.
+
+   폰트는 웹폰트를 싣지 않고 OS 기본 한글 폰트를 쓴다 (아래 주석 참고).
+   =========================================================== */
+
+:root {
+  /* ===== Surfaces ===== */
+  /* 캔버스는 아주 옅은 블루 — 흰 카드가 떠 보이게 하는 역할. */
+  --bg-base: #eef2fb;
+  --bg-card: #ffffff;
+  --bg-elev: #f7f9fd;
+  /* 아이콘 레일 / 네비 사이드바 바탕 */
+  --bg-rail: #ffffff;
+  --bg-nav: #ffffff;
+
+  /* ===== Borders ===== */
+  --border: #e6ebf4;
+  --border-strong: #cfd8e8;
+
+  /* ===== Text ===== */
+  --text-primary: #16203a;
+  --text-secondary: #4a5673;
+  --text-muted: #8b98b4;
+
+  /* ===== Accent (마브AI 시그니처 블루) ===== */
+  --accent: #2f6bff;
+  --accent-soft: rgba(47, 107, 255, 0.1);
+  --accent-strong: #1f4fd8;
+
+  /* ===== Status colors ===== */
+  --accent-amber: #c2830a;
+  --accent-amber-soft: rgba(194, 131, 10, 0.14);
+  --accent-rose: #d9317a;
+  --accent-rose-soft: rgba(217, 49, 122, 0.12);
+  --accent-emerald: #0f9b7d;
+  --accent-emerald-soft: rgba(15, 155, 125, 0.13);
+  --accent-blue: #2f6bff;
+  --accent-blue-soft: rgba(47, 107, 255, 0.12);
+
+  /* ===== Elevation =====
+     카드가 캔버스 위에 얹힌 느낌. 그림자는 옅게 — 진하면 대시보드가
+     무거워 보인다. */
+  --shadow-card: 0 1px 2px rgba(22, 32, 58, 0.04),
+    0 8px 24px rgba(22, 32, 58, 0.05);
+  --shadow-pop: 0 4px 12px rgba(22, 32, 58, 0.1),
+    0 16px 40px rgba(22, 32, 58, 0.12);
+
+  /* 카드 모서리 — 레퍼런스의 둥근 느낌 */
+  --radius-card: 16px;
+}
+
+html, body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  /* 시스템 폰트 우선 — 웹폰트 CDN 1.5MB / 41 requests 제거 후 한국어
+     OS 기본 폰트 사용. macOS = Apple SD Gothic Neo, Windows = 맑은 고딕,
+     iOS/Android = 시스템 한글 폰트. 첫 paint 5초+ 단축. */
+  font-family: -apple-system, BlinkMacSystemFont, system-ui,
+    "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Noto Sans KR",
+    "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 카드 공통 — 반복되는 흰 카드 + 옅은 테두리 + 그림자 묶음 */
+.mv-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+/* 가로 스크롤 영역(소재 캐러셀)의 스크롤바를 얇게 — 카드 안에서
+   기본 스크롤바는 덩어리가 커서 레이아웃을 깬다. */
+.mv-scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.mv-scroll-x::-webkit-scrollbar {
+  height: 6px;
+}
+.mv-scroll-x::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}
+.mv-scroll-x::-webkit-scrollbar-track {
+  background: transparent;
+}
