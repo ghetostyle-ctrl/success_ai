@@ -10,6 +10,14 @@ const DashboardView = dynamic(() => import("@/components/DashboardView"), {
 });
 import type { ArchiveBrand } from "@/components/BrandArchive";
 
+const GuideView = dynamic(() => import("@/components/GuideView"), {
+  ssr: false,
+  loading: () => (
+    <div className="p-8 text-center text-sm text-[var(--text-muted)]">
+      사용법 로딩…
+    </div>
+  ),
+});
 const BrandArchive = dynamic(() => import("@/components/BrandArchive"), {
   ssr: false,
   loading: () => (
@@ -311,7 +319,7 @@ const CLASSIFICATION_META: Record<
   },
 };
 
-type Tab = "archive" | "ads" | "creatives" | "dashboard" | "meta";
+type Tab = "archive" | "ads" | "meta" | "creatives" | "dashboard" | "guide";
 type CreativesSort =
   | "views"
   | "daily"
@@ -1910,10 +1918,11 @@ export default function Home() {
         {(
           [
             ["archive", "🗂", "브랜드 아카이브"],
-            ["ads", "📋", "광고 목록"],
+            ["ads", "📋", "구글 광고 (YouTube 영상)"],
+            ["meta", "📘", "메타 광고"],
             ["creatives", "🎬", "소재 비교"],
             ["dashboard", "📊", "대시보드"],
-            ["meta", "📘", "메타 광고"],
+            ["guide", "❓", "사용법"],
           ] as const
         ).map(([key, icon, label]) => (
           <button
@@ -2822,10 +2831,11 @@ export default function Home() {
             {(
               [
                 ["archive", "🗂 브랜드 아카이브", archiveBrands.length],
-                ["ads", "📋 광고 목록", scopedAds.length],
+                ["ads", "🟦 구글 광고", scopedAds.length],
+                ["meta", "📘 메타 광고", null],
                 ["creatives", "🎬 소재 비교", creativePool.length],
                 ["dashboard", "📊 대시보드", null],
-                ["meta", "📘 메타 광고", null],
+                ["guide", "❓ 사용법", null],
               ] as const
             ).map(([key, label, count]) => (
               <button
@@ -3052,7 +3062,9 @@ export default function Home() {
               </section>
             )}
 
-          {tab === "archive" ? (
+          {tab === "guide" ? (
+            <GuideView onGoTo={(t) => setTab(t)} />
+          ) : tab === "archive" ? (
             <BrandArchive
               brands={archiveBrands}
               onOpen={(kw) => {
@@ -3096,6 +3108,33 @@ export default function Home() {
             />
           ) : tab === "ads" ? (
             <>
+              {/* 데이터 출처 안내 — 표의 조회수를 광고 노출수로 오해하는
+                  일이 실제로 잦다. 구글은 노출/비용을 공개하지 않고, 이
+                  숫자는 광고 소재로 쓰인 YouTube 영상의 공개 통계다. */}
+              <div className="mv-card flex items-start gap-3 p-4">
+                <span className="text-lg leading-none">🟦</span>
+                <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
+                  <b className="text-[var(--text-primary)]">
+                    구글 광고 투명성 센터
+                  </b>
+                  에서 가져온 광고입니다. 구글은 노출수·비용을 공개하지 않아서,
+                  영상 광고는 소재로 쓰인{" "}
+                  <b className="text-rose-600">▶️ YouTube 영상의 공개 통계</b>
+                  (조회수·좋아요·게시일)를 붙여 성과를 가늠합니다.
+                  <div className="mt-1 text-[var(--text-muted)]">
+                    조회수는 광고 노출수가 아니라 유기적 조회까지 합쳐진
+                    숫자입니다. 절대값보다 <b>브랜드 안에서의 상대 순위</b>로
+                    보세요. 이미지 광고는 숫자가 비어 있는 게 정상입니다.
+                  </div>
+                </div>
+                <button
+                  onClick={() => setTab("guide")}
+                  className="shrink-0 rounded-lg border border-[var(--border-strong)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  자세히
+                </button>
+              </div>
+
               {/* Live log + progress for the currently selected collection */}
               {currentCollection &&
                 (currentCollection.busy ||
