@@ -35,7 +35,7 @@ README.md의 "Claude Code 사용자" 섹션을 따라서
    (실행 정책 오류 시 `powershell -ExecutionPolicy Bypass -File .\install.ps1`)
 3. 사용자에게 아래 2번 절차로 YouTube API 키를 발급받게 하고, 받은 키를 `.env` 와 `.env.local` **둘 다** `YOUTUBE_API_KEY=` 에 기록. 키는 사용자가 직접 붙여넣도록 안내해도 됨.
 4. `.\start.ps1` 실행 후 `http://localhost:3000` 이 200 을 주는지 확인. 이후 실행은 바탕화면 `Success AI 실행` 아이콘.
-5. `.\schedule-daily.ps1` 로 작업 스케줄러 등록. `-RunNow` 로 1회 실행해 `logsun-tracked.log` 에 `Done` 이 찍히는지 확인.
+5. `.\schedule-daily.ps1` 로 작업 스케줄러 등록. `-RunNow` 로 1회 실행해 `logs\run-tracked.log` 에 `Done` 이 찍히는지 확인.
 6. `.env` 파일이나 키 값을 채팅·커밋·로그에 남기지 말 것.
 
 ## 1. 설치 (Windows, 5분)
