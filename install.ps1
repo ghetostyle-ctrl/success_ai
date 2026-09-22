@@ -78,12 +78,28 @@ if ($LASTEXITCODE -ne 0) { Fail "prisma generate 실패" }
 npx prisma db push
 if ($LASTEXITCODE -ne 0) { Fail "prisma db push 실패 (.env 의 DATABASE_URL 확인)" }
 
-# 6. 선택 도구 안내 ------------------------------------------------------------
+# 6. 바탕화면 바로가기 ---------------------------------------------------------
+Step "바탕화면 바로가기 만들기"
+try {
+  $desktop = [Environment]::GetFolderPath("Desktop")
+  $lnk = Join-Path $desktop "Success AI 실행.lnk"
+  $ws = New-Object -ComObject WScript.Shell
+  $sc = $ws.CreateShortcut($lnk)
+  $sc.TargetPath = "powershell.exe"
+  $sc.Arguments = "-NoExit -ExecutionPolicy Bypass -File `"$ProjectDir\start.ps1`""
+  $sc.WorkingDirectory = $ProjectDir
+  $sc.IconLocation = "$env:SystemRoot\System32\shell32.dll,13"
+  $sc.Description = "Success AI 서버 실행 + 브라우저 열기"
+  $sc.Save()
+  Write-Host "  $lnk"
+} catch { Write-Host "  바로가기 생성 실패(무시 가능): $($_.Exception.Message)" -ForegroundColor Yellow }
+
+# 7. 선택 도구 안내 ------------------------------------------------------------
 if (-not (Get-Command yt-dlp -ErrorAction SilentlyContinue)) {
   Write-Host "`n(선택) 소재 mp4 다운로드를 쓰려면:  winget install yt-dlp.yt-dlp   후 앱 재시작" -ForegroundColor Yellow
 }
 
-Write-Host "`n설치 완료. 실행:" -ForegroundColor Green
-Write-Host "  cd $ProjectDir"
-Write-Host "  .\start.ps1        # 또는  npm run dev  →  http://localhost:3000"
+Write-Host "`n설치 완료. 실행 방법:" -ForegroundColor Green
+Write-Host "  1) 바탕화면의 'Success AI 실행' 아이콘 더블클릭   ← 제일 쉬움"
+Write-Host "  2) 또는  cd $ProjectDir ; .\start.ps1   →  http://localhost:3000"
 Write-Host "매일 자동 수집 등록:  .\schedule-daily.ps1"
