@@ -1945,7 +1945,7 @@ export default function Home() {
       {/* Sidebar */}
       <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-base)]">
         <div className="flex h-14 items-center gap-2 border-b border-[var(--border)] px-4">
-          <span className="text-sm font-bold tracking-tight">마브AI</span>
+          <span className="text-sm font-bold tracking-tight">Success AI</span>
           <span className="rounded-full border border-[var(--border-strong)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">
             무료
           </span>

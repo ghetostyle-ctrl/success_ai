@@ -99,7 +99,7 @@ export default function GuideView({
             "linear-gradient(135deg, var(--accent), var(--accent-strong))",
         }}
       >
-        <h1 className="text-lg font-black">마브AI 사용법</h1>
+        <h1 className="text-lg font-black">Success AI 사용법</h1>
         <p className="mt-1.5 text-[13px] leading-relaxed text-white/85">
           경쟁 브랜드가 지금 어떤 광고를 돌리고 있는지 한 화면에서 봅니다.
           구글과 메타가 <b>법적으로 공개하게 돼 있는</b> 광고 데이터만
@@ -374,7 +374,7 @@ export default function GuideView({
       </Section>
 
       <div className="pb-4 text-center text-[11px] text-[var(--text-muted)]">
-        마브AI · MIT License · 공개 광고 데이터 기반
+        Success AI · MIT License · 공개 광고 데이터 기반
       </div>
     </div>
   );
