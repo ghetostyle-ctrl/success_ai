@@ -9,6 +9,8 @@
 - 광고에 붙은 YouTube 영상을 찾아 **조회수·좋아요·게시일**을 붙이고, 며칠 쌓이면
   ⭐주력 / 📈상승세 / ⚡급등 / 📉둔화 / 🌱새 캠페인 배지가 자동으로 붙습니다.
 
+> 📖 **사용법 (노션, 그림 포함)**: https://hypnotic-brace-05b.notion.site/Success-AI-3e3c9aa03cf481628fc1d8e8ea6ac233
+
 > 이 저장소는 [mabsaki 님의 마브AI(mav-ai)](https://github.com/chonamgyu/mav-ai) 를
 > MIT 라이선스에 따라 포크한 것입니다. 원본 대비 바뀐 점: Windows 원클릭 설치
 > 스크립트, 작업 스케줄러 등록 스크립트, 누락돼 있던 `.env.example`, 한국어 README.
