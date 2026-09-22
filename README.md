@@ -22,13 +22,13 @@
 PowerShell 을 열고 한 줄:
 
 ```powershell
-irm https://raw.githubusercontent.com/<GITHUB_USER>/success_ai/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 | iex
 ```
 
 또는 직접 클론한 뒤:
 
 ```powershell
-git clone https://github.com/<GITHUB_USER>/success_ai.git C:\success_ai
+git clone https://github.com/ghetostyle-ctrl/success_ai.git C:\success_ai
 cd C:\success_ai
 .\install.ps1
 ```
@@ -43,7 +43,7 @@ Prisma 클라이언트 생성 → SQLite DB 초기화. 이미 설치된 항목�
 <summary>macOS / Linux</summary>
 
 ```bash
-git clone https://github.com/<GITHUB_USER>/success_ai.git && cd success_ai
+git clone https://github.com/ghetostyle-ctrl/success_ai.git && cd success_ai
 npm install && npx playwright install chromium
 cp .env.example .env && cp .env.example .env.local
 npx prisma generate && npx prisma db push

@@ -15,12 +15,12 @@
   .\install.ps1 -YouTubeApiKey "AIza..."
 
   # 아무 데서나 (자동 클론)
-  irm https://raw.githubusercontent.com/<GITHUB_USER>/success_ai/main/install.ps1 | iex
+  irm https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 | iex
 #>
 param(
   [string]$YouTubeApiKey = "",
   [string]$InstallDir = "C:\success_ai",
-  [string]$RepoUrl = "https://github.com/<GITHUB_USER>/success_ai.git"
+  [string]$RepoUrl = "https://github.com/ghetostyle-ctrl/success_ai.git"
 )
 
 $ErrorActionPreference = "Stop"
