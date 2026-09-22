@@ -15,6 +15,29 @@
 
 ---
 
+## 0. Claude Code 사용자 (가장 쉬운 방법)
+
+Claude Code 를 쓰고 있다면 아래 프롬프트를 그대로 붙여넣으세요. Claude 가 이 README 를 읽고 설치·키 안내·실행·스케줄 등록까지 진행합니다.
+
+```
+https://github.com/ghetostyle-ctrl/success_ai 이 저장소를 내 PC에 설치해줘.
+README.md의 "Claude Code 사용자" 섹션을 따라서
+1) C:\success_ai 에 클론하고 install.ps1 을 실행하고
+2) 유튜브 Data API 키 발급 방법을 안내해 준 뒤 내가 주는 키를 .env 와 .env.local 에 넣고
+3) start.ps1 로 실행해서 http://localhost:3000 이 열리는지 확인하고
+4) schedule-daily.ps1 로 매일 자동 수집을 등록해줘.
+막히는 게 있으면 README의 FAQ를 먼저 보고 알려줘.
+```
+
+**Claude 에게 (에이전트 체크리스트)**
+1. `node -v` 가 20 이상인지, `git` 이 있는지 확인. 없으면 설치 안내 후 중단.
+2. `git clone https://github.com/ghetostyle-ctrl/success_ai.git C:\success_ai` → `cd C:\success_ai` → `.\install.ps1`
+   (실행 정책 오류 시 `powershell -ExecutionPolicy Bypass -File .\install.ps1`)
+3. 사용자에게 아래 2번 절차로 YouTube API 키를 발급받게 하고, 받은 키를 `.env` 와 `.env.local` **둘 다** `YOUTUBE_API_KEY=` 에 기록. 키는 사용자가 직접 붙여넣도록 안내해도 됨.
+4. `.\start.ps1` 실행 후 `http://localhost:3000` 이 200 을 주는지 확인. 이후 실행은 바탕화면 `Success AI 실행` 아이콘.
+5. `.\schedule-daily.ps1` 로 작업 스케줄러 등록. `-RunNow` 로 1회 실행해 `logsun-tracked.log` 에 `Done` 이 찍히는지 확인.
+6. `.env` 파일이나 키 값을 채팅·커밋·로그에 남기지 말 것.
+
 ## 1. 설치 (Windows, 5분)
 
 **필요한 것**: [Node.js 20 이상](https://nodejs.org) (LTS), [git](https://git-scm.com)
