@@ -15,7 +15,7 @@
  */
 export async function register() {
   // Only run on the node server runtime — skip edge / build phases.
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.SUCCESS_AI_JOB_CLEANUP === "0") return;
 
   // Dynamic import — prisma client pulls in heavy deps we don't want
   // evaluated during build introspection.
