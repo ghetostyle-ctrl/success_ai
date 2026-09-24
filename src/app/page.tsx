@@ -681,6 +681,7 @@ export default function Home() {
   const [creativesSort, setCreativesSort] = useState<CreativesSort>("views");
   const [creativesSortDir, setCreativesSortDir] = useState<SortDir>("desc");
   const [classFilter, setClassFilter] = useState<Classification | "all">("all");
+  const [copiedCount, setCopiedCount] = useState<number | null>(null);
 
   // 분석 기간 — delta/%/D+N 컬럼이 어느 윈도우 기준으로 계산될지.
   // 광고 수집 탭 상단 셀렉터 + AdsTable에 prop으로 전달. default 7일.
@@ -1860,6 +1861,23 @@ export default function Home() {
     a.download = `${tab}-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // 현재 보이는(필터·정렬 적용) 광고의 YouTube 링크를 "브랜드 | URL" 한 줄씩 복사.
+  // 같은 영상이 크리에이티브 여러 개에 걸려 있으면 한 번만. ad-factory
+  // refs/inbox/list.txt 에 그대로 붙여넣는 용도.
+  const copyLinks = async () => {
+    const seen = new Set<string>();
+    const lines: string[] = [];
+    for (const a of sortedAds) {
+      if (!a.youtubeId || seen.has(a.youtubeId)) continue;
+      seen.add(a.youtubeId);
+      lines.push(`${a.keyword} | ${ytLink(a.youtubeId)}`);
+    }
+    if (lines.length === 0) return;
+    await navigator.clipboard.writeText(lines.join("\n") + "\n");
+    setCopiedCount(lines.length);
+    setTimeout(() => setCopiedCount(null), 2000);
   };
 
   const formatTime = (iso: string) => {
@@ -3199,6 +3217,14 @@ export default function Home() {
                   </span>
                 )}
                 <div className="ml-auto flex gap-2">
+                  <button
+                    onClick={copyLinks}
+                    disabled={sortedAds.length === 0}
+                    title="보이는 광고의 YouTube 링크를 '브랜드 | URL' 형식으로 복사 — ad-factory refs/inbox/list.txt 에 붙여넣기"
+                    className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-50"
+                  >
+                    {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 링크 복사"}
+                  </button>
                   <button
                     onClick={downloadCSV}
                     disabled={sortedAds.length === 0}

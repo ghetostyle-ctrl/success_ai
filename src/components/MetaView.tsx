@@ -800,6 +800,7 @@ function DetailPane({
   const [hideSuspicious, setHideSuspicious] = useState(true);
   const [purging, setPurging] = useState(false);
   const [enriching, setEnriching] = useState(false);
+  const [copiedCount, setCopiedCount] = useState<number | null>(null);
 
   // Auto-poll while engagement enrichment is running so the user sees
   // the progress counter advance + the new likeCount values populate
@@ -878,6 +879,25 @@ function DetailPane({
   }, [baseFiltered, tierMap, tierFilter, sortMode]);
   const adsCount = filteredAds.length;
   const totalAds = detail.ads?.length ?? 0;
+
+  // 보이는 광고를 "브랜드 | URL" 로 복사. bit.ly 를 따라가 YouTube 에 닿은
+  // 광고는 그 영상 링크(yt-dlp 로 받을 수 있음), 아니면 광고라이브러리 링크.
+  const copyLinks = async () => {
+    const seen = new Set<string>();
+    const lines: string[] = [];
+    for (const a of filteredAds) {
+      const url = a.resolvedYoutubeId
+        ? `https://www.youtube.com/watch?v=${a.resolvedYoutubeId}`
+        : metaLibraryLink(a.adArchiveId);
+      if (seen.has(url)) continue;
+      seen.add(url);
+      lines.push(`${detail.keyword} | ${url}`);
+    }
+    if (lines.length === 0) return;
+    await navigator.clipboard.writeText(lines.join("\n") + "\n");
+    setCopiedCount(lines.length);
+    setTimeout(() => setCopiedCount(null), 2000);
+  };
   const droppedCount = totalAds - baseFiltered.length;
   const tierCounts = useMemo(() => {
     const c = { A: 0, B: 0, C: 0 };
@@ -1176,6 +1196,14 @@ function DetailPane({
               {hideSuspicious ? "✓ " : ""}🐤 위장 숨기기
             </button>
             <div className="mx-1 h-3 w-px bg-[var(--border)]" />
+            <button
+              onClick={copyLinks}
+              disabled={filteredAds.length === 0}
+              className="rounded-full border border-[var(--border)] px-2 py-1 font-bold text-[var(--text-muted)] hover:border-[var(--border-strong)] disabled:opacity-50"
+              title="보이는 광고 링크를 '브랜드 | URL' 형식으로 복사 — ad-factory refs/inbox/list.txt 에 붙여넣기"
+            >
+              {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 링크 복사"}
+            </button>
             <button
               onClick={() =>
                 setDensity(density === "compact" ? "comfy" : "compact")
