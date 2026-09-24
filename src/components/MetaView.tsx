@@ -617,6 +617,15 @@ export default function MetaView({
             )}
           </div>
 
+          <a
+            href={`http://127.0.0.1:4317/?import=success-ai&platform=meta&keyword=${encodeURIComponent(detail && !detail.isAggregate ? detail.keyword : "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
+            title="Meta Ad Studio에서 프로젝트를 고른 뒤 Success AI에 저장된 광고를 확인하고 가져옵니다."
+          >
+            ↗ Meta Ad Studio로 보내기
+          </a>
           <button
             onClick={() => void loadJobs()}
             className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1.5 text-[11px] text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
