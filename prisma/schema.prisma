@@ -211,6 +211,7 @@ model MetaAd {
   // URL (l.facebook.com → real LP), and the per-ad-unit UTM tags. These
   // turn the card from text-only into a real preview.
   mediaUrl                 String?  // 600x600 fbcdn creative image
+  videoUrl                 String?
   mediaType                String?  // 'video' | 'image' (web-scrape detection)
   avatarUrl                String?  // 60x60 page avatar
   lpUrl                    String?  // full destination URL (with UTM)

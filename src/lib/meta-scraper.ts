@@ -62,6 +62,7 @@ export type MetaScrapedAd = {
   publisherPlatforms: string[]; // FACEBOOK / INSTAGRAM / MESSENGER / AUDIENCE_NETWORK
   // Web-scrape only (Graph API path leaves these null) ----------------
   mediaUrl?: string | null;     // creative thumbnail (600x600)
+  videoUrl?: string | null;
   mediaType?: "video" | "image"; // detected from <video> tag presence
   avatarUrl?: string | null;    // page avatar (60x60)
   lpUrl?: string | null;        // decoded destination URL

@@ -55,6 +55,21 @@ test("missing selected IDs fail the batch instead of silently exporting partial 
   });
 });
 
+test("Meta export keeps both creative image and captured video link", async () => {
+  await withFixture(async (client) => {
+    const timestamp = new Date("2026-09-24T00:00:00.000Z");
+    await client.metaAd.create({ data: { adArchiveId: "video-1", keyword: "brand", pageId: "page",
+      pageName: "Brand", savedAt: timestamp, updatedAt: timestamp,
+      mediaUrl: "https://scontent.example.fbcdn.net/poster.jpg",
+      videoUrl: "https://video.example.fbcdn.net/creative.mp4" } });
+    const exported = await exportSelectedReferences(client, { platform: "meta", mode: "ids", ids: ["video-1"] });
+    assert.deepEqual(exported.items[0]?.referenceData.media, [
+      { kind: "image", url: "https://scontent.example.fbcdn.net/poster.jpg" },
+      { kind: "video", url: "https://video.example.fbcdn.net/creative.mp4" },
+    ]);
+  });
+});
+
 test("Google exports existing completed creative transcript and public observation provenance", async () => {
   await withFixture(async (client) => {
     // Given

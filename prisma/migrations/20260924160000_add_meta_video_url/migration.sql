@@ -1,0 +1,1 @@
+ALTER TABLE "MetaAd" ADD COLUMN "videoUrl" TEXT;

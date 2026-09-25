@@ -163,6 +163,7 @@ type ExtractedAd = {
   stopTime: string | null;
   platforms: string[];
   mediaUrl: string | null;     // 600x600 creative image (or video poster)
+  videoUrl: string | null;
   mediaType: "video" | "image"; // detected from <video> tag presence
   avatarUrl: string | null;    // 60x60 page avatar
   lpUrl: string | null;        // decoded destination URL (l.facebook.com → real domain)
@@ -185,6 +186,7 @@ async function extractCards(page: Page): Promise<ExtractedAd[]> {
       stopTime: string | null;
       platforms: string[];
       mediaUrl: string | null;
+      videoUrl: string | null;
       mediaType: "video" | "image";
       avatarUrl: string | null;
       lpUrl: string | null;
@@ -447,6 +449,11 @@ async function extractCards(page: Page): Promise<ExtractedAd[]> {
         }
       }
       if (videoEl?.poster) mediaUrl = videoEl.poster;
+      const candidateVideoUrl = videoEl?.currentSrc || videoEl?.src ||
+        videoEl?.querySelector("source")?.src || "";
+      const videoUrl = /^https:\/\//i.test(candidateVideoUrl)
+        ? candidateVideoUrl
+        : null;
       const mediaType: "video" | "image" = hasVideoSignal ? "video" : "image";
 
       // Destination URL — Meta wraps every outbound click in
@@ -509,6 +516,7 @@ async function extractCards(page: Page): Promise<ExtractedAd[]> {
         stopTime,
         platforms,
         mediaUrl,
+        videoUrl,
         mediaType,
         avatarUrl,
         lpUrl,
@@ -537,6 +545,7 @@ function toScrapedAd(e: ExtractedAd): MetaScrapedAd {
     languages: [],
     publisherPlatforms: e.platforms,
     mediaUrl: e.mediaUrl,
+    videoUrl: e.videoUrl,
     mediaType: e.mediaType,
     avatarUrl: e.avatarUrl,
     lpUrl: e.lpUrl,

@@ -276,6 +276,7 @@ async function processOne(id: string) {
     for (const a of filteredAds) {
       const extra = {
         mediaUrl: a.mediaUrl ?? null,
+        videoUrl: a.videoUrl ?? null,
         mediaType: a.mediaType ?? null,
         avatarUrl: a.avatarUrl ?? null,
         lpUrl: a.lpUrl ?? null,

@@ -85,7 +85,8 @@ export function mapMetaReference(ad: MetaAd, transcript: ReferenceData["transcri
   return exportedReference({ id: ad.adArchiveId, title: `${ad.pageName} · ${headlines[0] ?? ad.adArchiveId}`,
     url: `https://www.facebook.com/ads/library/?id=${encodeURIComponent(ad.adArchiveId)}`, capturedAt: ad.updatedAt }, {
     platform: "meta", brand: ad.pageName, headlines, bodies, transcriptSegments: transcript,
-    media: [...mediaLink("image", ad.mediaUrl), ...mediaLink("preview", ad.snapshotUrl)],
+    media: [...mediaLink("image", ad.mediaUrl), ...mediaLink("video", ad.videoUrl),
+      ...mediaLink("preview", ad.snapshotUrl)],
     observations,
   });
 }
