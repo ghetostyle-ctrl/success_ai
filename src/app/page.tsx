@@ -1962,11 +1962,50 @@ export default function Home() {
 
       {/* Sidebar */}
       <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-base)]">
-        <div className="flex h-14 items-center gap-2 border-b border-[var(--border)] px-4">
-          <span className="text-sm font-bold tracking-tight">Success AI</span>
-          <span className="rounded-full border border-[var(--border-strong)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--text-muted)]">
-            무료
-          </span>
+        <div className="border-b border-[var(--border)] px-4 py-3">
+          <label htmlFor="app-switcher" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            앱 선택
+          </label>
+          <details className="group relative">
+            <summary
+              id="app-switcher"
+              className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-[#2b3141] bg-[#171b26] p-3 text-left text-white shadow-[0_10px_28px_rgba(23,27,38,0.16)] outline-none transition hover:border-[#3c465f] focus-visible:ring-4 focus-visible:ring-blue-500/20"
+              aria-label="앱 선택"
+            >
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">S</span>
+              <span className="min-w-0 flex-1">
+                <strong className="block truncate text-[13px] font-bold leading-5">Success AI 광고수집기</strong>
+                <small className="block truncate text-[12px] font-medium leading-5 text-slate-300">구글·메타 광고 레퍼런스 수집</small>
+              </span>
+              <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="absolute left-0 top-[calc(100%+8px)] z-20 flex w-full flex-col gap-1 rounded-xl border border-[#2b3141] bg-[#171b26] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.25)]">
+              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:4317/">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">M</span>
+                <span>
+                  <strong className="block text-[13px] font-bold leading-5">Meta Ad Studio</strong>
+                  <small className="block text-[11px] font-medium leading-4 text-slate-400">광고 설계·제작·배포 자동화</small>
+                </span>
+              </a>
+              <a className="flex items-center gap-3 rounded-lg bg-[#242b3a] px-2 py-2 text-white" href="http://127.0.0.1:3000/" aria-current="page">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-500 text-sm font-bold text-white">S</span>
+                <span>
+                  <strong className="block text-[13px] font-bold leading-5">Success AI 광고수집기</strong>
+                  <small className="block text-[11px] font-medium leading-4 text-slate-300">구글·메타 광고 레퍼런스 수집</small>
+                </span>
+              </a>
+              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3002/">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">K</span>
+                <span>
+                  <strong className="block text-[13px] font-bold leading-5">키워드워처</strong>
+                  <small className="block text-[11px] font-medium leading-4 text-slate-400">검색량·시장 트렌드 추적</small>
+                </span>
+              </a>
+            </div>
+          </details>
+          <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+            현재 화면은 광고 레퍼런스를 수집하는 Success AI입니다. 키워드워처는 검색량 추적 도구로 분리합니다.
+          </p>
         </div>
 
         {/* Source switcher — splits the brand list into 🟦 구글 / 📘 메타.
