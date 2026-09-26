@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   // Next.js 16 보안 가드 — dev mode에서 localhost 외 origin 들어오면
   // HMR/RSC 등 클라이언트 기능 차단. 외부 도메인 (Cloudflare
   // Tunnel을 통한 외부 접근)에서 화면이 깨지는 원인이라 명시적 허용.
-  allowedDevOrigins: ["your-domain.example.com", "*.example.com" /* 배포 도메인으로 교체 */],
+  allowedDevOrigins: ["127.0.0.1", "your-domain.example.com", "*.example.com" /* 배포 도메인으로 교체 */],
   // Response compression — 명시적으로 켬. /api/ads 응답이 12MB 인데
   // 한국 → Singapore latency 80ms + 그 용량 다운로드가 첫 화면 로딩의
   // 가장 큰 병목이었음. gzip 압축 시 약 1/6 (12MB → 2MB)로 줄어 한국에서
