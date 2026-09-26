@@ -1191,10 +1191,15 @@ export default function Home() {
       // 🎯 이 도메인만 — Stage3 형제 brand 제거. Stage1 으로 명확히 표시된
       // 광고만. via=null (레거시) 도 같이 빠짐.
       if (domainOnly && a.via !== "domain") return false;
-      // 채널 chip — 선택된 채널 중 하나라도 매칭되어야 통과.
+      // 채널 chip — YouTube 매칭 광고는 ytChannel과 advertiserName을
+      // 둘 다 가진다. 광고주 chip을 누른 뒤 YouTube 필터를 켰을 때도
+      // 해당 광고주의 YouTube 소재가 보여야 하므로 둘 중 하나라도
+      // 선택된 값과 맞으면 통과시킨다.
       if (selectedChannels.size > 0) {
-        const ch = a.ytChannel || a.advertiserName || "";
-        if (!selectedChannels.has(ch)) return false;
+        const channelMatches = [a.ytChannel, a.advertiserName]
+          .filter(Boolean)
+          .some((label) => selectedChannels.has(label as string));
+        if (!channelMatches) return false;
       }
       // 조회수 대역 — "min:max" (max 빈 문자열 = 무한). YouTube 매칭
       // 안 된 광고 (ytViews null) 는 대역 필터 켜면 제외.
