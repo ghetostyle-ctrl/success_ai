@@ -589,6 +589,11 @@ export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [ads, setAds] = useState<Ad[]>([]);
+  const [deleteSecret, setDeleteSecret] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteDone, setDeleteDone] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletingAll, setDeletingAll] = useState(false);
   const [watches, setWatches] = useState<Watch[]>([]);
   const [metaWatches, setMetaWatches] = useState<MetaWatchRow[]>([]);
   const [metaJobs, setMetaJobs] = useState<MetaJobRow[]>([]);
@@ -1114,29 +1119,35 @@ export default function Home() {
   };
 
   const clearAll = async () => {
-    // 전체 데이터 삭제는 관리자 전용. 비밀번호를 입력받아 API 에 전달하면
-    // 서버가 ADMIN_DELETE_SECRET 과 대조해 검증한다 (페이지가 Cloudflare
-    // Access bypass 라 공개 접근이므로 클라이언트 confirm 만으로는 불충분).
-    const secret = window.prompt(
-      "⚠️ 전체 데이터 삭제 (되돌릴 수 없음)\n관리자 비밀번호를 입력하세요:"
-    );
-    if (!secret) return;
+    // 전체 데이터 삭제는 관리자 전용. Codex 인앱 브라우저는 window.prompt를
+    // 지원하지 않으므로 사이드바의 비밀번호 입력칸에서 받은 값을 전달한다.
+    const secret = deleteSecret.trim();
+    if (!secret || deletingAll) return;
+    setDeletingAll(true);
+    setDeleteError(null);
+    setDeleteDone(false);
     const headers = { "x-admin-secret": secret };
-    const adsRes = await fetch("/api/ads", { method: "DELETE", headers });
-    if (adsRes.status === 403) {
-      alert("❌ 비밀번호가 틀렸습니다. 삭제가 취소되었습니다.");
-      return;
+    try {
+      const adsRes = await fetch("/api/ads", { method: "DELETE", headers });
+      if (adsRes.status === 403) {
+        setDeleteError("비밀번호가 틀렸습니다. 삭제가 취소되었습니다.");
+        return;
+      }
+      if (!adsRes.ok) {
+        setDeleteError(`삭제 실패 (${adsRes.status}). 다시 시도하세요.`);
+        return;
+      }
+      await fetch("/api/videos", { method: "DELETE", headers });
+      setJobs([]);
+      setVideos([]);
+      setAds([]);
+      setSelectedKeyword(null);
+      setDeleteSecret("");
+      setDeleteOpen(false);
+      setDeleteDone(true);
+    } finally {
+      setDeletingAll(false);
     }
-    if (!adsRes.ok) {
-      alert(`삭제 실패 (${adsRes.status}). 다시 시도하세요.`);
-      return;
-    }
-    await fetch("/api/videos", { method: "DELETE", headers });
-    setJobs([]);
-    setVideos([]);
-    setAds([]);
-    setSelectedKeyword(null);
-    alert("✅ 전체 데이터가 삭제되었습니다.");
   };
 
   const scopedAds = useMemo(
@@ -2849,12 +2860,66 @@ export default function Home() {
 
         <div className="mt-auto border-t border-[#343b4c] px-3 py-4">
           {(jobs.length > 0 || ads.length > 0) && (
-            <button
-              onClick={clearAll}
-              className="block w-full rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 hover:bg-rose-400/20"
-            >
-              🗑️ 전체 데이터 삭제
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteOpen((open) => !open);
+                  setDeleteError(null);
+                  setDeleteDone(false);
+                }}
+                className="block w-full rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 hover:bg-rose-400/20"
+              >
+                🗑️ 전체 데이터 삭제
+              </button>
+              {deleteOpen && (
+                <form
+                  className="space-y-2 rounded-lg border border-rose-400/30 bg-rose-400/10 p-2"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void clearAll();
+                  }}
+                >
+                  <p className="text-[11px] leading-4 text-rose-100/90">
+                    되돌릴 수 없습니다. 관리자 비밀번호를 입력하세요.
+                  </p>
+                  <input
+                    type="password"
+                    value={deleteSecret}
+                    onChange={(event) => setDeleteSecret(event.target.value)}
+                    placeholder="관리자 비밀번호"
+                    autoComplete="off"
+                    className="w-full rounded-md border border-rose-300/30 bg-[#171b26] px-2 py-1.5 text-xs text-white outline-none placeholder:text-slate-500 focus:border-rose-300/70"
+                  />
+                  {deleteError && <p className="text-[11px] text-rose-200">{deleteError}</p>}
+                  <div className="flex gap-1.5">
+                    <button
+                      type="submit"
+                      disabled={!deleteSecret.trim() || deletingAll}
+                      className="flex-1 rounded-md bg-rose-500 px-2 py-1.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deletingAll ? "삭제 중…" : "삭제 실행"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteOpen(false);
+                        setDeleteSecret("");
+                        setDeleteError(null);
+                      }}
+                      className="rounded-md border border-slate-500/40 px-2 py-1.5 text-[11px] font-semibold text-slate-300 hover:bg-slate-700/40"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+          {deleteDone && (
+            <p className="mt-2 rounded-lg bg-emerald-400/10 px-2 py-1.5 text-[11px] text-emerald-200">
+              전체 데이터가 삭제되었습니다.
+            </p>
           )}
         </div>
       </aside>
