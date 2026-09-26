@@ -339,6 +339,17 @@ function looksLikeDomain(query: string): boolean {
   return /^[a-z0-9.-]+\.[a-z]{2,}/i.test(stripped);
 }
 
+function normalizeAdKeyword(query: string): string {
+  const trimmed = query.trim();
+  if (!looksLikeDomain(trimmed)) return trimmed;
+
+  return trimmed
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .replace(/\/.*/, "");
+}
+
 function daysBetween(dateStr: string | null): number {
   if (!dateStr) return 0;
   const d = new Date(dateStr);
@@ -1005,27 +1016,28 @@ export default function Home() {
   };
 
   const startAdCollection = (q: string, opts?: { snapshot?: boolean }) => {
-    if (!q || isBusyKeyword(q)) return;
+    const keyword = normalizeAdKeyword(q);
+    if (!keyword || isBusyKeyword(keyword)) return;
 
     // Initialize fresh state for this keyword
     setAdCollections((prev) => ({
       ...prev,
-      [q]: {
+      [keyword]: {
         busy: true,
         logs: [],
         progress: { step: "starting", percent: 0 },
       },
     }));
-    setSelectedKeyword(q);
+    setSelectedKeyword(keyword);
     setTab("ads");
 
     // snapshot=1 → 서버가 Watch upsert skip = cron 미편입 (1회 조사만).
     const es = new EventSource(
-      `/api/ads-stream?query=${encodeURIComponent(q)}${
+      `/api/ads-stream?query=${encodeURIComponent(keyword)}${
         opts?.snapshot ? "&snapshot=1" : ""
       }`
     );
-    adESRefs.current.set(q, es);
+    adESRefs.current.set(keyword, es);
 
     es.addEventListener("job", () => {
       // Job row created in DB — refresh sidebar so 진행 중 entry appears
@@ -1038,7 +1050,7 @@ export default function Home() {
           msg: string;
           level: LogLevel;
         };
-        updateCollection(q, (c) => ({
+        updateCollection(keyword, (c) => ({
           ...c,
           logs: [...c.logs, { time: new Date(), msg: d.msg, level: d.level }],
         }));
@@ -1051,13 +1063,13 @@ export default function Home() {
           step: string;
           percent: number;
         };
-        updateCollection(q, (c) => ({ ...c, progress: d }));
+        updateCollection(keyword, (c) => ({ ...c, progress: d }));
       } catch {}
     });
 
     const finish = () => {
-      updateCollection(q, (c) => ({ ...c, busy: false }));
-      adESRefs.current.delete(q);
+      updateCollection(keyword, (c) => ({ ...c, busy: false }));
+      adESRefs.current.delete(keyword);
       void refreshAll();
     };
 
@@ -1072,7 +1084,7 @@ export default function Home() {
           message?: string;
         };
         if (d.message) {
-          updateCollection(q, (c) => ({
+          updateCollection(keyword, (c) => ({
             ...c,
             logs: [
               ...c.logs,
@@ -1094,7 +1106,7 @@ export default function Home() {
 
   const runAdSearch = () => {
     const raw = adQuery.trim();
-    if (!raw || isBusyKeyword(raw)) return;
+    if (!raw) return;
     setAdQuery("");
     // Multi-keyword 분리 — placeholder에 "example.co.kr, example-shop.com, 쿠팡"
     // 처럼 콤마로 여러 brand 한 번에 가능. 각 keyword를 구글 + 메타 둘 다
@@ -1108,8 +1120,9 @@ export default function Home() {
       // 시 자동 트리거 금지 — 사용자가 사이드바 brand 🔄 로 명시적으로
       // 수집해야 비용이 통제된다. (검색하면 구글 결과 뜬 뒤 메타 brand
       // 카드가 사이드바에 등록되니, 거기서 🔄 누르면 수집)
-      if (!isBusyKeyword(kw))
-        startAdCollection(kw, { snapshot: snapshotMode });
+      const keyword = normalizeAdKeyword(kw);
+      if (!isBusyKeyword(keyword))
+        startAdCollection(keyword, { snapshot: snapshotMode });
     }
   };
 
@@ -3661,6 +3674,7 @@ export default function Home() {
                 sortDir={sortDir}
                 onSort={toggleSort}
                 analyzeDays={analyzeDays}
+                activeKeyword={selectedKeyword}
               />
               {groupedAds.length > displayLimit && (
                 <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-4 py-3 text-center text-xs text-[var(--text-muted)]">
@@ -3889,6 +3903,7 @@ function AdsTable({
   onSort,
   onDissect,
   analyzeDays,
+  activeKeyword,
 }: {
   groups: { primary: Ad; siblings: Ad[]; count: number }[];
   sortKey: AdSortKey;
@@ -3896,12 +3911,25 @@ function AdsTable({
   onSort: (key: AdSortKey) => void;
   onDissect?: (youtubeId: string, creativeId: string | null) => void;
   analyzeDays: AnalyzeDays;
+  activeKeyword: string | null;
 }) {
   if (groups.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-6 py-16 text-center text-sm text-[var(--text-muted)]">
-        아직 불러온 광고가 없어요. 위에 브랜드명이나 도메인을 넣어보세요.
-        <div className="mt-2 text-xs">예: 올리브영 · oliveyoung.co.kr</div>
+        {activeKeyword ? (
+          <>
+            <b className="text-[var(--text-secondary)]">{activeKeyword}</b>에서
+            불러온 광고가 없어요.
+            <div className="mt-2 text-xs">
+              위 로그의 ATC 직접 확인 링크로 실제 공개 여부를 확인할 수 있어요.
+            </div>
+          </>
+        ) : (
+          <>
+            아직 불러온 광고가 없어요. 위에 브랜드명이나 도메인을 넣어보세요.
+            <div className="mt-2 text-xs">예: 올리브영 · oliveyoung.co.kr</div>
+          </>
+        )}
       </div>
     );
   }
