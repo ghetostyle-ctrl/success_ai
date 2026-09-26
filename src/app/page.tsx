@@ -8,21 +8,13 @@ const DashboardView = dynamic(() => import("@/components/DashboardView"), {
   ssr: false,
   loading: () => <div className="p-8 text-center text-sm text-[var(--text-muted)]">대시보드 로딩…</div>,
 });
-import type { ArchiveBrand } from "@/components/BrandArchive";
+import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
 
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
   loading: () => (
     <div className="p-8 text-center text-sm text-[var(--text-muted)]">
       사용법 로딩…
-    </div>
-  ),
-});
-const BrandArchive = dynamic(() => import("@/components/BrandArchive"), {
-  ssr: false,
-  loading: () => (
-    <div className="p-8 text-center text-sm text-[var(--text-muted)]">
-      아카이브 로딩…
     </div>
   ),
 });
