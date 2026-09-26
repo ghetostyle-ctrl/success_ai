@@ -1918,12 +1918,12 @@ export default function Home() {
         ))}
       </datalist>
       {/* 아이콘 레일 — 최상위 이동. 레이블은 툴팁으로만 (폭 절약). */}
-      <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--bg-rail)] py-3">
+      <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-[#2b3141] bg-[#20242f] py-3">
         <span
           aria-hidden
-          className="mb-2 grid h-9 w-9 place-items-center rounded-xl bg-[var(--accent)] text-sm font-black text-white"
+          className="mb-2 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-sm font-black text-white shadow-lg shadow-blue-500/25"
         >
-          M
+          S
         </span>
         {(
           [
@@ -1943,8 +1943,8 @@ export default function Home() {
             aria-current={tab === key ? "page" : undefined}
             className={`grid h-10 w-10 place-items-center rounded-xl text-lg transition ${
               tab === key
-                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                : "text-[var(--text-muted)] hover:bg-[var(--bg-elev)]"
+                ? "bg-blue-500/20 text-blue-200"
+                : "text-slate-400 hover:bg-[#2b3141] hover:text-slate-100"
             }`}
           >
             {icon}
@@ -1953,9 +1953,19 @@ export default function Home() {
       </nav>
 
       {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg-base)]">
-        <div className="border-b border-[var(--border)] px-4 py-3">
-          <label htmlFor="app-switcher" className="mb-2 block text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-[#2b3141] bg-[#20242f] [--accent-soft:rgba(96,165,250,0.16)] [--bg-base:#20242f] [--bg-card:#2a2f3b] [--bg-elev:#242936] [--border-strong:#465166] [--border:#343b4c] [--shadow-card:none] [--text-muted:#94a3b8] [--text-primary:#f8fafc] [--text-secondary:#cbd5e1]">
+        <div className="px-5 pb-4 pt-6">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-sm font-black text-white shadow-lg shadow-blue-500/25">S</span>
+            <div>
+              <div className="text-[17px] font-extrabold tracking-tight text-white">Success AI</div>
+              <div className="mt-0.5 text-[13px] font-medium text-slate-300">광고 레퍼런스를 모으는 곳</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-b border-[#2b3141] px-3 pb-4">
+          <label htmlFor="app-switcher" className="mb-2 block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
             앱 선택
           </label>
           <details className="group relative">
@@ -1972,11 +1982,11 @@ export default function Home() {
               <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
             </summary>
             <div className="absolute left-0 top-[calc(100%+8px)] z-20 flex w-full flex-col gap-1 rounded-xl border border-[#2b3141] bg-[#171b26] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.25)]">
-              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:4317/">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">M</span>
+              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3002/">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">K</span>
                 <span>
-                  <strong className="block text-[13px] font-bold leading-5">Meta Ad Studio</strong>
-                  <small className="block text-[11px] font-medium leading-4 text-slate-400">광고 설계·제작·배포 자동화</small>
+                  <strong className="block text-[13px] font-bold leading-5">키워드워처</strong>
+                  <small className="block text-[11px] font-medium leading-4 text-slate-400">검색량·시장 트렌드 추적</small>
                 </span>
               </a>
               <a className="flex items-center gap-3 rounded-lg bg-[#242b3a] px-2 py-2 text-white" href="http://127.0.0.1:3000/" aria-current="page">
@@ -1986,19 +1996,49 @@ export default function Home() {
                   <small className="block text-[11px] font-medium leading-4 text-slate-300">구글·메타 광고 레퍼런스 수집</small>
                 </span>
               </a>
-              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3002/">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">K</span>
+              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:4317/">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">A</span>
                 <span>
-                  <strong className="block text-[13px] font-bold leading-5">키워드워처</strong>
-                  <small className="block text-[11px] font-medium leading-4 text-slate-400">검색량·시장 트렌드 추적</small>
+                  <strong className="block text-[13px] font-bold leading-5">AD FACTORY</strong>
+                  <small className="block text-[11px] font-medium leading-4 text-slate-400">광고 설계·제작·배포 자동화</small>
                 </span>
               </a>
             </div>
           </details>
-          <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">
+          <p className="mt-2 px-1 text-[11px] leading-4 text-slate-400">
             현재 화면은 광고 레퍼런스를 수집하는 Success AI입니다. 키워드워처는 검색량 추적 도구로 분리합니다.
           </p>
         </div>
+
+        <nav className="space-y-1 px-3 py-3" aria-label="Success AI 메뉴">
+          {(
+            [
+              ["archive", "🗂", "브랜드 아카이브", archiveBrands.length],
+              ["ads", "▥", "구글 광고", scopedAds.length],
+              ["meta", "▣", "메타 광고", null],
+              ["creatives", "🎬", "소재 비교", creativePool.length],
+              ["dashboard", "▥", "대시보드", null],
+              ["guide", "?", "사용법", null],
+            ] as const
+          ).map(([key, icon, label, count]) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              aria-current={tab === key ? "page" : undefined}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${
+                tab === key
+                  ? "bg-[#343846] text-white shadow-sm"
+                  : "text-slate-400 hover:bg-[#2b3141] hover:text-slate-100"
+              }`}
+            >
+              <span className="grid h-5 w-5 shrink-0 place-items-center text-[15px] text-slate-400">{icon}</span>
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {count !== null && count > 0 && (
+                <span className="rounded-full px-1.5 py-0.5 text-[11px] font-bold text-blue-200">{count.toLocaleString()}</span>
+              )}
+            </button>
+          ))}
+        </nav>
 
         {/* Source switcher — splits the brand list into 🟦 구글 / 📘 메타.
             Auto-syncs to the active main tab via the useEffect above;
@@ -2807,11 +2847,11 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-auto border-t border-[var(--border)] px-2 py-1.5">
+        <div className="mt-auto border-t border-[#343b4c] px-3 py-4">
           {(jobs.length > 0 || ads.length > 0) && (
             <button
               onClick={clearAll}
-              className="block w-full rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-500/20"
+              className="block w-full rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 hover:bg-rose-400/20"
             >
               🗑️ 전체 데이터 삭제
             </button>
