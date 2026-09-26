@@ -10,6 +10,7 @@ const DashboardView = dynamic(() => import("@/components/DashboardView"), {
 });
 import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
 import { AdSearchBox } from "@/components/AdSearchBox";
+import { AdCardGrid } from "@/components/AdCardGrid";
 
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
@@ -694,6 +695,7 @@ export default function Home() {
   // 광고 테이블 표시 cap — 한 번에 너무 많은 썸네일 fetch 하면 첫 paint
   // 후 background 40초+. 200개로 cap, "+200개" 버튼으로 점진 확장.
   const [displayLimit, setDisplayLimit] = useState(200);
+  const [adView, setAdView] = useState<"cards" | "table">("cards");
 
   // 사이드바 자동수집 위젯의 "누락" 펼침 토글
   const [showMissing, setShowMissing] = useState(false);
@@ -849,7 +851,7 @@ export default function Home() {
     }
   }, [currentCollection?.logs]);
 
-  const refreshAll = async () => {
+  const refreshAll = async (options?: { skipAds?: boolean; freshAds?: boolean }) => {
     // 각 API 도착 즉시 setState — Promise.all 로 다 끝날 때까지 기다리던
     // 이전 방식은 가장 느린 fetch (1~2초) 까지 사이드바도 빈 채. 분리해서
     // jobs/watch (사이드바 핵심) 가 0.4초에 오면 즉시 채워짐. progressive
@@ -907,10 +909,14 @@ export default function Home() {
     // /api/ad-stats 병합이고 그건 이미 지연 로드라, 목록 자체는 넉넉히
     // 받는 편이 낫다. 측정: 4.5k건 withStats=false = 4.2MB raw /
     // gzip 약 700KB / 0.17s.
-    fetch(`/api/ads?withStats=false&limit=${INITIAL_ADS_LIMIT}`)
-      .then((r) => r.json())
-      .then((d) => setAds(d.ads ?? []))
-      .catch(() => {});
+    if (!options?.skipAds) {
+      fetch(`/api/ads?withStats=false&limit=${INITIAL_ADS_LIMIT}`, {
+        cache: options?.freshAds ? "no-store" : "default",
+      })
+        .then((r) => r.json())
+        .then((d) => setAds(d.ads ?? []))
+        .catch(() => {});
+    }
     // stats 백그라운드 fetch — 5초 지연 + requestIdleCallback 으로 main
     // thread block 회피. 사용자가 본 30초 "응답 없음" 다이얼로그 진짜 원인:
     // 4000 ads × 30일 stats merge + 그 직후 useMemo (groupedAds/filteredAds/
@@ -1011,9 +1017,25 @@ export default function Home() {
     });
   };
 
+  const resetAdFilters = () => {
+    setAdTypeFilter("all");
+    setFilter("all");
+    setClassFilter("all");
+    setSinceDateFilter(null);
+    setInnerSearch("");
+    setSelectedChannels(new Set());
+    setViewBand("");
+    setAgeBand("");
+    setDisplayLimit(200);
+    setDomainOnly(false);
+  };
+
   const startAdCollection = (q: string, opts?: { snapshot?: boolean }) => {
     const keyword = normalizeAdKeyword(q);
     if (!keyword || isBusyKeyword(keyword)) return;
+
+    resetAdFilters();
+    setAdView("cards");
 
     // Initialize fresh state for this keyword
     setAdCollections((prev) => ({
@@ -1037,7 +1059,7 @@ export default function Home() {
 
     es.addEventListener("job", () => {
       // Job row created in DB — refresh sidebar so 진행 중 entry appears
-      void refreshAll();
+      void refreshAll({ skipAds: true });
     });
 
     es.addEventListener("log", (e) => {
@@ -1066,7 +1088,7 @@ export default function Home() {
     const finish = () => {
       updateCollection(keyword, (c) => ({ ...c, busy: false }));
       adESRefs.current.delete(keyword);
-      void refreshAll();
+      void refreshAll({ freshAds: true });
     };
 
     es.addEventListener("done", () => {
@@ -3041,6 +3063,7 @@ export default function Home() {
               selectedKeyword 있을 때만. */}
           {selectedKeyword &&
             (tab === "ads" || tab === "creatives") &&
+            !(tab === "ads" && adView === "cards") &&
             advertiserRanking &&
             advertiserRanking.total >= 2 && (
               <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
@@ -3157,6 +3180,7 @@ export default function Home() {
               광고만 필터링. 레퍼런스 대시보드의 시간 칩 UX와 동일. */}
           {selectedKeyword &&
             tab === "ads" &&
+            adView === "table" &&
             snapshotTimeline &&
             snapshotTimeline.dates.length > 0 && (
               <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
@@ -3222,6 +3246,8 @@ export default function Home() {
             <BrandArchive
               brands={archiveBrands}
               onOpen={(kw) => {
+                resetAdFilters();
+                setAdView("cards");
                 setSelectedKeyword(kw);
                 setTab("ads");
               }}
@@ -3260,6 +3286,43 @@ export default function Home() {
               domainFilter={creativeDomainFilter}
               onDomainFilterChange={setCreativeDomainFilter}
             />
+          ) : tab === "ads" && selectedKeyword && adView === "cards" ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-1 text-xs">
+                  {(["all", "image", "video", "other", "youtube"] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setAdTypeFilter(type)}
+                      className={`rounded-lg px-3 py-1.5 font-semibold ${adTypeFilter === type ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)]"}`}
+                    >
+                      {type === "all" ? "전체" : type === "image" ? "이미지" : type === "video" ? "영상" : type === "other" ? "기타" : "YouTube"}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setAdView("table")} className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
+                  분석 표 보기
+                </button>
+              </div>
+              {currentCollection?.busy && (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-xs text-[var(--text-secondary)]">
+                  광고 수집 중 · {currentCollection.progress.percent}%
+                </div>
+              )}
+              <AdCardGrid
+                ads={sortedAds.slice(0, displayLimit)}
+                keyword={selectedKeyword}
+                totalCount={sortedAds.length}
+                collectedCount={scopedAds.length}
+                onClearFilters={resetAdFilters}
+              />
+              {sortedAds.length > displayLimit && (
+                <button type="button" onClick={() => setDisplayLimit((limit) => limit + 200)} className="w-full rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-4 py-3 text-center text-xs font-semibold text-[var(--text-secondary)]">
+                  광고 {displayLimit.toLocaleString()}/{sortedAds.length.toLocaleString()}개 표시 중 · 200개 더 보기
+                </button>
+              )}
+            </>
           ) : tab === "ads" ? (
             <>
               {/* 데이터 출처 안내 — 표의 조회수를 광고 노출수로 오해하는
@@ -3650,6 +3713,16 @@ export default function Home() {
               {/* Unified ads table — 항상 200개 cap. brand 선택해도 한 번에
                   너무 많은 썸네일 (mqdefault.jpg 수천 개) 동시 fetch 하면
                   네트워크 40초+. "더 보기" 클릭 시 +200 추가. */}
+              {selectedKeyword && (
+                <div className="flex justify-end gap-1 text-xs">
+                  <button type="button" onClick={() => setAdView("cards")} className={`rounded-lg px-3 py-1.5 font-semibold ${adView === "cards" ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] text-[var(--text-secondary)]"}`}>
+                    카드 보기
+                  </button>
+                  <button type="button" onClick={() => setAdView("table")} className={`rounded-lg px-3 py-1.5 font-semibold ${adView === "table" ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] text-[var(--text-secondary)]"}`}>
+                    표 보기
+                  </button>
+                </div>
+              )}
               <AdsTable
                 groups={groupedAds.slice(0, displayLimit)}
                 sortKey={sortKey}
