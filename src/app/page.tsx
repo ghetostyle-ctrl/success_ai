@@ -11,6 +11,7 @@ const DashboardView = dynamic(() => import("@/components/DashboardView"), {
 import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
 import { AdSearchBox } from "@/components/AdSearchBox";
 import { AdCardGrid } from "@/components/AdCardGrid";
+import { AdSelectionToolbar } from "@/components/AdSelectionToolbar";
 
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
@@ -696,6 +697,7 @@ export default function Home() {
   // 후 background 40초+. 200개로 cap, "+200개" 버튼으로 점진 확장.
   const [displayLimit, setDisplayLimit] = useState(200);
   const [adView, setAdView] = useState<"cards" | "table">("cards");
+  const [selectedAdIds, setSelectedAdIds] = useState<Set<string>>(() => new Set());
 
   // 사이드바 자동수집 위젯의 "누락" 펼침 토글
   const [showMissing, setShowMissing] = useState(false);
@@ -1018,6 +1020,7 @@ export default function Home() {
   };
 
   const resetAdFilters = () => {
+    setSelectedAdIds(new Set());
     setAdTypeFilter("all");
     setFilter("all");
     setClassFilter("all");
@@ -1367,6 +1370,21 @@ export default function Home() {
     }
     return [...ytGroups.values(), ...noYt];
   }, [sortedAds]);
+
+  const visibleCardAds = sortedAds.slice(0, displayLimit);
+  const visibleTableGroups = groupedAds.slice(0, displayLimit);
+  const visibleTableAds = visibleTableGroups.flatMap((group) => group.siblings);
+  const selectedFilteredAds = sortedAds.filter((ad) => selectedAdIds.has(ad.creativeId));
+  const toggleAdIds = (ids: readonly string[], checked: boolean) => {
+    setSelectedAdIds((current) => {
+      const next = new Set(current);
+      for (const id of ids) {
+        if (checked) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
 
   const filteredVideos = useMemo(() => {
     return scopedVideos.filter((v) => {
@@ -3312,11 +3330,19 @@ export default function Home() {
               )}
               <AdCardGrid
                 key={selectedKeyword}
-                ads={sortedAds.slice(0, displayLimit)}
+                ads={visibleCardAds}
                 keyword={selectedKeyword}
                 totalCount={sortedAds.length}
                 collectedCount={scopedAds.length}
                 onClearFilters={resetAdFilters}
+                selectedIds={selectedAdIds}
+                onToggle={(id, checked) => toggleAdIds([id], checked)}
+                selectionActions={<AdSelectionToolbar
+                  selectedAds={selectedFilteredAds}
+                  visibleCount={visibleCardAds.length}
+                  onSelectAll={() => toggleAdIds(visibleCardAds.map((ad) => ad.creativeId), true)}
+                  onClear={() => setSelectedAdIds(new Set())}
+                />}
               />
               {sortedAds.length > displayLimit && (
                 <button type="button" onClick={() => setDisplayLimit((limit) => limit + 200)} className="w-full rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-4 py-3 text-center text-xs font-semibold text-[var(--text-secondary)]">
@@ -3423,7 +3449,7 @@ export default function Home() {
                     title="보이는 광고의 YouTube 링크를 '브랜드 | URL' 형식으로 복사 — ad-factory refs/inbox/list.txt 에 붙여넣기"
                     className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-50"
                   >
-                    {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 링크 복사"}
+                    {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 전체 YouTube 링크 복사"}
                   </button>
                   <button
                     onClick={downloadCSV}
@@ -3724,8 +3750,17 @@ export default function Home() {
                   </button>
                 </div>
               )}
+              <AdSelectionToolbar
+                selectedAds={selectedFilteredAds}
+                visibleCount={visibleTableAds.length}
+                visibleLabel={`표시 ${visibleTableGroups.length}행 · 광고 ${visibleTableAds.length}개`}
+                onSelectAll={() => toggleAdIds(visibleTableAds.map((ad) => ad.creativeId), true)}
+                onClear={() => setSelectedAdIds(new Set())}
+              />
               <AdsTable
-                groups={groupedAds.slice(0, displayLimit)}
+                groups={visibleTableGroups}
+                selectedIds={selectedAdIds}
+                onToggleGroup={toggleAdIds}
                 sortKey={sortKey}
                 sortDir={sortDir}
                 onSort={toggleSort}
@@ -3954,6 +3989,8 @@ function SortHeader({
 
 function AdsTable({
   groups,
+  selectedIds,
+  onToggleGroup,
   sortKey,
   sortDir,
   onSort,
@@ -3962,6 +3999,8 @@ function AdsTable({
   activeKeyword,
 }: {
   groups: { primary: Ad; siblings: Ad[]; count: number }[];
+  selectedIds: ReadonlySet<string>;
+  onToggleGroup: (ids: readonly string[], checked: boolean) => void;
   sortKey: AdSortKey;
   sortDir: SortDir;
   onSort: (key: AdSortKey) => void;
@@ -3995,6 +4034,11 @@ function AdsTable({
         <table className="w-full text-sm">
           <thead className="bg-[var(--bg-elev)] text-xs text-[var(--text-secondary)]">
             <tr>
+              <th className="px-2 py-2 text-left font-semibold">
+                <input type="checkbox" aria-label="표에 표시된 광고 전체 선택"
+                  checked={groups.every((group) => group.siblings.every((ad) => selectedIds.has(ad.creativeId)))}
+                  onChange={(event) => onToggleGroup(groups.flatMap((group) => group.siblings.map((ad) => ad.creativeId)), event.target.checked)} />
+              </th>
               <th className="px-2 py-2 text-left font-semibold">#</th>
               <th className="px-2 py-2 text-left font-semibold">썸네일</th>
               <th className="px-2 py-2 text-left font-semibold">제목</th>
@@ -4051,6 +4095,8 @@ function AdsTable({
                 key={g.primary.id}
                 group={g}
                 index={i + 1}
+                selected={g.siblings.every((ad) => selectedIds.has(ad.creativeId))}
+                onSelect={(checked) => onToggleGroup(g.siblings.map((ad) => ad.creativeId), checked)}
                 highlightDaily={sortKey === "daily"}
                 highlightDelta={sortKey === "delta"}
                 highlightGrowth={sortKey === "growth"}
@@ -4147,6 +4193,8 @@ function DownloadButton({
 function AdRow({
   group,
   index,
+  selected,
+  onSelect,
   highlightDaily = false,
   highlightDelta = false,
   highlightGrowth = false,
@@ -4155,6 +4203,8 @@ function AdRow({
 }: {
   group: { primary: Ad; siblings: Ad[]; count: number };
   index: number;
+  selected: boolean;
+  onSelect: (checked: boolean) => void;
   highlightDaily?: boolean;
   highlightDelta?: boolean;
   highlightGrowth?: boolean;
@@ -4192,7 +4242,11 @@ function AdRow({
   const variantCount = group.count;
 
   return (
-    <tr className="border-t border-[var(--border)] hover:bg-[var(--bg-elev)]">
+    <tr className={`border-t border-[var(--border)] hover:bg-[var(--bg-elev)] ${selected ? "bg-[var(--accent-soft)]" : ""}`}>
+      <td className="px-2 py-1.5">
+        <input type="checkbox" aria-label={`광고 행 ${index} 선택${group.count > 1 ? ` (${group.count}개 소재)` : ""}`}
+          checked={selected} onChange={(event) => onSelect(event.target.checked)} />
+      </td>
       <td className="px-2 py-1.5 text-[var(--text-muted)]">{index}</td>
       <td className="px-2 py-1.5">
         <ThumbnailCell ad={ad} />
