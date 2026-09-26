@@ -659,13 +659,8 @@ export default function Home() {
       .catch(() => {});
   }, [selectedKeyword]);
 
-  // brand 선택 시 "🎯 이 도메인만" 자동 ON (사용자 요청 2026-07-01).
-  // brand-h 처럼 광고주(모비데이즈)가 미디어커머스 홀딩이라 광고주 fan-out
-  // 결과가 다른 brand 광고로 도배되는 경우 매번 토글 클릭 부담. 도메인
-  // 검색 = "이 brand 만 보고 싶음" 이 default 의도라 자동으로 도메인만.
-  // 사용자가 fan-out 결과 보고 싶으면 토글 클릭해서 끔 (여전히 가능).
   useEffect(() => {
-    if (selectedKeyword) setDomainOnly(true);
+    setDomainOnly(selectedKeyword ? looksLikeDomain(selectedKeyword) : false);
   }, [selectedKeyword]);
 
   // Sidebar source toggle — splits the brand list into 🟦 구글 / 📘 메타
