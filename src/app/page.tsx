@@ -3311,6 +3311,7 @@ export default function Home() {
                 </div>
               )}
               <AdCardGrid
+                key={selectedKeyword}
                 ads={sortedAds.slice(0, displayLimit)}
                 keyword={selectedKeyword}
                 totalCount={sortedAds.length}

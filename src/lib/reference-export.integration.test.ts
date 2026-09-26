@@ -94,6 +94,19 @@ test("Google exports existing completed creative transcript and public observati
   });
 });
 
+test("Google export includes the stored image creative when previewImage is absent", async () => {
+  await withFixture(async (client) => {
+    const timestamp = new Date("2026-09-24T00:00:00.000Z");
+    await client.ad.create({ data: { creativeId: "IMAGE1", advertiserId: "AR1", advertiserName: "Reference brand",
+      type: "image", keyword: "brand", region: "KR", savedAt: timestamp, updatedAt: timestamp,
+      imageHtml: '<img src="https://tpc.googlesyndication.com/archive/simgad/123456">' } });
+    const exported = await exportSelectedReferences(client, { platform: "google", mode: "ids", ids: ["IMAGE1"] });
+    assert.deepEqual(exported.items[0]?.referenceData.media, [
+      { kind: "image", url: "https://tpc.googlesyndication.com/archive/simgad/123456" },
+    ]);
+  });
+});
+
 test("export rejects captured fields beyond the consumer contract before returning a payload", async () => {
   await withFixture(async (client) => {
     // Given

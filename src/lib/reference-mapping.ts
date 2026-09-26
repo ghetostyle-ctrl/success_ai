@@ -108,7 +108,7 @@ export function mapGoogleReference(ad: Ad, transcript: ReferenceData["transcript
     url: `https://adstransparency.google.com/advertiser/${encodeURIComponent(ad.advertiserId)}/creative/${encodeURIComponent(ad.creativeId)}?region=${encodeURIComponent(ad.region)}`,
     capturedAt: latestStoredAt }, {
     platform: "google", brand: ad.advertiserName, headlines, bodies, transcriptSegments: transcript,
-    media: [...mediaLink("image", ad.previewImage), ...mediaLink("preview", ad.previewUrl),
+    media: [...mediaLink("image", ad.previewImage ?? ad.imageHtml?.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["']/i)?.[1] ?? null), ...mediaLink("preview", ad.previewUrl),
       ...mediaLink("video", ad.youtubeId ? `https://www.youtube.com/watch?v=${encodeURIComponent(ad.youtubeId)}` : null)],
     observations,
   });
