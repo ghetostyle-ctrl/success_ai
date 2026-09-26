@@ -9,6 +9,7 @@ const DashboardView = dynamic(() => import("@/components/DashboardView"), {
   loading: () => <div className="p-8 text-center text-sm text-[var(--text-muted)]">대시보드 로딩…</div>,
 });
 import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
+import { AdSearchBox } from "@/components/AdSearchBox";
 
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
@@ -2942,31 +2943,17 @@ export default function Home() {
         {/* 검색 헤더 — 이 도구에서 사용자가 제일 먼저 하는 행동이
             "브랜드 하나 넣고 불러오기" 라서, 탭보다 검색을 위에 둔다. */}
         <header className="border-b border-[var(--border)] bg-[var(--bg-card)] px-6 pb-4 pt-5">
-          <div className="relative">
-            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-[var(--text-muted)]">
-              🔍
-            </span>
-            <input
-              value={adQuery}
-              onChange={(e) => setAdQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") runAdSearch();
-              }}
-              placeholder="브랜드명 또는 도메인으로 검색 (예: 올리브영, oliveyoung.co.kr)"
-              className="w-full rounded-full border border-[var(--border-strong)] bg-[var(--bg-elev)] py-3 pl-11 pr-32 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--bg-card)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-            />
-            <button
-              onClick={runAdSearch}
-              disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-bold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {isBusyKeyword(adQuery.trim())
-                ? "불러오는 중"
-                : anyBusyAds
-                ? "추가 수집"
-                : "불러오기"}
-            </button>
-          </div>
+          <AdSearchBox
+            query={adQuery}
+            onQueryChange={setAdQuery}
+            onSearch={runAdSearch}
+            disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
+            buttonLabel={isBusyKeyword(adQuery.trim())
+              ? "불러오는 중"
+              : anyBusyAds
+              ? "추가 수집"
+              : "불러오기"}
+          />
 
           {/* 예시 칩 — 빈 화면에서 뭘 넣어야 할지 알려주는 역할. */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
