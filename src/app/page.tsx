@@ -2006,14 +2006,14 @@ export default function Home() {
               <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
             </summary>
             <div className="absolute left-0 top-[calc(100%+8px)] z-20 flex w-full flex-col gap-1 rounded-xl border border-[#2b3141] bg-[#171b26] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.25)]">
-              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3002/">
+              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3000/">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">K</span>
                 <span>
                   <strong className="block text-[13px] font-bold leading-5">키워드워처</strong>
                   <small className="block text-[11px] font-medium leading-4 text-slate-400">검색량·시장 트렌드 추적</small>
                 </span>
               </a>
-              <a className="flex items-center gap-3 rounded-lg bg-[#242b3a] px-2 py-2 text-white" href="http://127.0.0.1:3000/" aria-current="page">
+              <a className="flex items-center gap-3 rounded-lg bg-[#242b3a] px-2 py-2 text-white" href="/" aria-current="page">
                 <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-500 text-sm font-bold text-white">S</span>
                 <span>
                   <strong className="block text-[13px] font-bold leading-5">Success AI 광고수집기</strong>

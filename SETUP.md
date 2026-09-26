@@ -25,7 +25,7 @@ cp .env.example .env.local     # 앱용 — 값 채우기 (아래 3번)
 cp .env.example .env           # Prisma CLI 용 (주의 참고)
 npx prisma generate            # Prisma 클라이언트 생성
 npx prisma db push             # 빈 SQLite DB(dev.db) 스키마 생성
-npm run dev                    # http://localhost:3000
+npm run dev -- --port 3001      # http://localhost:3001
 ```
 
 > ⚠️ **`.env` 와 `.env.local` 둘 다 필요합니다.**

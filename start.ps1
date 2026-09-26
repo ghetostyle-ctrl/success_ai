@@ -4,9 +4,9 @@ param([string]$Hostname = "")
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 if (-not (Test-Path ".env.local")) { Write-Host ".env.local 이 없습니다. 먼저 .\install.ps1 을 실행하세요." -ForegroundColor Red; exit 1 }
-Start-Job -ScriptBlock { Start-Sleep 6; Start-Process "http://localhost:3000" } | Out-Null
+Start-Job -ScriptBlock { Start-Sleep 6; Start-Process "http://localhost:3001" } | Out-Null
 if ([string]::IsNullOrWhiteSpace($Hostname)) {
-  npm run dev
+  npm run dev -- --port 3001
 } else {
-  npm run dev -- --hostname $Hostname
+  npm run dev -- --hostname $Hostname --port 3001
 }
