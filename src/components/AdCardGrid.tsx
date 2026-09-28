@@ -42,7 +42,7 @@ function creativeUrl(ad: CardAd): string {
 export function AdCardGrid({ ads, keyword, totalCount, collectedCount, onClearFilters, selectedIds, onToggle, selectionActions }: Props) {
   if (ads.length === 0) {
     return (
-      <div className="panel empty text-sm text-muted">
+      <div className="panel empty text-base text-muted">
         {collectedCount > 0 ? (
           <>
             <p>광고 {collectedCount.toLocaleString()}개를 수집했지만 현재 필터에 맞는 소재가 없습니다.</p>
@@ -86,7 +86,7 @@ export function AdCardGrid({ ads, keyword, totalCount, collectedCount, onClearFi
           const image = previewImage(ad);
           return (
             <div key={ad.id} className={`relative overflow-hidden rounded-panel border transition-colors ${selectedIds.has(ad.creativeId) ? "border-accent bg-accent-soft ring-1 ring-accent" : "border-line bg-surface hover:border-line-strong hover:shadow-xs"}`}>
-              <label className="absolute left-3 top-3 z-10 flex cursor-pointer items-center gap-2 rounded-sm border border-line bg-surface px-2 py-1.5 text-xs font-semibold text-ink">
+              <label className="absolute left-3 top-3 z-10 flex cursor-pointer items-center gap-2 rounded-sm border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink">
                 <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" aria-label={`광고 ${ad.creativeId} 선택`} checked={selectedIds.has(ad.creativeId)} onChange={(event) => onToggle(ad.creativeId, event.target.checked)} />
                 선택
               </label>
@@ -95,13 +95,13 @@ export function AdCardGrid({ ads, keyword, totalCount, collectedCount, onClearFi
                 {image ? (
                   <img src={image} alt={`${ad.advertiserName} 광고 소재`} loading="lazy" className="max-h-full max-w-full object-contain" />
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-4 text-center text-xs text-faint">
+                  <span className="inline-flex items-center gap-1 px-4 text-center text-sm text-faint">
                     미리보기는 원본에서 확인
                     <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
                   </span>
                 )}
               </div>
-              <div className="flex items-center justify-between gap-2 border-t border-line bg-surface px-3 py-2 text-xs">
+              <div className="flex items-center justify-between gap-2 border-t border-line bg-surface px-3 py-2 text-sm">
                 <span className="truncate font-semibold text-[var(--text-primary)]">{ad.advertiserName || keyword}</span>
                 <span className="shrink-0 text-[var(--text-muted)]">{ad.youtubeId ? "YouTube" : ad.type === "image" ? "이미지" : ad.type === "video" ? "영상" : "기타"}</span>
               </div>

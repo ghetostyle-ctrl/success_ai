@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import dynamic from "next/dynamic";
 import {
   Archive,
@@ -31,6 +38,7 @@ import {
   Image as ImageIcon,
   Info,
   Layers,
+  SlidersHorizontal,
   LayoutDashboard,
   LayoutList,
   LoaderCircle,
@@ -61,7 +69,7 @@ import {
 // 사용자가 그 tab 클릭 시 그제서야 chunk 다운로드.
 const DashboardView = dynamic(() => import("@/components/DashboardView"), {
   ssr: false,
-  loading: () => <div className="p-8 text-center text-sm text-[var(--text-muted)]">대시보드 로딩…</div>,
+  loading: () => <div className="p-8 text-center text-base text-[var(--text-muted)]">대시보드 로딩…</div>,
 });
 import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
 import { AdSearchBox } from "@/components/AdSearchBox";
@@ -71,14 +79,14 @@ import { AdSelectionToolbar } from "@/components/AdSelectionToolbar";
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
   loading: () => (
-    <div className="p-8 text-center text-sm text-[var(--text-muted)]">
+    <div className="p-8 text-center text-base text-[var(--text-muted)]">
       사용법 로딩…
     </div>
   ),
 });
 const MetaView = dynamic(() => import("@/components/MetaView"), {
   ssr: false,
-  loading: () => <div className="p-8 text-center text-sm text-[var(--text-muted)]">메타 로딩…</div>,
+  loading: () => <div className="p-8 text-center text-base text-[var(--text-muted)]">메타 로딩…</div>,
 });
 
 type Job = {
@@ -109,12 +117,12 @@ type Watch = {
 
 // tier 시각화 상수 — 레퍼런스 도구 벤치마크 (2026-07-13). A1=레드(최우선),
 // A2=오렌지, A3=옐로우. null=미지정 (무채색).
-// 스위트 v1: A1 danger / A2 warning / A3 neutral 배지 톤. 점은 사이드바(어두운
-// 배경)에서도 보이게 밝은 상태점 색을 쓴다.
+// 스위트 v1: A1 danger / A2 warning / A3 neutral 배지 톤. 점도 같은 의미색
+// (브랜드 목록이 v2 에서 밝은 본문 패널로 옮겨 왔다).
 const TIER_META: Record<string, { label: string; dot: string; chip: string }> = {
-  A1: { label: "A1", dot: "bg-sidebar-danger", chip: "badge badge-danger" },
-  A2: { label: "A2", dot: "bg-[#d97706]", chip: "badge badge-warning" },
-  A3: { label: "A3", dot: "bg-sidebar-faint", chip: "badge badge-neutral" },
+  A1: { label: "A1", dot: "bg-danger", chip: "badge badge-danger" },
+  A2: { label: "A2", dot: "bg-warning", chip: "badge badge-warning" },
+  A3: { label: "A3", dot: "bg-faint", chip: "badge badge-neutral" },
 };
 const TIER_CYCLE: (string | null)[] = ["A1", "A2", "A3", null];
 
@@ -811,8 +819,26 @@ export default function Home() {
   const [adView, setAdView] = useState<"cards" | "table">("cards");
   const [selectedAdIds, setSelectedAdIds] = useState<Set<string>>(() => new Set());
 
-  // 사이드바 자동수집 위젯의 "누락" 펼침 토글
+  // 자동수집 위젯의 "누락" 펼침 토글 (브랜드 목록 패널)
   const [showMissing, setShowMissing] = useState(false);
+  // 브랜드 목록 패널 펼침 상태 — 탭마다 따로 기억한다. 값이 없으면 아카이브는
+  // 펼침, 나머지는 접힘.
+  const [brandPanelOpenByTab, setBrandPanelOpenByTab] = useState<
+    Partial<Record<Tab, boolean>>
+  >({});
+  // 가독성 v2 §10.6 — nav 클릭 즉시 활성 표시. 무거운 탭 렌더는 transition
+  // 으로 미루고, 그동안 nav 는 누른 탭을 먼저 활성으로 보여준다.
+  const [navPending, startNavTransition] = useTransition();
+  const [navTarget, setNavTarget] = useState<Tab | null>(null);
+  // 광고 탭 "필터 더보기" 펼침 (v2 §10.4).
+  const [adsMoreFiltersOpen, setAdsMoreFiltersOpen] = useState(false);
+  // 헤더 "브랜드 검색" 버튼 → 아카이브로 이동한 뒤 검색창에 포커스.
+  const focusSearchOnArchive = useRef(false);
+  useEffect(() => {
+    if (tab !== "archive" || !focusSearchOnArchive.current) return;
+    focusSearchOnArchive.current = false;
+    document.getElementById("brand-search-input")?.focus();
+  }, [tab]);
 
   /**
    * 태그 시스템 — keyword(광고주 도메인)에 카테고리 태그 (예: 식이섬유,
@@ -2087,6 +2113,992 @@ export default function Home() {
   };
 
   const tabMeta = TAB_META[tab];
+  // "필터 더보기" 뒤로 접힌 광고 필터 중 지금 걸려 있는 개수.
+  const adsMoreFilterCount =
+    (filter !== "all" ? 1 : 0) +
+    (hasDomainModeAds && domainOnly ? 1 : 0) +
+    (viewBand ? 1 : 0) +
+    (ageBand ? 1 : 0) +
+    (innerSearch.trim() ? 1 : 0) +
+    (adTypeFilter !== "all" ? 1 : 0) +
+    (selectedChannels.size > 0 ? 1 : 0);
+  const activeNavTab = navPending && navTarget ? navTarget : tab;
+
+  // 브랜드 목록·수집 현황 — 가독성 v2(SUITE-DESIGN §10.3)에서 사이드바에서
+  // 옮겨 온 블록. 상태·핸들러는 그대로이고 표시 위치만 본문으로 바뀌었다.
+  // 브랜드 아카이브에서는 펼친 채, 구글/메타 광고 탭에서는 접힌 채 시작한다.
+  const brandPanelOpen = brandPanelOpenByTab[tab] ?? tab === "archive";
+  const brandPanel = (
+    <details
+      className="group panel brand-panel"
+      open={brandPanelOpen}
+      onToggle={(event) => {
+        const open = event.currentTarget.open;
+        setBrandPanelOpenByTab((prev) =>
+          prev[tab] === open ? prev : { ...prev, [tab]: open }
+        );
+      }}
+    >
+      <summary className="panel-header cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+        <h2>
+          <Layers size={16} strokeWidth={1.75} aria-hidden />
+          브랜드 목록 · 수집 현황
+        </h2>
+        <span className="inline-flex items-center gap-2 text-sm text-muted">
+          <span className="tabular-nums">
+            구글 {groupedJobs.length} · 메타 {metaBrandGroups.length}
+          </span>
+          <ChevronDown
+            size={16}
+            strokeWidth={1.75}
+            aria-hidden
+            className="transition-transform group-open:rotate-180"
+          />
+        </span>
+      </summary>
+      <div className="panel-body brand-panel-body">
+        {/* 상단 요약 — 구글/메타 전환 · 수집 통계 · 자동수집 현황 */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
+            {/* Source switcher — 브랜드 목록을 구글 / 메타로 나눈다.
+                Auto-syncs to the active main tab via the useEffect above;
+                manual click here overrides until the next main-tab change. */}
+            <div className="segmented" role="group" aria-label="브랜드 목록 출처">
+              {(
+                [
+                  ["google", "구글", groupedJobs.length],
+                  ["meta", "메타", metaBrandGroups.length],
+                ] as const
+              ).map(([key, label, n]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSidebarSource(key)}
+                  aria-pressed={sidebarSource === key}
+                  className="inline-flex items-center justify-center gap-1.5"
+                >
+                  {key === "google" ? (
+                    <LayoutList size={14} strokeWidth={1.75} aria-hidden />
+                  ) : (
+                    <Megaphone size={14} strokeWidth={1.75} aria-hidden />
+                  )}
+                  {label} <span className="tabular-nums opacity-80">{n}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-1.5 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-muted">불러온 광고</span>
+                <span className="font-semibold tabular-nums text-ink">
+                  {ads.length.toLocaleString()}개
+                </span>
+              </div>
+              {watches.filter((w) => w.active).length > 0 && (
+                <div className="flex min-w-0 items-center gap-1.5 text-muted">
+                  <Star size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-faint" />
+                  <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-ink">
+                    {watches.filter((w) => w.active).length}개 추적 중
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span className="truncate">매일 새벽 3시 자동 재수집</span>
+                </div>
+              )}
+              {/* 첫 진입 안내 — keyword가 하나도 없을 때만 표시 (가벼움) */}
+              {groupedJobs.length === 0 && metaBrandGroups.length === 0 && (
+                <p className="text-muted">
+                  검색을 누르면 여기로 바로 들어오고, 위에서부터 순서대로 자동
+                  수집돼요.
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* ===== 자동수집 현황 — 어제 새벽 3시 cron 결과 =====
+              누락된 keyword는 펼침 가능 — 클릭 시 검색창에 그 keyword 를
+              자동 채움 → 사용자가 불러오기 한 번 누르면 됨. */}
+          {autoCollectStatus.total > 0 && (
+            <div className="space-y-2 rounded-sm border border-line bg-surface-soft p-3">
+              <div className="flex items-center justify-between gap-2 text-sm text-muted">
+                <span>자동수집 · 지난 24시간</span>
+                <span
+                  className={
+                    autoCollectStatus.successRate >= 100
+                      ? "font-semibold tabular-nums text-success"
+                      : "font-semibold tabular-nums text-ink"
+                  }
+                >
+                  {autoCollectStatus.success}/{autoCollectStatus.total} (
+                  {autoCollectStatus.successRate}%)
+                </span>
+              </div>
+              {/* 진행바 — 성공률. 단색 */}
+              <div className="progress">
+                <div
+                  className={
+                    autoCollectStatus.successRate >= 100
+                      ? "h-full rounded-full bg-success"
+                      : "h-full rounded-full bg-accent"
+                  }
+                  style={{
+                    width: `${Math.max(autoCollectStatus.successRate, 2)}%`,
+                  }}
+                />
+              </div>
+              {autoCollectStatus.missingCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMissing((s) => !s)}
+                  aria-expanded={showMissing}
+                  className="btn btn-secondary btn-sm w-full justify-between font-medium"
+                >
+                  <span className="truncate">
+                    미수집 {autoCollectStatus.missingCount}개
+                    {autoCollectStatus.failedCount > 0 && (
+                      <span className="ml-1 font-normal text-faint">
+                        (실패 {autoCollectStatus.failedCount} · 미실행{" "}
+                        {autoCollectStatus.notRunCount})
+                      </span>
+                    )}
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-muted">
+                    {showMissing ? (
+                      <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+                    ) : (
+                      <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
+                    )}
+                    {showMissing ? "닫기" : "즉시복구"}
+                  </span>
+                </button>
+              ) : (
+                <div className="text-sm font-medium text-success">
+                  정상 · 누락 없음
+                </div>
+              )}
+              {showMissing && autoCollectStatus.missing.length > 0 && (
+                <ul className="max-h-48 space-y-0.5 overflow-y-auto">
+                  {autoCollectStatus.missing.map((m) => (
+                    <li key={`${m.source}::${m.keyword}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (m.source === "meta") {
+                            setTab("meta");
+                            setSelectedKeyword(m.keyword);
+                          } else {
+                            // 검색창은 브랜드 아카이브에만 있다 (v2) — 그 화면에 채운다.
+                            setAdQuery(m.keyword);
+                            setTab("archive");
+                            setSelectedKeyword(m.keyword);
+                          }
+                        }}
+                        title={`${m.reason} · 클릭하면 검색창에 채움`}
+                        className="flex min-h-9 w-full items-center justify-between gap-2 rounded-sm px-2 text-sm text-muted transition-colors hover:bg-surface hover:text-ink"
+                      >
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          {m.source === "meta" ? (
+                            <Megaphone size={14} strokeWidth={1.75} aria-hidden className="shrink-0" />
+                          ) : (
+                            <LayoutList size={14} strokeWidth={1.75} aria-hidden className="shrink-0" />
+                          )}
+                          <span className="truncate">{m.keyword}</span>
+                        </span>
+                        <span
+                          className={
+                            m.reason === "실패"
+                              ? "shrink-0 text-xs text-danger"
+                              : "shrink-0 text-xs text-faint"
+                          }
+                        >
+                          {m.reason}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ===== 그룹 (tier) · 태그 필터 — 아래 브랜드 목록에만 적용 ===== */}
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-line pt-4">
+          <div role="group" aria-label="그룹 필터" className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+              <Layers size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+              그룹
+            </span>
+            <button
+              type="button"
+              onClick={() => setTierFilter(null)}
+              aria-pressed={tierFilter === null}
+              className="chip"
+            >
+              전체
+            </button>
+            {(["A1", "A2", "A3"] as const).map((t) => {
+              const m = TIER_META[t];
+              const active = tierFilter === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTierFilter(active ? null : t)}
+                  aria-pressed={active}
+                  className="chip"
+                >
+                  <span aria-hidden className={`chip-dot ${m.dot}`} />
+                  {m.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 태그 필터 chip group — 클릭 → 그 태그 가진 keyword만 목록에
+              보임 (메타 / 구글 두 모드 모두 적용). allTags.length === 0 이면 hidden. */}
+          {allTags.length > 0 && (
+            <div role="group" aria-label="태그 필터" className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+                <Tag size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                태그
+              </span>
+              {allTags.map((t) => {
+                const active = selectedTag === t;
+                const c = tagColor(t);
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setSelectedTag(active ? null : t)}
+                    aria-pressed={active}
+                    className="chip"
+                  >
+                    <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                  </button>
+                );
+              })}
+              {selectedTag && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag(null)}
+                  className="btn btn-ghost btn-sm"
+                >
+                  <X size={14} strokeWidth={1.75} aria-hidden />
+                  해제
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className={sidebarSource === "google" ? "" : "hidden"}>
+          {!loaded ? (
+            <div className="py-6 text-center text-sm text-muted">
+              불러오는 중...
+            </div>
+          ) : groupedJobs.length === 0 ? (
+            <div className="py-6 text-center text-sm text-muted">
+              기록이 없습니다
+            </div>
+          ) : (
+            <ul className="brand-list">
+              {groupedJobs
+                .filter((g) => {
+                  // 태그 필터 적용 — selectedTag 가 있을 때만.
+                  if (selectedTag && !(tagMap[g.keyword] ?? []).includes(selectedTag))
+                    return false;
+                  // tier(그룹) 필터 — 선택 시 그 tier 인 keyword 만.
+                  if (tierFilter) {
+                    const w = watches.find(
+                      (x) => x.keyword === g.keyword && x.kind === g.kind
+                    );
+                    if ((w?.tier ?? null) !== tierFilter) return false;
+                  }
+                  return true;
+                })
+                .map((g) => {
+                const active = selectedKeyword === g.keyword;
+                const watched = isWatched(g.keyword, g.kind);
+                const wInfo = watchInfo(g.keyword, g.kind);
+                const inFlight =
+                  g.kind === "ad" ? adCollections[g.keyword] : null;
+                const isRunning = inFlight?.busy ?? false;
+                const lastLog = inFlight?.logs.length
+                  ? inFlight.logs[inFlight.logs.length - 1]
+                  : null;
+                return (
+                  <li key={`${g.kind}::${g.keyword}`}>
+                    <div
+                      className={`group/job relative rounded-sm transition-colors ${
+                        active
+                          ? "bg-accent-soft"
+                          : "hover:bg-surface-soft"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedKeyword(active ? null : g.keyword);
+                          if (!active) {
+                            // Only switch tab if currently on an
+                            // incompatible one. Stay on 소재 분석 if user
+                            // is exploring there. 브랜드 아카이브(v2 에서 이
+                            // 목록이 놓인 곳)에서 누르면 광고 표로 넘어간다.
+                            if (g.kind !== "ad" || tab === "archive") {
+                              setTab("ads");
+                            }
+                          }
+                        }}
+                        aria-pressed={active}
+                        className="w-full rounded-sm px-2.5 py-2 pr-2 text-left text-sm transition-all group-hover/job:pr-[7.5rem] group-focus-within/job:pr-[7.5rem]"
+                      >
+                        <div className="flex items-center gap-2">
+                          {/* 아바타 — 아카이브 카드와 같은 색 규칙이라
+                              목록 ↔ 카드가 같은 브랜드로 인식된다. */}
+                          <span className="relative shrink-0">
+                            <span
+                              aria-hidden
+                              className="grid h-7 w-7 place-items-center rounded-sm text-xs font-semibold text-white"
+                              style={{
+                                background: `hsl(${brandHue(g.keyword)} 62% 55%)`,
+                              }}
+                            >
+                              {brandInitial(g.keyword)}
+                            </span>
+                            {isRunning && (
+                              <span className="absolute -right-0.5 -top-0.5 inline-block h-2 w-2 animate-pulse rounded-full bg-accent ring-2 ring-surface" />
+                            )}
+                            {/* tier dot — 클릭 시 A1→A2→A3→없음 cycle */}
+                            {g.kind === "ad" && (
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void cycleTier(g.keyword);
+                                }}
+                                title={
+                                  wInfo?.tier
+                                    ? `그룹 ${wInfo.tier} — 클릭해서 변경`
+                                    : "그룹 미지정 — 클릭해서 A1 지정"
+                                }
+                                className={`absolute -bottom-0.5 -right-0.5 inline-block h-3 w-3 cursor-pointer rounded-full ring-2 ring-surface transition hover:scale-125 ${
+                                  wInfo?.tier && TIER_META[wInfo.tier]
+                                    ? TIER_META[wInfo.tier].dot
+                                    : "border border-line-strong bg-surface"
+                                }`}
+                              />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1 truncate text-base font-medium text-ink">
+                            {g.keyword}
+                          </span>
+                          {watched && (
+                            <span
+                              title="매일 자동으로 다시 불러옵니다"
+                              className="shrink-0 text-muted"
+                            >
+                              <Star size={14} strokeWidth={1.75} fill="currentColor" aria-hidden />
+                              <span className="sr-only">자동 추적 중</span>
+                            </span>
+                          )}
+                          <span
+                            title={isRunning ? undefined : g.status}
+                            className={`shrink-0 transition group-hover/job:opacity-0 ${
+                              isRunning || g.status === "진행 중"
+                                ? "badge badge-accent tabular-nums"
+                                : g.status === "대기 중"
+                                ? "badge badge-neutral"
+                                : g.status === "완료"
+                                ? "badge badge-success"
+                                : g.status === "실패"
+                                ? "badge badge-danger"
+                                : "badge badge-warning"
+                            }`}
+                          >
+                            {isRunning ? (
+                              `${inFlight!.progress.percent}%`
+                            ) : g.status === "완료" ? (
+                              <>
+                                <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                                <span className="sr-only">완료</span>
+                              </>
+                            ) : g.status === "실패" ? (
+                              <>
+                                <CircleX size={12} strokeWidth={2} aria-hidden />
+                                <span className="sr-only">실패</span>
+                              </>
+                            ) : (
+                              g.status
+                            )}
+                          </span>
+                        </div>
+                        {isRunning && (
+                          <div className="progress mt-1.5">
+                            <div
+                              className="h-full rounded-full bg-accent transition-all duration-300"
+                              style={{
+                                width: `${inFlight!.progress.percent}%`,
+                              }}
+                            />
+                          </div>
+                        )}
+                        {isRunning && lastLog && (
+                          <div className="mt-1 truncate text-sm text-accent">
+                            {lastLog.msg}
+                          </div>
+                        )}
+                        {/* 2줄: 상대시간 · 광고/매칭 — 절대 줄바꿈 없이 한 줄. */}
+                        <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-9 text-sm text-faint">
+                          <span className="shrink-0" title={formatTime(g.latestAt)}>
+                            {formatRelative(g.latestAt)}
+                          </span>
+                          <span aria-hidden className="shrink-0">·</span>
+                          <span className="shrink-0 text-muted">
+                            {g.kind === "ad" ? (
+                              <>
+                                광고 <b className="font-semibold tabular-nums text-ink">{g.adCount}</b>
+                                {g.videoCount > 0 && (
+                                  <> · 매칭 <b className="font-semibold tabular-nums text-ink">{g.videoCount}</b></>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                영상 <b className="font-semibold tabular-nums text-ink">{g.videoCount}</b>
+                              </>
+                            )}
+                          </span>
+                        </div>
+                        {g.status === "실패" && g.errorMsg && (
+                          <div
+                            className="mt-1 truncate pl-9 text-sm text-danger"
+                            title={g.errorMsg}
+                          >
+                            {humanizeErrorMsg(g.errorMsg)}
+                          </div>
+                        )}
+                      </button>
+                      {/* ===== 태그 영역 (행 아래 — button 밖) =====
+                          기존 태그 chip 표시 + "태그" 추가 input. button
+                          중첩 방지를 위해 메인 button 밖에 위치. */}
+                      <div className="px-2.5 pb-1.5 pl-[46px]">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {(tagMap[g.keyword] ?? []).map((t) => {
+                            const c = tagColor(t);
+                            return (
+                              <span key={t} className="chip h-6 gap-1 px-2">
+                                <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeTag(g.keyword, t);
+                                  }}
+                                  className="rounded-xs text-faint transition-colors hover:text-danger"
+                                  title="태그 제거"
+                                  aria-label={`태그 ${t} 제거`}
+                                >
+                                  <X size={12} strokeWidth={2} aria-hidden />
+                                </button>
+                              </span>
+                            );
+                          })}
+                          {editingTagFor === g.keyword ? (
+                            <input
+                              autoFocus
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  addTag(g.keyword, tagInput);
+                                  setTagInput("");
+                                  // 연속 입력 가능하게 input 유지
+                                } else if (e.key === "Escape") {
+                                  setEditingTagFor(null);
+                                  setTagInput("");
+                                }
+                              }}
+                              onBlur={() => {
+                                if (tagInput.trim()) {
+                                  addTag(g.keyword, tagInput);
+                                }
+                                setEditingTagFor(null);
+                                setTagInput("");
+                              }}
+                              placeholder="태그 입력 → Enter"
+                              list="known-tags"
+                              className="field-input min-h-7 w-28 px-2 py-0.5 text-sm"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTagFor(g.keyword);
+                                setTagInput("");
+                              }}
+                              className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-sm text-faint transition-colors hover:bg-surface-soft hover:text-ink"
+                            >
+                              <Plus size={12} strokeWidth={2} aria-hidden />
+                              태그
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬.
+                          평소 숨김, hover 시 우측에 가로로 표시. */}
+                      <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/job:opacity-100 group-hover/job:opacity-100">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            const isBusy =
+                              (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
+                              (g.kind === "youtube" && busyYt === g.keyword);
+                            if (isBusy) return;
+                            await refreshJob(g.keyword, g.kind);
+                          }}
+                          disabled={
+                            (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
+                            (g.kind === "youtube" && busyYt === g.keyword)
+                          }
+                          title="지금 재수집"
+                          aria-label="지금 재수집"
+                          className="icon-btn-28 text-muted hover:bg-surface-soft hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await toggleWatch(g.keyword, g.kind);
+                          }}
+                          title={watched ? "자동 추적 해제" : "자동 추적 켜기"}
+                          aria-label={watched ? "자동 추적 해제" : "자동 추적 켜기"}
+                          aria-pressed={watched}
+                          className={`icon-btn-28 hover:bg-surface-soft ${
+                            watched
+                              ? "text-ink"
+                              : "text-muted hover:text-ink"
+                          }`}
+                        >
+                          <Star
+                            size={14}
+                            strokeWidth={1.75}
+                            fill={watched ? "currentColor" : "none"}
+                            aria-hidden
+                          />
+                        </button>
+                        {watched && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await toggleDaily(
+                                g.keyword,
+                                g.kind,
+                                !(wInfo?.daily ?? false)
+                              );
+                            }}
+                            title={
+                              wInfo?.daily
+                                ? "매일 추적 중 (클릭 → 격일로)"
+                                : "격일 추적 중 (클릭 → 매일로)"
+                            }
+                            className={`h-7 rounded-sm px-1.5 text-sm font-semibold transition-colors hover:bg-surface-soft ${
+                              wInfo?.daily
+                                ? "text-ink"
+                                : "text-muted hover:text-ink"
+                            }`}
+                          >
+                            {wInfo?.daily ? "매일" : "격일"}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (
+                              !confirm(
+                                `"${g.keyword}" ${
+                                  g.kind === "ad" ? "광고 수집" : "YouTube 검색"
+                                } 결과를 삭제할까요?`
+                              )
+                            )
+                              return;
+                            await fetch("/api/jobs", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                keyword: g.keyword,
+                                kind: g.kind,
+                              }),
+                            });
+                            if (selectedKeyword === g.keyword)
+                              setSelectedKeyword(null);
+                            await refreshAll();
+                          }}
+                          title="이 작업 삭제"
+                          aria-label="이 작업 삭제"
+                          className="icon-btn-28 text-muted hover:bg-surface-soft hover:text-danger"
+                        >
+                          <X size={14} strokeWidth={1.75} aria-hidden />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {/* === Meta brand groups === sock-puppet pages collapsed under
+            their anchor brand. Click → switches to 메타 광고 tab and
+            auto-selects the brand in MetaView. Visible only when the
+            sidebar source toggle is set to 메타. */}
+        {sidebarSource === "meta" && (
+          <div>
+            <div className="flex items-center justify-between gap-2 pb-2 text-sm font-medium text-muted">
+              <span className="inline-flex items-center gap-1.5">
+                <Megaphone size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                메타 광고 브랜드
+              </span>
+              <span className="text-xs tabular-nums">{metaBrandGroups.length}개</span>
+            </div>
+            {metaBrandGroups.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted">
+                메타 광고 탭 → 새 brand 입력으로 시작
+              </div>
+            ) : (
+            <ul className="brand-list">
+              {metaBrandGroups
+                .filter((g) => {
+                  // 태그 필터 — 메타 brand의 anchor keyword에 selectedTag 있어야 통과
+                  if (!selectedTag) return true;
+                  return (tagMap[g.anchor] ?? []).includes(selectedTag);
+                })
+                .map((g) => {
+                const active =
+                  tab === "meta" && selectedKeyword === g.anchor;
+                const isRunning = g.runningCount > 0;
+                const hasError = !isRunning && g.erroredCount > 0;
+                // Meta brand groups are always tracked — every entry here
+                // came from an active MetaWatch (or an orphaned job we
+                // promoted to anchor). Show a star to signal that, matching
+                // the Google row's tracked-state visual.
+                const watched = metaWatches.some(
+                  (w) =>
+                    w.active && (w.keyword === g.anchor || w.anchorKeyword === g.anchor)
+                );
+                return (
+                  <li key={`meta::${g.anchor}`}>
+                    <div
+                      className={`group/meta relative rounded-sm transition-colors ${
+                        active
+                          ? "bg-accent-soft"
+                          : "hover:bg-surface-soft"
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTab("meta");
+                          setSelectedKeyword(g.anchor);
+                        }}
+                        aria-pressed={active}
+                        className="w-full rounded-sm px-2.5 py-2 pr-2 text-left text-sm transition-all group-hover/meta:pr-16 group-focus-within/meta:pr-16"
+                      >
+                        <div className="flex min-h-6 items-center gap-2">
+                          <span
+                            aria-hidden
+                            className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                              isRunning
+                                ? "animate-pulse bg-accent"
+                                : hasError
+                                ? "bg-danger"
+                                : g.adCount > 0 || g.pageCount > 0
+                                ? "bg-success"
+                                : "bg-line-strong"
+                            }`}
+                          />
+                          <span className="min-w-0 flex-1 truncate text-base font-medium text-ink">
+                            {g.anchor}
+                          </span>
+                          {watched && (
+                            <Star size={12} strokeWidth={2} fill="currentColor" aria-hidden className="shrink-0 text-muted" />
+                          )}
+                          <span
+                            className={`shrink-0 transition group-hover/meta:opacity-0 ${
+                              isRunning
+                                ? "badge badge-accent"
+                                : hasError
+                                ? "badge badge-danger"
+                                : g.adCount > 0 || g.pageCount > 0
+                                ? "badge badge-success"
+                                : "badge badge-neutral"
+                            }`}
+                          >
+                            {isRunning ? (
+                              <>
+                                <LoaderCircle size={12} strokeWidth={2} aria-hidden className="animate-spin" />
+                                <span className="sr-only">수집 중</span>
+                              </>
+                            ) : hasError ? (
+                              <>
+                                <CircleX size={12} strokeWidth={2} aria-hidden />
+                                <span className="sr-only">실패</span>
+                              </>
+                            ) : g.adCount > 0 || g.pageCount > 0 ? (
+                              <>
+                                <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                                <span className="sr-only">완료</span>
+                              </>
+                            ) : (
+                              "대기"
+                            )}
+                          </span>
+                        </div>
+                        {/* 2줄: 상대시간 · 광고 N · 페이지 N — 절대 줄바꿈 없이 한 줄. */}
+                        <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-4 text-sm text-faint">
+                          <span className="shrink-0" title={g.latestAt ? formatTime(g.latestAt) : ""}>
+                            {g.latestAt ? formatRelative(g.latestAt) : "수집 전"}
+                          </span>
+                          <span aria-hidden className="shrink-0">·</span>
+                          <span className="shrink-0 text-muted">
+                            광고 <b className="font-semibold tabular-nums text-ink">{g.adCount}</b>
+                            {g.pageWatches > 0 && (
+                              <> · 페이지 <b className="font-semibold tabular-nums text-ink">{g.pageWatches}</b></>
+                            )}
+                          </span>
+                          {g.autoCount > 0 && (
+                            <span
+                              title={`자동 발굴 ${g.autoCount}${g.manualCount > 0 ? ` · 수동 ${g.manualCount}` : ""}${g.seedCount > 0 ? ` · seed ${g.seedCount}` : ""}`}
+                              className="ml-auto shrink-0 text-success"
+                            >
+                              auto {g.autoCount}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      {/* ===== 태그 영역 (행 아래 — button 밖) ===== */}
+                      <div className="px-2.5 pb-1.5 pl-[26px]">
+                        <div className="flex flex-wrap items-center gap-1">
+                          {(tagMap[g.anchor] ?? []).map((t) => {
+                            const c = tagColor(t);
+                            return (
+                              <span key={t} className="chip h-6 gap-1 px-2">
+                                <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeTag(g.anchor, t);
+                                  }}
+                                  className="rounded-xs text-faint transition-colors hover:text-danger"
+                                  title="태그 제거"
+                                  aria-label={`태그 ${t} 제거`}
+                                >
+                                  <X size={12} strokeWidth={2} aria-hidden />
+                                </button>
+                              </span>
+                            );
+                          })}
+                          {editingTagFor === g.anchor ? (
+                            <input
+                              autoFocus
+                              value={tagInput}
+                              onChange={(e) => setTagInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  addTag(g.anchor, tagInput);
+                                  setTagInput("");
+                                } else if (e.key === "Escape") {
+                                  setEditingTagFor(null);
+                                  setTagInput("");
+                                }
+                              }}
+                              onBlur={() => {
+                                if (tagInput.trim()) addTag(g.anchor, tagInput);
+                                setEditingTagFor(null);
+                                setTagInput("");
+                              }}
+                              placeholder="태그 입력 → Enter"
+                              list="known-tags"
+                              className="field-input min-h-7 w-28 px-2 py-0.5 text-sm"
+                            />
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingTagFor(g.anchor);
+                                setTagInput("");
+                              }}
+                              className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-sm text-faint transition-colors hover:bg-surface-soft hover:text-ink"
+                            >
+                              <Plus size={12} strokeWidth={2} aria-hidden />
+                              태그
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* 지금 재수집 — 구글 행의 재수집과 동일. anchor keyword 를
+                          메타 큐에 다시 넣어 stage 1 + 1.5 를 재실행한다. 실패로
+                          끝난 brand 도 새 코드 + 살아있는 프록시로 재시도 가능. */}
+                      {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬. */}
+                      <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/meta:opacity-100 group-hover/meta:opacity-100">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (isRunning) return;
+                            // 트래픽 안내 — 메타 1회 수집 ~200MB. 프록시 경유 시 그만큼 차감.
+                            // 사용자가 의식하고 누르도록 confirm. 자주 누르면
+                            // 트래픽 빠르게 소진.
+                            if (
+                              !confirm(
+                                `"${g.anchor}" 메타 광고 재수집\n\n` +
+                                  `예상 트래픽: 약 200MB\n` +
+                                  `프록시를 쓰신다면 그만큼 차감됩니다.\n\n` +
+                                  `진행할까요?`
+                              )
+                            )
+                              return;
+                            await fetch("/api/meta/queue", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ keyword: g.anchor }),
+                            }).catch(() => {});
+                            await refreshAll();
+                          }}
+                          disabled={isRunning}
+                          title="지금 메타 다시 불러오기 (약 200MB)"
+                          aria-label="지금 메타 다시 불러오기 (약 200MB)"
+                          className="icon-btn-28 text-muted hover:bg-surface-soft hover:text-ink disabled:cursor-not-allowed disabled:opacity-30"
+                        >
+                          <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (
+                              !confirm(
+                                `"${g.anchor}" 메타 브랜드 추적을 해제할까요? (관련 키워드 ${g.keywords.length}개 모두 해제)`
+                              )
+                            )
+                              return;
+                            // Delete every MetaWatch row tied to this anchor
+                            // (brand keyword + page:* sock-puppet rows).
+                            for (const kw of g.keywords) {
+                              await fetch("/api/meta-watch", {
+                                method: "DELETE",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({ keyword: kw }),
+                              }).catch(() => {});
+                            }
+                            if (selectedKeyword === g.anchor)
+                              setSelectedKeyword(null);
+                            await refreshAll();
+                          }}
+                          title="이 브랜드 추적 해제"
+                          aria-label="이 브랜드 추적 해제"
+                          className="icon-btn-28 text-muted hover:bg-surface-soft hover:text-danger"
+                        >
+                          <X size={14} strokeWidth={1.75} aria-hidden />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            )}
+          </div>
+        )}
+
+        {/* 전체 데이터 삭제 — v2 에서 사이드바 푸터에서 옮겨 왔다. */}
+        {(jobs.length > 0 || ads.length > 0 || deleteDone) && (
+          <div className="space-y-3 border-t border-line pt-4">
+            {(jobs.length > 0 || ads.length > 0) && (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted">
+                  수집한 광고·작업 기록을 모두 지웁니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteOpen((open) => !open);
+                    setDeleteError(null);
+                    setDeleteDone(false);
+                  }}
+                  aria-expanded={deleteOpen}
+                  className="btn btn-danger btn-sm"
+                >
+                  <Trash2 size={14} strokeWidth={1.75} aria-hidden />
+                  전체 데이터 삭제
+                </button>
+              </div>
+            )}
+            {deleteOpen && (jobs.length > 0 || ads.length > 0) && (
+              <form
+                className="ml-auto max-w-md space-y-2 rounded-sm border border-danger-line bg-danger-soft p-3"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void clearAll();
+                }}
+              >
+                <p className="text-sm text-danger">
+                  되돌릴 수 없습니다. 관리자 비밀번호를 입력하세요.
+                </p>
+                <input
+                  type="password"
+                  value={deleteSecret}
+                  onChange={(event) => setDeleteSecret(event.target.value)}
+                  placeholder="관리자 비밀번호"
+                  autoComplete="off"
+                  aria-label="관리자 비밀번호"
+                  className="field-input w-full"
+                />
+                {deleteError && <p role="alert" className="text-sm text-danger">{deleteError}</p>}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteOpen(false);
+                      setDeleteSecret("");
+                      setDeleteError(null);
+                    }}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!deleteSecret.trim() || deletingAll}
+                    aria-busy={deletingAll}
+                    className="btn btn-sm bg-danger text-white"
+                  >
+                    {deletingAll ? "삭제 중…" : "삭제 실행"}
+                  </button>
+                </div>
+              </form>
+            )}
+            {deleteDone && (
+              <p role="status" className="flex items-center gap-1.5 text-sm text-success">
+                <CircleCheck size={14} strokeWidth={1.75} aria-hidden />
+                전체 데이터가 삭제되었습니다.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </details>
+  );
 
   return (
     <div className="app-shell bg-[var(--bg-base)] text-[var(--text-primary)]">
@@ -2161,9 +3173,6 @@ export default function Home() {
               </a>
             </div>
           </details>
-          <p className="mt-2 line-clamp-2 px-1 text-xs leading-4 text-sidebar-faint">
-            현재 화면은 광고 레퍼런스를 수집하는 Success AI입니다. 키워드워처는 검색량 추적 도구로 분리합니다.
-          </p>
         </div>
 
         <nav className="sidebar-nav" aria-label="Success AI 메뉴">
@@ -2182,8 +3191,11 @@ export default function Home() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setTab(key)}
-                aria-current={tab === key ? "page" : undefined}
+                onClick={() => {
+                  setNavTarget(key);
+                  startNavTransition(() => setTab(key));
+                }}
+                aria-current={activeNavTab === key ? "page" : undefined}
                 className="nav-item"
               >
                 <Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
@@ -2196,945 +3208,8 @@ export default function Home() {
           })}
         </nav>
 
-        <div className="sidebar-secondary">
-          {/* Source switcher — 브랜드 목록을 구글 / 메타로 나눈다.
-              Auto-syncs to the active main tab via the useEffect above;
-              manual click here overrides until the next main-tab change. */}
-          <div className="segmented mt-4 grid w-full grid-cols-2">
-            {(
-              [
-                ["google", "구글", groupedJobs.length],
-                ["meta", "메타", metaBrandGroups.length],
-              ] as const
-            ).map(([key, label, n]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSidebarSource(key)}
-                aria-pressed={sidebarSource === key}
-                className="inline-flex items-center justify-center gap-1.5"
-              >
-                {key === "google" ? (
-                  <LayoutList size={14} strokeWidth={1.75} aria-hidden />
-                ) : (
-                  <Megaphone size={14} strokeWidth={1.75} aria-hidden />
-                )}
-                {label} <span className="text-xs tabular-nums opacity-80">{n}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* 첫 진입 안내 — keyword가 하나도 없을 때만 표시 (가벼움) */}
-          {groupedJobs.length === 0 && metaBrandGroups.length === 0 && (
-            <div className="px-2.5 pt-3 text-xs text-sidebar-muted">
-              검색을 누르면 여기로 바로 들어오고, 위에서부터 순서대로 자동
-              수집돼요.
-            </div>
-          )}
-
-          <div className="mt-3 space-y-1.5 px-2.5">
-            <div className="flex items-center justify-between gap-2 text-sm text-sidebar-muted">
-              <span>불러온 광고</span>
-              <span className="text-xs font-semibold tabular-nums text-sidebar-text">
-                {ads.length.toLocaleString()}개
-              </span>
-            </div>
-            {watches.filter((w) => w.active).length > 0 && (
-              <div className="flex min-w-0 items-center gap-1.5 text-xs text-sidebar-faint">
-                <Star size={12} strokeWidth={2} aria-hidden className="shrink-0 text-sidebar-muted" />
-                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-sidebar-text">
-                  {watches.filter((w) => w.active).length}개 추적 중
-                </span>
-                <span aria-hidden>·</span>
-                <span className="truncate">매일 새벽 3시 자동 재수집</span>
-              </div>
-            )}
-          </div>
-
-          {/* ===== 자동수집 현황 — 어제 새벽 3시 cron 결과 =====
-              누락된 keyword는 펼침 가능 — 클릭 시 광고 수집 탭 + 그 keyword
-              검색 입력에 자동 채움 → 사용자가 불러오기 한 번 누르면 됨. */}
-          {autoCollectStatus.total > 0 && (
-            <div className="mt-3 space-y-1.5 px-2.5">
-              <div className="flex items-center justify-between gap-2 text-sm text-sidebar-muted">
-                <span>자동수집 · 지난 24h</span>
-                <span
-                  className={
-                    autoCollectStatus.successRate >= 100
-                      ? "text-xs font-semibold tabular-nums text-sidebar-success"
-                      : "text-xs font-semibold tabular-nums text-sidebar-text"
-                  }
-                >
-                  {autoCollectStatus.success}/{autoCollectStatus.total} (
-                  {autoCollectStatus.successRate}%)
-                </span>
-              </div>
-              {/* 진행바 — 성공률. 단색 */}
-              <div className="progress">
-                <div
-                  className={
-                    autoCollectStatus.successRate >= 100
-                      ? "h-full rounded-full bg-sidebar-success"
-                      : "h-full rounded-full bg-accent-on-dark"
-                  }
-                  style={{
-                    width: `${Math.max(autoCollectStatus.successRate, 2)}%`,
-                  }}
-                />
-              </div>
-              {autoCollectStatus.missingCount > 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowMissing((s) => !s)}
-                  aria-expanded={showMissing}
-                  className="btn btn-secondary btn-sm w-full justify-between font-medium"
-                >
-                  <span className="truncate">
-                    미수집 {autoCollectStatus.missingCount}개
-                    {autoCollectStatus.failedCount > 0 && (
-                      <span className="ml-1 font-normal text-sidebar-faint">
-                        (실패 {autoCollectStatus.failedCount} · 미실행{" "}
-                        {autoCollectStatus.notRunCount})
-                      </span>
-                    )}
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-sidebar-muted">
-                    {showMissing ? (
-                      <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
-                    ) : (
-                      <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
-                    )}
-                    {showMissing ? "닫기" : "즉시복구"}
-                  </span>
-                </button>
-              ) : (
-                <div className="text-xs font-medium text-sidebar-success">
-                  정상 · 누락 없음
-                </div>
-              )}
-              {showMissing && autoCollectStatus.missing.length > 0 && (
-                <ul className="max-h-40 space-y-0.5 overflow-y-auto">
-                  {autoCollectStatus.missing.map((m) => (
-                    <li key={`${m.source}::${m.keyword}`}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (m.source === "meta") {
-                            setTab("meta");
-                            setSelectedKeyword(m.keyword);
-                          } else {
-                            setAdQuery(m.keyword);
-                            setTab("ads");
-                            setSelectedKeyword(m.keyword);
-                          }
-                        }}
-                        title={`${m.reason} · 클릭하면 검색창에 채움`}
-                        className="flex min-h-8 w-full items-center justify-between gap-2 rounded-sm px-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
-                      >
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          {m.source === "meta" ? (
-                            <Megaphone size={12} strokeWidth={2} aria-hidden className="shrink-0" />
-                          ) : (
-                            <LayoutList size={12} strokeWidth={2} aria-hidden className="shrink-0" />
-                          )}
-                          <span className="truncate">{m.keyword}</span>
-                        </span>
-                        <span
-                          className={
-                            m.reason === "실패"
-                              ? "shrink-0 text-sidebar-danger"
-                              : "shrink-0 text-sidebar-faint"
-                          }
-                        >
-                          {m.reason}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-
-          {/* ===== 그룹 (tier) 필터 chip — A1/A2/A3 중요도. */}
-          <div>
-            <div className="sidebar-group-label">
-              <span className="inline-flex items-center gap-1.5">
-                <Layers size={14} strokeWidth={1.75} aria-hidden />
-                그룹
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-1 px-2.5">
-              <button
-                type="button"
-                onClick={() => setTierFilter(null)}
-                aria-pressed={tierFilter === null}
-                className="chip h-6"
-              >
-                전체
-              </button>
-              {(["A1", "A2", "A3"] as const).map((t) => {
-                const m = TIER_META[t];
-                const active = tierFilter === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTierFilter(active ? null : t)}
-                    aria-pressed={active}
-                    className="chip h-6"
-                  >
-                    <span aria-hidden className={`chip-dot ${m.dot}`} />
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ===== 태그 필터 chip group =====
-              클릭 → 그 태그 가진 keyword만 사이드바에 보임 (메타 / 구글 두
-              모드 모두 적용). allTags.length === 0 이면 hidden. */}
-          {allTags.length > 0 && (
-            <div>
-              <div className="sidebar-group-label">
-                <span className="inline-flex items-center gap-1.5">
-                  <Tag size={14} strokeWidth={1.75} aria-hidden />
-                  태그
-                </span>
-                {selectedTag && (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTag(null)}
-                    className="inline-flex items-center gap-1 rounded-sm px-1 text-xs font-normal text-sidebar-muted transition-colors hover:text-sidebar-text"
-                  >
-                    <X size={12} strokeWidth={2} aria-hidden />
-                    해제
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1 px-2.5">
-                {allTags.map((t) => {
-                  const active = selectedTag === t;
-                  const c = tagColor(t);
-                  return (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setSelectedTag(active ? null : t)}
-                      aria-pressed={active}
-                      className="chip h-6"
-                    >
-                      <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div
-            className={`pb-3 pt-2 ${
-              sidebarSource === "google" ? "" : "hidden"
-            }`}
-          >
-            {!loaded ? (
-              <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
-                불러오는 중...
-              </div>
-            ) : groupedJobs.length === 0 ? (
-              <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
-                기록이 없습니다
-              </div>
-            ) : (
-              <ul className="space-y-0.5">
-                {groupedJobs
-                  .filter((g) => {
-                    // 태그 필터 적용 — selectedTag 가 있을 때만.
-                    if (selectedTag && !(tagMap[g.keyword] ?? []).includes(selectedTag))
-                      return false;
-                    // tier(그룹) 필터 — 선택 시 그 tier 인 keyword 만.
-                    if (tierFilter) {
-                      const w = watches.find(
-                        (x) => x.keyword === g.keyword && x.kind === g.kind
-                      );
-                      if ((w?.tier ?? null) !== tierFilter) return false;
-                    }
-                    return true;
-                  })
-                  .map((g) => {
-                  const active = selectedKeyword === g.keyword;
-                  const watched = isWatched(g.keyword, g.kind);
-                  const wInfo = watchInfo(g.keyword, g.kind);
-                  const inFlight =
-                    g.kind === "ad" ? adCollections[g.keyword] : null;
-                  const isRunning = inFlight?.busy ?? false;
-                  const lastLog = inFlight?.logs.length
-                    ? inFlight.logs[inFlight.logs.length - 1]
-                    : null;
-                  return (
-                    <li key={`${g.kind}::${g.keyword}`}>
-                      <div
-                        className={`group/job relative rounded-sm transition-colors ${
-                          active
-                            ? "bg-sidebar-elevated"
-                            : "hover:bg-sidebar-hover"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedKeyword(active ? null : g.keyword);
-                            if (!active) {
-                              // Only switch tab if currently on an
-                              // incompatible one. Stay on 소재 분석 if user
-                              // is exploring there.
-                              if (g.kind !== "ad") {
-                                setTab("ads");
-                              }
-                            }
-                          }}
-                          aria-pressed={active}
-                          className="w-full rounded-sm px-2.5 py-1.5 pr-2 text-left text-xs transition-all group-hover/job:pr-[7.5rem]"
-                        >
-                          <div className="flex items-center gap-2">
-                            {/* 아바타 — 아카이브 카드와 같은 색 규칙이라
-                                사이드바 ↔ 카드가 같은 브랜드로 인식된다. */}
-                            <span className="relative shrink-0">
-                              <span
-                                aria-hidden
-                                className="grid h-7 w-7 place-items-center rounded-sm text-xs font-semibold text-white"
-                                style={{
-                                  background: `hsl(${brandHue(g.keyword)} 62% 55%)`,
-                                }}
-                              >
-                                {brandInitial(g.keyword)}
-                              </span>
-                              {isRunning && (
-                                <span className="absolute -right-0.5 -top-0.5 inline-block h-2 w-2 animate-pulse rounded-full bg-accent-on-dark ring-2 ring-sidebar" />
-                              )}
-                              {/* tier dot — 클릭 시 A1→A2→A3→없음 cycle */}
-                              {g.kind === "ad" && (
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void cycleTier(g.keyword);
-                                  }}
-                                  title={
-                                    wInfo?.tier
-                                      ? `그룹 ${wInfo.tier} — 클릭해서 변경`
-                                      : "그룹 미지정 — 클릭해서 A1 지정"
-                                  }
-                                  className={`absolute -bottom-0.5 -right-0.5 inline-block h-3 w-3 cursor-pointer rounded-full ring-2 ring-sidebar transition hover:scale-125 ${
-                                    wInfo?.tier && TIER_META[wInfo.tier]
-                                      ? TIER_META[wInfo.tier].dot
-                                      : "border border-sidebar-faint bg-sidebar-elevated"
-                                  }`}
-                                />
-                              )}
-                            </span>
-                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-text">
-                              {g.keyword}
-                            </span>
-                            {watched && (
-                              <span
-                                title="매일 자동으로 다시 불러옵니다"
-                                className="shrink-0 text-sidebar-muted"
-                              >
-                                <Star size={12} strokeWidth={2} fill="currentColor" aria-hidden />
-                                <span className="sr-only">자동 추적 중</span>
-                              </span>
-                            )}
-                            <span
-                              title={isRunning ? undefined : g.status}
-                              className={`shrink-0 transition group-hover/job:opacity-0 ${
-                                isRunning || g.status === "진행 중"
-                                  ? "badge badge-accent tabular-nums"
-                                  : g.status === "대기 중"
-                                  ? "badge badge-neutral"
-                                  : g.status === "완료"
-                                  ? "badge badge-success"
-                                  : g.status === "실패"
-                                  ? "badge badge-danger"
-                                  : "badge badge-warning"
-                              }`}
-                            >
-                              {isRunning ? (
-                                `${inFlight!.progress.percent}%`
-                              ) : g.status === "완료" ? (
-                                <>
-                                  <CircleCheck size={12} strokeWidth={2} aria-hidden />
-                                  <span className="sr-only">완료</span>
-                                </>
-                              ) : g.status === "실패" ? (
-                                <>
-                                  <CircleX size={12} strokeWidth={2} aria-hidden />
-                                  <span className="sr-only">실패</span>
-                                </>
-                              ) : (
-                                g.status
-                              )}
-                            </span>
-                          </div>
-                          {isRunning && (
-                            <div className="progress mt-1.5">
-                              <div
-                                className="h-full rounded-full bg-accent-on-dark transition-all duration-300"
-                                style={{
-                                  width: `${inFlight!.progress.percent}%`,
-                                }}
-                              />
-                            </div>
-                          )}
-                          {isRunning && lastLog && (
-                            <div className="mt-1 truncate text-xs text-accent-on-dark">
-                              {lastLog.msg}
-                            </div>
-                          )}
-                          {/* 2줄: 상대시간 · 광고/매칭 — 절대 줄바꿈 없이 한 줄. */}
-                          <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-9 text-xs text-sidebar-faint">
-                            <span className="shrink-0" title={formatTime(g.latestAt)}>
-                              {formatRelative(g.latestAt)}
-                            </span>
-                            <span aria-hidden className="shrink-0">·</span>
-                            <span className="shrink-0 text-sidebar-muted">
-                              {g.kind === "ad" ? (
-                                <>
-                                  광고 <b className="font-semibold tabular-nums text-sidebar-text">{g.adCount}</b>
-                                  {g.videoCount > 0 && (
-                                    <> · 매칭 <b className="font-semibold tabular-nums text-sidebar-text">{g.videoCount}</b></>
-                                  )}
-                                </>
-                              ) : (
-                                <>
-                                  영상 <b className="font-semibold tabular-nums text-sidebar-text">{g.videoCount}</b>
-                                </>
-                              )}
-                            </span>
-                          </div>
-                          {g.status === "실패" && g.errorMsg && (
-                            <div
-                              className="mt-1 truncate pl-9 text-xs text-sidebar-danger"
-                              title={g.errorMsg}
-                            >
-                              {humanizeErrorMsg(g.errorMsg)}
-                            </div>
-                          )}
-                        </button>
-                        {/* ===== 태그 영역 (행 아래 — button 밖) =====
-                            기존 태그 chip 표시 + "태그" 추가 input. button
-                            중첩 방지를 위해 메인 button 밖에 위치. */}
-                        <div className="px-2.5 pb-1.5 pl-[46px]">
-                          <div className="flex flex-wrap items-center gap-1">
-                            {(tagMap[g.keyword] ?? []).map((t) => {
-                              const c = tagColor(t);
-                              return (
-                                <span key={t} className="chip h-6 gap-1 px-2">
-                                  <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeTag(g.keyword, t);
-                                    }}
-                                    className="rounded-xs text-sidebar-faint transition-colors hover:text-sidebar-danger"
-                                    title="태그 제거"
-                                    aria-label={`태그 ${t} 제거`}
-                                  >
-                                    <X size={12} strokeWidth={2} aria-hidden />
-                                  </button>
-                                </span>
-                              );
-                            })}
-                            {editingTagFor === g.keyword ? (
-                              <input
-                                autoFocus
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    addTag(g.keyword, tagInput);
-                                    setTagInput("");
-                                    // 연속 입력 가능하게 input 유지
-                                  } else if (e.key === "Escape") {
-                                    setEditingTagFor(null);
-                                    setTagInput("");
-                                  }
-                                }}
-                                onBlur={() => {
-                                  if (tagInput.trim()) {
-                                    addTag(g.keyword, tagInput);
-                                  }
-                                  setEditingTagFor(null);
-                                  setTagInput("");
-                                }}
-                                placeholder="태그 입력 → Enter"
-                                list="known-tags"
-                                className="field-input min-h-7 w-28 px-2 py-0.5 text-xs"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTagFor(g.keyword);
-                                  setTagInput("");
-                                }}
-                                className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-xs text-sidebar-faint transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
-                              >
-                                <Plus size={12} strokeWidth={2} aria-hidden />
-                                태그
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬.
-                            평소 숨김, hover 시 우측에 가로로 표시. */}
-                        <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/job:opacity-100 group-hover/job:opacity-100">
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const isBusy =
-                                (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
-                                (g.kind === "youtube" && busyYt === g.keyword);
-                              if (isBusy) return;
-                              await refreshJob(g.keyword, g.kind);
-                            }}
-                            disabled={
-                              (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
-                              (g.kind === "youtube" && busyYt === g.keyword)
-                            }
-                            title="지금 재수집"
-                            aria-label="지금 재수집"
-                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-text disabled:cursor-not-allowed disabled:opacity-30"
-                          >
-                            <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await toggleWatch(g.keyword, g.kind);
-                            }}
-                            title={watched ? "자동 추적 해제" : "자동 추적 켜기"}
-                            aria-label={watched ? "자동 추적 해제" : "자동 추적 켜기"}
-                            aria-pressed={watched}
-                            className={`icon-btn-28 hover:bg-sidebar-hover ${
-                              watched
-                                ? "text-sidebar-text"
-                                : "text-sidebar-muted hover:text-sidebar-text"
-                            }`}
-                          >
-                            <Star
-                              size={14}
-                              strokeWidth={1.75}
-                              fill={watched ? "currentColor" : "none"}
-                              aria-hidden
-                            />
-                          </button>
-                          {watched && (
-                            <button
-                              type="button"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                await toggleDaily(
-                                  g.keyword,
-                                  g.kind,
-                                  !(wInfo?.daily ?? false)
-                                );
-                              }}
-                              title={
-                                wInfo?.daily
-                                  ? "매일 추적 중 (클릭 → 격일로)"
-                                  : "격일 추적 중 (클릭 → 매일로)"
-                              }
-                              className={`h-7 rounded-sm px-1.5 text-xs font-semibold transition-colors hover:bg-sidebar-hover ${
-                                wInfo?.daily
-                                  ? "text-sidebar-text"
-                                  : "text-sidebar-muted hover:text-sidebar-text"
-                              }`}
-                            >
-                              {wInfo?.daily ? "매일" : "격일"}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (
-                                !confirm(
-                                  `"${g.keyword}" ${
-                                    g.kind === "ad" ? "광고 수집" : "YouTube 검색"
-                                  } 결과를 삭제할까요?`
-                                )
-                              )
-                                return;
-                              await fetch("/api/jobs", {
-                                method: "DELETE",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  keyword: g.keyword,
-                                  kind: g.kind,
-                                }),
-                              });
-                              if (selectedKeyword === g.keyword)
-                                setSelectedKeyword(null);
-                              await refreshAll();
-                            }}
-                            title="이 작업 삭제"
-                            aria-label="이 작업 삭제"
-                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-danger"
-                          >
-                            <X size={14} strokeWidth={1.75} aria-hidden />
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-
-          {/* === Meta brand groups === sock-puppet pages collapsed under
-              their anchor brand. Click → switches to 메타 광고 tab and
-              auto-selects the brand in MetaView. Visible only when the
-              sidebar source toggle is set to 메타. */}
-          {sidebarSource === "meta" && (
-            <div className="pb-3">
-              <div className="sidebar-group-label">
-                <span className="inline-flex items-center gap-1.5">
-                  <Megaphone size={14} strokeWidth={1.75} aria-hidden />
-                  메타 광고 브랜드
-                </span>
-                <span className="tabular-nums">{metaBrandGroups.length}개</span>
-              </div>
-              {metaBrandGroups.length === 0 ? (
-                <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
-                  메타 광고 탭 → 새 brand 입력으로 시작
-                </div>
-              ) : (
-              <ul className="space-y-0.5">
-                {metaBrandGroups
-                  .filter((g) => {
-                    // 태그 필터 — 메타 brand의 anchor keyword에 selectedTag 있어야 통과
-                    if (!selectedTag) return true;
-                    return (tagMap[g.anchor] ?? []).includes(selectedTag);
-                  })
-                  .map((g) => {
-                  const active =
-                    tab === "meta" && selectedKeyword === g.anchor;
-                  const isRunning = g.runningCount > 0;
-                  const hasError = !isRunning && g.erroredCount > 0;
-                  // Meta brand groups are always tracked — every entry here
-                  // came from an active MetaWatch (or an orphaned job we
-                  // promoted to anchor). Show a star to signal that, matching
-                  // the Google row's tracked-state visual.
-                  const watched = metaWatches.some(
-                    (w) =>
-                      w.active && (w.keyword === g.anchor || w.anchorKeyword === g.anchor)
-                  );
-                  return (
-                    <li key={`meta::${g.anchor}`}>
-                      <div
-                        className={`group/meta relative rounded-sm transition-colors ${
-                          active
-                            ? "bg-sidebar-elevated"
-                            : "hover:bg-sidebar-hover"
-                        }`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTab("meta");
-                            setSelectedKeyword(g.anchor);
-                          }}
-                          aria-pressed={active}
-                          className="w-full rounded-sm px-2.5 py-1.5 pr-2 text-left text-xs transition-all group-hover/meta:pr-16"
-                        >
-                          <div className="flex min-h-6 items-center gap-2">
-                            <span
-                              aria-hidden
-                              className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                                isRunning
-                                  ? "animate-pulse bg-accent-on-dark"
-                                  : hasError
-                                  ? "bg-sidebar-danger"
-                                  : g.adCount > 0 || g.pageCount > 0
-                                  ? "bg-sidebar-success"
-                                  : "bg-sidebar-faint"
-                              }`}
-                            />
-                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-text">
-                              {g.anchor}
-                            </span>
-                            {watched && (
-                              <Star size={12} strokeWidth={2} fill="currentColor" aria-hidden className="shrink-0 text-sidebar-muted" />
-                            )}
-                            <span
-                              className={`shrink-0 transition group-hover/meta:opacity-0 ${
-                                isRunning
-                                  ? "badge badge-accent"
-                                  : hasError
-                                  ? "badge badge-danger"
-                                  : g.adCount > 0 || g.pageCount > 0
-                                  ? "badge badge-success"
-                                  : "badge badge-neutral"
-                              }`}
-                            >
-                              {isRunning ? (
-                                <>
-                                  <LoaderCircle size={12} strokeWidth={2} aria-hidden className="animate-spin" />
-                                  <span className="sr-only">수집 중</span>
-                                </>
-                              ) : hasError ? (
-                                <>
-                                  <CircleX size={12} strokeWidth={2} aria-hidden />
-                                  <span className="sr-only">실패</span>
-                                </>
-                              ) : g.adCount > 0 || g.pageCount > 0 ? (
-                                <>
-                                  <CircleCheck size={12} strokeWidth={2} aria-hidden />
-                                  <span className="sr-only">완료</span>
-                                </>
-                              ) : (
-                                "대기"
-                              )}
-                            </span>
-                          </div>
-                          {/* 2줄: 상대시간 · 광고 N · 페이지 N — 절대 줄바꿈 없이 한 줄. */}
-                          <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-4 text-xs text-sidebar-faint">
-                            <span className="shrink-0" title={g.latestAt ? formatTime(g.latestAt) : ""}>
-                              {g.latestAt ? formatRelative(g.latestAt) : "수집 전"}
-                            </span>
-                            <span aria-hidden className="shrink-0">·</span>
-                            <span className="shrink-0 text-sidebar-muted">
-                              광고 <b className="font-semibold tabular-nums text-sidebar-text">{g.adCount}</b>
-                              {g.pageWatches > 0 && (
-                                <> · 페이지 <b className="font-semibold tabular-nums text-sidebar-text">{g.pageWatches}</b></>
-                              )}
-                            </span>
-                            {g.autoCount > 0 && (
-                              <span
-                                title={`자동 발굴 ${g.autoCount}${g.manualCount > 0 ? ` · 수동 ${g.manualCount}` : ""}${g.seedCount > 0 ? ` · seed ${g.seedCount}` : ""}`}
-                                className="ml-auto shrink-0 text-sidebar-success"
-                              >
-                                auto {g.autoCount}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                        {/* ===== 태그 영역 (행 아래 — button 밖) ===== */}
-                        <div className="px-2.5 pb-1.5 pl-[26px]">
-                          <div className="flex flex-wrap items-center gap-1">
-                            {(tagMap[g.anchor] ?? []).map((t) => {
-                              const c = tagColor(t);
-                              return (
-                                <span key={t} className="chip h-6 gap-1 px-2">
-                                  <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      removeTag(g.anchor, t);
-                                    }}
-                                    className="rounded-xs text-sidebar-faint transition-colors hover:text-sidebar-danger"
-                                    title="태그 제거"
-                                    aria-label={`태그 ${t} 제거`}
-                                  >
-                                    <X size={12} strokeWidth={2} aria-hidden />
-                                  </button>
-                                </span>
-                              );
-                            })}
-                            {editingTagFor === g.anchor ? (
-                              <input
-                                autoFocus
-                                value={tagInput}
-                                onChange={(e) => setTagInput(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    addTag(g.anchor, tagInput);
-                                    setTagInput("");
-                                  } else if (e.key === "Escape") {
-                                    setEditingTagFor(null);
-                                    setTagInput("");
-                                  }
-                                }}
-                                onBlur={() => {
-                                  if (tagInput.trim()) addTag(g.anchor, tagInput);
-                                  setEditingTagFor(null);
-                                  setTagInput("");
-                                }}
-                                placeholder="태그 입력 → Enter"
-                                list="known-tags"
-                                className="field-input min-h-7 w-28 px-2 py-0.5 text-xs"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingTagFor(g.anchor);
-                                  setTagInput("");
-                                }}
-                                className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-xs text-sidebar-faint transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
-                              >
-                                <Plus size={12} strokeWidth={2} aria-hidden />
-                                태그
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {/* 지금 재수집 — 구글 행의 재수집과 동일. anchor keyword 를
-                            메타 큐에 다시 넣어 stage 1 + 1.5 를 재실행한다. 실패로
-                            끝난 brand 도 새 코드 + 살아있는 프록시로 재시도 가능. */}
-                        {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬. */}
-                        <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/meta:opacity-100 group-hover/meta:opacity-100">
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (isRunning) return;
-                              // 트래픽 안내 — 메타 1회 수집 ~200MB. 프록시 경유 시 그만큼 차감.
-                              // 사용자가 의식하고 누르도록 confirm. 자주 누르면
-                              // 트래픽 빠르게 소진.
-                              if (
-                                !confirm(
-                                  `"${g.anchor}" 메타 광고 재수집\n\n` +
-                                    `예상 트래픽: 약 200MB\n` +
-                                    `프록시를 쓰신다면 그만큼 차감됩니다.\n\n` +
-                                    `진행할까요?`
-                                )
-                              )
-                                return;
-                              await fetch("/api/meta/queue", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ keyword: g.anchor }),
-                              }).catch(() => {});
-                              await refreshAll();
-                            }}
-                            disabled={isRunning}
-                            title="지금 메타 다시 불러오기 (약 200MB)"
-                            aria-label="지금 메타 다시 불러오기 (약 200MB)"
-                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-text disabled:cursor-not-allowed disabled:opacity-30"
-                          >
-                            <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (
-                                !confirm(
-                                  `"${g.anchor}" 메타 브랜드 추적을 해제할까요? (관련 키워드 ${g.keywords.length}개 모두 해제)`
-                                )
-                              )
-                                return;
-                              // Delete every MetaWatch row tied to this anchor
-                              // (brand keyword + page:* sock-puppet rows).
-                              for (const kw of g.keywords) {
-                                await fetch("/api/meta-watch", {
-                                  method: "DELETE",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({ keyword: kw }),
-                                }).catch(() => {});
-                              }
-                              if (selectedKeyword === g.anchor)
-                                setSelectedKeyword(null);
-                              await refreshAll();
-                            }}
-                            title="이 브랜드 추적 해제"
-                            aria-label="이 브랜드 추적 해제"
-                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-danger"
-                          >
-                            <X size={14} strokeWidth={1.75} aria-hidden />
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              )}
-            </div>
-          )}
-        </div>
 
         <div className="sidebar-footer">
-          {(jobs.length > 0 || ads.length > 0) && (
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setDeleteOpen((open) => !open);
-                  setDeleteError(null);
-                  setDeleteDone(false);
-                }}
-                aria-expanded={deleteOpen}
-                className="btn btn-danger btn-sm w-full"
-              >
-                <Trash2 size={14} strokeWidth={1.75} aria-hidden />
-                전체 데이터 삭제
-              </button>
-              {deleteOpen && (
-                <form
-                  className="space-y-2 rounded-sm border border-sidebar-line p-2"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void clearAll();
-                  }}
-                >
-                  <p className="text-xs leading-4 text-sidebar-muted">
-                    되돌릴 수 없습니다. 관리자 비밀번호를 입력하세요.
-                  </p>
-                  <input
-                    type="password"
-                    value={deleteSecret}
-                    onChange={(event) => setDeleteSecret(event.target.value)}
-                    placeholder="관리자 비밀번호"
-                    autoComplete="off"
-                    aria-label="관리자 비밀번호"
-                    className="field-input w-full text-xs"
-                  />
-                  {deleteError && <p role="alert" className="text-xs text-sidebar-danger">{deleteError}</p>}
-                  <div className="flex gap-1.5">
-                    <button
-                      type="submit"
-                      disabled={!deleteSecret.trim() || deletingAll}
-                      aria-busy={deletingAll}
-                      className="btn btn-sm flex-1 bg-danger text-white"
-                    >
-                      {deletingAll ? "삭제 중…" : "삭제 실행"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteOpen(false);
-                        setDeleteSecret("");
-                        setDeleteError(null);
-                      }}
-                      className="btn btn-secondary btn-sm"
-                    >
-                      취소
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
-          {deleteDone && (
-            <p role="status" className="mt-2 flex items-center gap-1.5 px-1 text-xs text-sidebar-success">
-              <CircleCheck size={12} strokeWidth={2} aria-hidden />
-              전체 데이터가 삭제되었습니다.
-            </p>
-          )}
           <p className="local-note">
             <span aria-hidden className="status-dot text-sidebar-success" />
             로컬
@@ -3149,13 +3224,31 @@ export default function Home() {
             <ChevronRight size={14} strokeWidth={1.75} aria-hidden />
             <strong aria-current="page">{tabMeta.label}</strong>
           </nav>
-          <span className="status-chip" role="status">
-            <span
-              aria-hidden
-              className={`status-dot ${anyBusyAds ? "text-accent" : "text-success"}`}
-            />
-            {anyBusyAds ? "수집 중" : "대기 중"}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* 큰 검색 패널은 브랜드 아카이브에만 둔다 (v2 §10.4).
+                다른 화면에서는 이 버튼으로 아카이브 검색창으로 이동. */}
+            {tab !== "archive" && (
+              <button
+                type="button"
+                onClick={() => {
+                  focusSearchOnArchive.current = true;
+                  setNavTarget("archive");
+                  startNavTransition(() => setTab("archive"));
+                }}
+                className="btn btn-ghost btn-sm"
+              >
+                <Search size={16} strokeWidth={1.75} aria-hidden />
+                브랜드 검색
+              </button>
+            )}
+            <span className="status-chip" role="status">
+              <span
+                aria-hidden
+                className={`status-dot ${anyBusyAds ? "text-accent" : "text-success"}`}
+              />
+              {anyBusyAds ? "수집 중" : "대기 중"}
+            </span>
+          </div>
         </header>
 
         <main id="main-content" tabIndex={-1} className="workspace-body space-y-5 outline-none">
@@ -3167,47 +3260,53 @@ export default function Home() {
           </div>
 
           {/* 검색 툴바 — 이 도구에서 사용자가 제일 먼저 하는 행동이
-              "브랜드 하나 넣고 불러오기" 라서 페이지 제목 바로 아래 둔다. */}
-          <section className="panel p-3">
-            <AdSearchBox
-              query={adQuery}
-              onQueryChange={setAdQuery}
-              onSearch={runAdSearch}
-              disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
-              buttonLabel={isBusyKeyword(adQuery.trim())
-                ? "불러오는 중"
-                : anyBusyAds
-                ? "추가 수집"
-                : "불러오기"}
-            />
+              "브랜드 하나 넣고 불러오기" 라서 페이지 제목 바로 아래 둔다.
+              v2(§10.4): 큰 검색 패널은 브랜드 아카이브에만. */}
+          {tab === "archive" && (
+            <section className="panel p-4" aria-label="브랜드 검색">
+              <AdSearchBox
+                inputId="brand-search-input"
+                query={adQuery}
+                onQueryChange={setAdQuery}
+                onSearch={runAdSearch}
+                disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
+                buttonLabel={isBusyKeyword(adQuery.trim())
+                  ? "불러오는 중"
+                  : anyBusyAds
+                  ? "추가 수집"
+                  : "불러오기"}
+              />
 
-            {/* 예시 칩 — 빈 화면에서 뭘 넣어야 할지 알려주는 역할. */}
-            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="text-faint">예시</span>
-              {["올리브영", "무신사", "oliveyoung.co.kr"].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setAdQuery(d)}
-                  className="chip"
-                >
-                  {d}
-                </button>
-              ))}
-              <label className="ml-2 flex min-h-7 cursor-pointer items-center gap-1.5 text-muted">
-                <input
-                  type="checkbox"
-                  checked={snapshotMode}
-                  onChange={(e) => setSnapshotMode(e.target.checked)}
-                  className="h-4 w-4 accent-[var(--accent)]"
-                />
-                <Camera size={14} strokeWidth={1.75} aria-hidden />
-                1회만 (자동 갱신 안 함)
-              </label>
-            </div>
-          </section>
+              {/* 예시 칩 — 빈 화면에서 뭘 넣어야 할지 알려주는 역할. */}
+              <div className="mt-3 flex flex-wrap items-center gap-1.5 text-sm">
+                <span className="text-muted">예시</span>
+                {["올리브영", "무신사", "oliveyoung.co.kr"].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setAdQuery(d)}
+                    className="chip"
+                  >
+                    {d}
+                  </button>
+                ))}
+                <label className="ml-2 flex min-h-7 cursor-pointer items-center gap-1.5 text-muted">
+                  <input
+                    type="checkbox"
+                    checked={snapshotMode}
+                    onChange={(e) => setSnapshotMode(e.target.checked)}
+                    className="h-4 w-4 accent-[var(--accent)]"
+                  />
+                  <Camera size={14} strokeWidth={1.75} aria-hidden />
+                  1회만 (자동 갱신 안 함)
+                </label>
+              </div>
+            </section>
+          )}
 
-          {selectedKeyword && tab !== "creatives" && (
+          {(tab === "archive" || tab === "ads" || tab === "meta") && brandPanel}
+
+          {selectedKeyword && (tab === "ads" || tab === "meta") && (
             <div className="notice notice-accent items-center justify-between" role="status">
               <div className="flex min-w-0 items-center gap-2">
                 <Search size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
@@ -3247,19 +3346,19 @@ export default function Home() {
                   {/* 소재수 순위 */}
                   <div>
                     <div className="mb-1 flex items-baseline justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
                         <Clapperboard size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
                         광고 소재수
                       </span>
-                      <span className="text-xs tabular-nums text-faint">
+                      <span className="text-sm tabular-nums text-faint">
                         {advertiserRanking.adCount}개
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-semibold tabular-nums text-ink">
+                      <span className="text-page font-semibold leading-tight tabular-nums tracking-[-0.03em] text-ink">
                         {advertiserRanking.adRank}위
                       </span>
-                      <span className="text-xs tabular-nums text-faint">
+                      <span className="text-sm tabular-nums text-faint">
                         / {advertiserRanking.total}
                       </span>
                       <span
@@ -3296,7 +3395,7 @@ export default function Home() {
                   {/* 가속도 순위 (analyzeDays 기준) */}
                   <div>
                     <div className="mb-1 flex items-baseline justify-between">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
                         <Rocket size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
                         가속도 (
                         {analyzeDays === "all"
@@ -3304,16 +3403,16 @@ export default function Home() {
                           : `최근 ${analyzeDays}일`}
                         )
                       </span>
-                      <span className="text-xs tabular-nums text-faint">
+                      <span className="text-sm tabular-nums text-faint">
                         {advertiserRanking.avgAccel >= 0 ? "+" : ""}
                         {advertiserRanking.avgAccel.toLocaleString()}/일
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-semibold tabular-nums text-ink">
+                      <span className="text-page font-semibold leading-tight tabular-nums tracking-[-0.03em] text-ink">
                         {advertiserRanking.accelRank}위
                       </span>
-                      <span className="text-xs tabular-nums text-faint">
+                      <span className="text-sm tabular-nums text-faint">
                         / {advertiserRanking.total}
                       </span>
                       <span
@@ -3348,7 +3447,7 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 text-xs text-faint">
+                <div className="mt-3 text-sm text-faint">
                   기준: 분석 기간(
                   {analyzeDays === "all" ? "전체" : `${analyzeDays}일`}) 내
                   본인이 추적 중인 업체들 사이에서의 순위
@@ -3371,7 +3470,7 @@ export default function Home() {
                     <Calendar size={16} strokeWidth={1.75} aria-hidden />
                     스냅샷 {snapshotTimeline.dates.length}개
                   </h2>
-                  <span className="text-xs tabular-nums text-muted">
+                  <span className="text-sm tabular-nums text-muted">
                     최초: {snapshotTimeline.first} · 최신:{" "}
                     {snapshotTimeline.last}
                   </span>
@@ -3410,7 +3509,7 @@ export default function Home() {
                   })}
                 </div>
                 {sinceDateFilter && (
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-accent-ink">
+                  <div className="mt-2 flex items-center gap-1.5 text-sm text-accent-ink">
                     <Search size={14} strokeWidth={1.75} aria-hidden />
                     <span>
                       {sinceDateFilter} 이후 ATC에 처음 등장한 광고만 보고
@@ -3446,7 +3545,7 @@ export default function Home() {
               emptyHint={
                 <>
                   아직 불러온 브랜드가 없어요.
-                  <div className="mt-2 text-xs">
+                  <div className="mt-2 text-sm">
                     위 검색창에 도메인이나 브랜드명을 넣어보세요.
                   </div>
                 </>
@@ -3524,7 +3623,7 @@ export default function Home() {
                   숫자는 광고 소재로 쓰인 YouTube 영상의 공개 통계다. */}
               <div className="notice notice-info" role="note">
                 <Info size={16} strokeWidth={1.75} aria-hidden />
-                <div className="min-w-0 flex-1 text-sm text-muted">
+                <div className="min-w-0 flex-1 text-base text-muted">
                   <b className="font-semibold text-ink">
                     구글 광고 투명성 센터
                   </b>
@@ -3532,7 +3631,7 @@ export default function Home() {
                   영상 광고는 소재로 쓰인{" "}
                   <b className="font-semibold text-ink">YouTube 영상의 공개 통계</b>
                   (조회수·좋아요·게시일)를 붙여 성과를 가늠합니다.
-                  <div className="mt-1 text-xs text-faint">
+                  <div className="mt-1 text-sm text-faint">
                     조회수는 광고 노출수가 아니라 유기적 조회까지 합쳐진
                     숫자입니다. 절대값보다 <b>브랜드 안에서의 상대 순위</b>로
                     보세요. 이미지 광고는 숫자가 비어 있는 게 정상입니다.
@@ -3575,7 +3674,7 @@ export default function Home() {
               {/* Counter row */}
               <div className="flex flex-wrap items-center gap-3">
                 <div
-                  className="text-sm text-[var(--text-secondary)]"
+                  className="text-base text-[var(--text-secondary)]"
                   title="광고 = 수집된 전체 / 영상 후보 = 영상·기타 타입 / YouTube 매칭 = 영상 ID 추출 성공 / 고유 영상 = youtubeId 중복 제거"
                 >
                   광고{" "}
@@ -3603,11 +3702,11 @@ export default function Home() {
                 {ads.length >= INITIAL_ADS_LIMIT && (
                   <span
                     className="badge badge-warning h-auto min-h-[22px] whitespace-normal py-0.5"
-                    title={`첫 로딩은 최근 수집순 ${INITIAL_ADS_LIMIT}건까지만 가져옵니다. 사이드바에서 브랜드를 클릭하면 그 브랜드 전체를 불러옵니다.`}
+                    title={`첫 로딩은 최근 수집순 ${INITIAL_ADS_LIMIT}건까지만 가져옵니다. 브랜드 목록에서 브랜드를 클릭하면 그 브랜드 전체를 불러옵니다.`}
                   >
                     <TriangleAlert size={12} strokeWidth={2} aria-hidden className="shrink-0" />
                     최근 {INITIAL_ADS_LIMIT.toLocaleString()}건만 불러옴 —
-                    사이드바에서 브랜드를 클릭하면 전체 로드
+                    브랜드 목록에서 브랜드를 클릭하면 전체 로드
                   </span>
                 )}
                 <div className="ml-auto flex gap-2">
@@ -3648,253 +3747,295 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 분석 기간 셀렉터 — delta/%/D+N 컬럼이 이 윈도우 기준으로
-                  계산됨. 7일이 default. "전체"는 snapshot 첫~끝 사용. */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-                  <Calendar size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
-                  분석 기간
-                </span>
-                <div className="segmented">
-                  {(["all", 7, 14, 30, 90] as const).map((d) => (
-                    <button
-                      key={String(d)}
-                      onClick={() => setAnalyzeDays(d)}
-                      aria-pressed={analyzeDays === d}
-                    >
-                      {d === "all" ? "전체" : `${d}일`}
-                    </button>
-                  ))}
-                </div>
-                <span className="text-xs text-faint">
-                  변화·성장률 컬럼 기준
-                </span>
-              </div>
+              {/* ===== 필터 (v2 §10.4) =====
+                  1행: 분석 기간 · 상태 — 가장 자주 바꾸는 핵심 두 가지만.
+                  나머지(주력/상승세, 조회수·나이 대역, 결과 내 검색, 유형,
+                  광고주·채널)는 "필터 더보기" 뒤로 접는다. 활성 개수는 버튼에. */}
+              <section className="panel p-4" aria-label="광고 필터">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  {/* 분석 기간 셀렉터 — delta/%/D+N 컬럼이 이 윈도우 기준으로
+                      계산됨. 7일이 default. "전체"는 snapshot 첫~끝 사용. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+                      <Calendar size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                      분석 기간
+                    </span>
+                    <div className="segmented">
+                      {(["all", 7, 14, 30, 90] as const).map((d) => (
+                        <button
+                          key={String(d)}
+                          onClick={() => setAnalyzeDays(d)}
+                          aria-pressed={analyzeDays === d}
+                        >
+                          {d === "all" ? "전체" : `${d}일`}
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-sm text-muted">
+                      변화·성장률 컬럼 기준
+                    </span>
+                  </div>
 
-              {/* 상태 분류 chip 필터 — classifyAd 결과 중 한 가지를 골라 필터.
-                  스크린샷의 레퍼런스 대시보드 "스파이크/신규/히어로/피로도" 패턴. */}
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
-                  <Tag size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
-                  상태
-                </span>
-                <button
-                  onClick={() => setClassFilter("all")}
-                  aria-pressed={classFilter === "all"}
-                  className="chip"
-                >
-                  전체
-                </button>
-                {(
-                  [
-                    "신규광고",
-                    "스파이크",
-                    "히어로",
-                    "가속도",
-                    "피로도",
-                  ] as const
-                ).map((c) => {
-                  const m = CLASSIFICATION_META[c];
-                  const active = classFilter === c;
-                  return (
+                  {/* 상태 분류 chip 필터 — classifyAd 결과 중 한 가지를 골라 필터.
+                      스크린샷의 레퍼런스 대시보드 "스파이크/신규/히어로/피로도" 패턴. */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+                      <Tag size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                      상태
+                    </span>
                     <button
-                      key={c}
-                      onClick={() =>
-                        setClassFilter(active ? "all" : c)
-                      }
-                      title={m.tip}
-                      aria-pressed={active}
+                      onClick={() => setClassFilter("all")}
+                      aria-pressed={classFilter === "all"}
                       className="chip"
                     >
-                      <m.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : m.text} /> {m.label}
+                      전체
                     </button>
-                  );
-                })}
-              </div>
+                    {(
+                      [
+                        "신규광고",
+                        "스파이크",
+                        "히어로",
+                        "가속도",
+                        "피로도",
+                      ] as const
+                    ).map((c) => {
+                      const m = CLASSIFICATION_META[c];
+                      const active = classFilter === c;
+                      return (
+                        <button
+                          key={c}
+                          onClick={() =>
+                            setClassFilter(active ? "all" : c)
+                          }
+                          title={m.tip}
+                          aria-pressed={active}
+                          className="chip"
+                        >
+                          <m.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : m.text} /> {m.label}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-              {/* Filter chips */}
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => setFilter(filter === "hero" ? "all" : "hero")}
-                  aria-pressed={filter === "hero"}
-                  className="chip"
-                >
-                  <Star size={14} strokeWidth={1.75} aria-hidden />
-                  주력 소재 50만+
-                </button>
-                <button
-                  onClick={() =>
-                    setFilter(filter === "growing" ? "all" : "growing")
-                  }
-                  aria-pressed={filter === "growing"}
-                  className="chip"
-                >
-                  <TrendingUp size={14} strokeWidth={1.75} aria-hidden />
-                  상승세 10만+ 또는 일 3천+
-                </button>
-                <span className="ml-2 text-xs text-faint">
-                  조회수 밑 XXX회/일 = 게시일 기준 하루 평균 조회수
-                </span>
-                {/* 이 도메인만 토글 — Stage3 형제 brand 제거. 도메인 모드
-                    검색일 때만 (via 데이터 있을 때만) 표시. 재수집 안 한
-                    레거시 광고는 다 빠지니까 (n) 으로 명시. */}
-                {hasDomainModeAds && (
                   <button
-                    onClick={() => setDomainOnly((v) => !v)}
-                    title="같은 광고주가 굴리는 다른 브랜드 광고를 숨기고, 검색한 도메인이 직접 띄운 것만 표시"
-                    aria-pressed={domainOnly}
-                    className="chip ml-2 tabular-nums"
+                    type="button"
+                    onClick={() => setAdsMoreFiltersOpen((open) => !open)}
+                    aria-expanded={adsMoreFiltersOpen}
+                    aria-controls="ads-more-filters"
+                    className="btn btn-secondary btn-sm ml-auto"
                   >
-                    <Target size={14} strokeWidth={1.75} aria-hidden />
-                    이 도메인만 ({domainAdsCount})
-                  </button>
-                )}
-                {/* 조회수 대역 + 소재 나이 콤보 — 레퍼런스 도구 벤치마크.
-                    메가히트/롱런(검증된 소재) 만 골라보기. */}
-                <select
-                  value={viewBand}
-                  onChange={(e) => setViewBand(e.target.value)}
-                  className={`ml-2 h-8 rounded-sm border px-2 text-xs ${
-                    viewBand
-                      ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
-                      : "border-line-control bg-surface text-muted"
-                  }`}
-                  title="조회수 대역 필터"
-                >
-                  <option value="">조회수 전체</option>
-                  <option value="0:30000">~3만 (테스트)</option>
-                  <option value="30000:300000">3만~30만</option>
-                  <option value="300000:3000000">30만~300만 (통한 소재)</option>
-                  <option value="3000000:20000000">300만~2000만 (대형)</option>
-                  <option value="20000000:">2000만+ (전국구)</option>
-                </select>
-                <select
-                  value={ageBand}
-                  onChange={(e) => setAgeBand(e.target.value)}
-                  className={`h-8 rounded-sm border px-2 text-xs ${
-                    ageBand
-                      ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
-                      : "border-line-control bg-surface text-muted"
-                  }`}
-                  title="소재 나이 — 오래 살아남은 광고 = 검증된 소재"
-                >
-                  <option value="">나이 전체</option>
-                  <option value="old:21">3주+ (살아남은 소재)</option>
-                  <option value="old:60">2개월+ (검증된 소재)</option>
-                </select>
-                {/* 결과 내 검색 — 한 광고주(예: 모브랜드사)에 brand 가 여러
-                    개 섞일 때 "브랜드D" / "브랜드E" 입력으로 좁힘. 제목/채널/
-                    광고주명 contains 매칭. */}
-                <div className="relative ml-auto flex items-center gap-1">
-                  <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
-                  <input
-                    value={innerSearch}
-                    onChange={(e) => setInnerSearch(e.target.value)}
-                    placeholder="결과 내 검색 (제목/채널/광고주)"
-                    aria-label="결과 내 검색"
-                    className="field-input min-h-8 w-64 py-1 pl-9 text-sm"
-                  />
-                  {innerSearch && (
-                    <button
-                      onClick={() => setInnerSearch("")}
-                      title="검색 지우기"
-                      aria-label="검색 지우기"
-                      className="btn btn-ghost btn-sm btn-icon"
-                    >
-                      <X size={14} strokeWidth={1.75} aria-hidden />
-                    </button>
-                  )}
-                </div>
-                <div className="segmented ml-auto">
-                  {(
-                    ["all", "youtube", "image", "video", "other"] as const
-                  ).map((t) => (
-                    <button
-                      key={t}
-                      onClick={() => setAdTypeFilter(t)}
-                      aria-pressed={adTypeFilter === t}
-                      className="inline-flex items-center gap-1.5"
-                    >
-                      {t === "youtube" && <Clapperboard size={14} strokeWidth={1.75} aria-hidden />}
-                      {t === "all"
-                        ? "전체"
-                        : t === "youtube"
-                        ? "YouTube"
-                        : t === "image"
-                        ? "이미지"
-                        : t === "video"
-                        ? "영상"
-                        : "기타"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Advertiser chips */}
-              {advertiserGroups.length > 0 && (
-                <section className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-muted">
-                    광고주
-                  </span>
-                  {advertiserGroups.slice(0, 8).map((g) => (
-                    <a
-                      key={g.id}
-                      href={`https://adstransparency.google.com/advertiser/${g.id}?region=KR`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="chip"
-                    >
-                      {g.name || "(이름 없음)"}{" "}
-                      <span className="font-semibold tabular-nums text-ink">
-                        {g.count}
+                    <SlidersHorizontal size={14} strokeWidth={1.75} aria-hidden />
+                    필터 더보기
+                    {adsMoreFilterCount > 0 && (
+                      <span className="badge badge-accent h-5 px-1.5 tabular-nums">
+                        {adsMoreFilterCount}
+                        <span className="sr-only">개 적용 중</span>
                       </span>
-                    </a>
-                  ))}
-                </section>
-              )}
+                    )}
+                    {adsMoreFiltersOpen ? (
+                      <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+                    ) : (
+                      <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
+                    )}
+                  </button>
+                </div>
 
-              {/* 채널 chip multi-select — 한 광고주(예: 모브랜드사) 안에
-                  brand(브랜드D/브랜드E/브랜드F) 가 여러 채널로 갈릴 때 클릭
-                  toggle 로 좁힘. 2개 이상일 때만 표시. innerSearch 와 AND. */}
-              {channelChips.length >= 2 && (
-                <section className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-medium text-muted">
-                    채널
-                  </span>
-                  {channelChips.map((c) => {
-                    const active = selectedChannels.has(c.label);
-                    return (
+                {adsMoreFiltersOpen && (
+                  <div
+                    id="ads-more-filters"
+                    className="mt-4 space-y-3 border-t border-line pt-4"
+                  >
+                    {/* 결과 내 검색 — 한 광고주(예: 모브랜드사)에 brand 가 여러
+                        개 섞일 때 "브랜드D" / "브랜드E" 입력으로 좁힘. 제목/채널/
+                        광고주명 contains 매칭. · 유형 세그먼트 */}
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="relative flex items-center gap-1">
+                        <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+                        <input
+                          value={innerSearch}
+                          onChange={(e) => setInnerSearch(e.target.value)}
+                          placeholder="결과 내 검색 (제목/채널/광고주)"
+                          aria-label="결과 내 검색"
+                          className="field-input w-72 max-w-full py-1 pl-9"
+                        />
+                        {innerSearch && (
+                          <button
+                            onClick={() => setInnerSearch("")}
+                            title="검색 지우기"
+                            aria-label="검색 지우기"
+                            className="btn btn-ghost btn-sm btn-icon"
+                          >
+                            <X size={14} strokeWidth={1.75} aria-hidden />
+                          </button>
+                        )}
+                      </div>
+                      <div className="segmented" role="group" aria-label="광고 유형">
+                        {(
+                          ["all", "youtube", "image", "video", "other"] as const
+                        ).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setAdTypeFilter(t)}
+                            aria-pressed={adTypeFilter === t}
+                            className="inline-flex items-center gap-1.5"
+                          >
+                            {t === "youtube" && <Clapperboard size={14} strokeWidth={1.75} aria-hidden />}
+                            {t === "all"
+                              ? "전체"
+                              : t === "youtube"
+                              ? "YouTube"
+                              : t === "image"
+                              ? "이미지"
+                              : t === "video"
+                              ? "영상"
+                              : "기타"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 성과 chip · 이 도메인만 · 조회수 대역 + 소재 나이 콤보 */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
-                        key={c.label}
-                        onClick={() => {
-                          setSelectedChannels((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(c.label)) next.delete(c.label);
-                            else next.add(c.label);
-                            return next;
-                          });
-                        }}
-                        aria-pressed={active}
+                        onClick={() => setFilter(filter === "hero" ? "all" : "hero")}
+                        aria-pressed={filter === "hero"}
                         className="chip"
                       >
-                        {c.label}{" "}
-                        <span className="font-semibold tabular-nums">
-                          {c.count}
-                        </span>
+                        <Star size={14} strokeWidth={1.75} aria-hidden />
+                        주력 소재 50만+
                       </button>
-                    );
-                  })}
-                  {selectedChannels.size > 0 && (
-                    <button
-                      onClick={() => setSelectedChannels(new Set())}
-                      className="btn btn-ghost btn-sm"
-                    >
-                      <X size={14} strokeWidth={1.75} aria-hidden />
-                      채널 필터 해제 ({selectedChannels.size})
-                    </button>
-                  )}
-                </section>
-              )}
+                      <button
+                        onClick={() =>
+                          setFilter(filter === "growing" ? "all" : "growing")
+                        }
+                        aria-pressed={filter === "growing"}
+                        className="chip"
+                      >
+                        <TrendingUp size={14} strokeWidth={1.75} aria-hidden />
+                        상승세 10만+ 또는 일 3천+
+                      </button>
+                      {/* 이 도메인만 토글 — Stage3 형제 brand 제거. 도메인 모드
+                          검색일 때만 (via 데이터 있을 때만) 표시. 재수집 안 한
+                          레거시 광고는 다 빠지니까 (n) 으로 명시. */}
+                      {hasDomainModeAds && (
+                        <button
+                          onClick={() => setDomainOnly((v) => !v)}
+                          title="같은 광고주가 굴리는 다른 브랜드 광고를 숨기고, 검색한 도메인이 직접 띄운 것만 표시"
+                          aria-pressed={domainOnly}
+                          className="chip tabular-nums"
+                        >
+                          <Target size={14} strokeWidth={1.75} aria-hidden />
+                          이 도메인만 ({domainAdsCount})
+                        </button>
+                      )}
+                      {/* 조회수 대역 + 소재 나이 콤보 — 레퍼런스 도구 벤치마크.
+                          메가히트/롱런(검증된 소재) 만 골라보기. */}
+                      <select
+                        value={viewBand}
+                        onChange={(e) => setViewBand(e.target.value)}
+                        className={`h-8 rounded-sm border px-2 text-sm ${
+                          viewBand
+                            ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                            : "border-line-control bg-surface text-muted"
+                        }`}
+                        title="조회수 대역 필터"
+                        aria-label="조회수 대역"
+                      >
+                        <option value="">조회수 전체</option>
+                        <option value="0:30000">~3만 (테스트)</option>
+                        <option value="30000:300000">3만~30만</option>
+                        <option value="300000:3000000">30만~300만 (통한 소재)</option>
+                        <option value="3000000:20000000">300만~2000만 (대형)</option>
+                        <option value="20000000:">2000만+ (전국구)</option>
+                      </select>
+                      <select
+                        value={ageBand}
+                        onChange={(e) => setAgeBand(e.target.value)}
+                        className={`h-8 rounded-sm border px-2 text-sm ${
+                          ageBand
+                            ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                            : "border-line-control bg-surface text-muted"
+                        }`}
+                        title="소재 나이 — 오래 살아남은 광고 = 검증된 소재"
+                        aria-label="소재 나이"
+                      >
+                        <option value="">나이 전체</option>
+                        <option value="old:21">3주+ (살아남은 소재)</option>
+                        <option value="old:60">2개월+ (검증된 소재)</option>
+                      </select>
+                      <span className="text-sm text-muted">
+                        조회수 밑 XXX회/일 = 게시일 기준 하루 평균 조회수
+                      </span>
+                    </div>
+
+                    {/* Advertiser chips */}
+                    {advertiserGroups.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-muted">
+                          광고주
+                        </span>
+                        {advertiserGroups.slice(0, 8).map((g) => (
+                          <a
+                            key={g.id}
+                            href={`https://adstransparency.google.com/advertiser/${g.id}?region=KR`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="chip"
+                          >
+                            {g.name || "(이름 없음)"}{" "}
+                            <span className="font-semibold tabular-nums text-ink">
+                              {g.count}
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 채널 chip multi-select — 한 광고주(예: 모브랜드사) 안에
+                        brand(브랜드D/브랜드E/브랜드F) 가 여러 채널로 갈릴 때 클릭
+                        toggle 로 좁힘. 2개 이상일 때만 표시. innerSearch 와 AND. */}
+                    {channelChips.length >= 2 && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-muted">
+                          채널
+                        </span>
+                        {channelChips.map((c) => {
+                          const active = selectedChannels.has(c.label);
+                          return (
+                            <button
+                              key={c.label}
+                              onClick={() => {
+                                setSelectedChannels((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(c.label)) next.delete(c.label);
+                                  else next.add(c.label);
+                                  return next;
+                                });
+                              }}
+                              aria-pressed={active}
+                              className="chip"
+                            >
+                              {c.label}{" "}
+                              <span className="font-semibold tabular-nums">
+                                {c.count}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {selectedChannels.size > 0 && (
+                          <button
+                            onClick={() => setSelectedChannels(new Set())}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            <X size={14} strokeWidth={1.75} aria-hidden />
+                            채널 필터 해제 ({selectedChannels.size})
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
 
               {/* Unified ads table — 항상 200개 cap. brand 선택해도 한 번에
                   너무 많은 썸네일 (mqdefault.jpg 수천 개) 동시 fetch 하면
@@ -3929,7 +4070,7 @@ export default function Home() {
                 activeKeyword={selectedKeyword}
               />
               {groupedAds.length > displayLimit && (
-                <div className="panel flex flex-wrap items-center justify-center gap-3 border-dashed px-4 py-3 text-center text-xs tabular-nums text-muted">
+                <div className="panel flex flex-wrap items-center justify-center gap-3 border-dashed px-4 py-3 text-center text-sm tabular-nums text-muted">
                   광고 {displayLimit.toLocaleString()}/{groupedAds.length.toLocaleString()}개 표시 중
                   <button
                     onClick={() => setDisplayLimit((n) => n + 200)}
@@ -4034,7 +4175,7 @@ function LogConsole({
   return (
     <section className="panel p-5" aria-busy={busy}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-base">
           <span
             aria-hidden
             className={`inline-block h-2 w-2 rounded-full ${
@@ -4043,7 +4184,7 @@ function LogConsole({
           />
           <span className="inline-flex flex-wrap items-center gap-1 font-semibold">
             {busy ? "수집 중" : "완료"}
-            <span className="ml-1 text-xs font-normal text-faint">
+            <span className="ml-1 text-sm font-normal text-faint">
               · &quot;{keyword}&quot;
             </span>
             {progress.step && (
@@ -4057,13 +4198,13 @@ function LogConsole({
               </span>
             )}
           </span>
-          <span className="text-xs tabular-nums text-faint">
+          <span className="text-sm tabular-nums text-faint">
             {progress.percent}%
           </span>
         </div>
         <div className="flex items-center gap-2">
           {activeKeywords.length > 1 && (
-            <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
+            <div className="flex items-center gap-1 text-sm text-[var(--text-muted)]">
               <span>다른 진행:</span>
               {activeKeywords
                 .filter((k) => k !== keyword)
@@ -4101,7 +4242,7 @@ function LogConsole({
       {/* Log lines */}
       <div
         ref={scrollRef}
-        className="max-h-72 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-xs leading-relaxed"
+        className="max-h-72 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-sm leading-relaxed"
       >
         {logs.length === 0 ? (
           <div className="text-[var(--text-muted)]">로그 대기 중...</div>
@@ -4139,9 +4280,7 @@ function SortHeader({
   return (
     <th
       aria-sort={active ? (sortDir === "desc" ? "descending" : "ascending") : undefined}
-      className={`px-2 py-2 ${
-        align === "right" ? "text-right" : "text-left"
-      } font-medium`}
+      className={align === "right" ? "text-right" : "text-left"}
     >
       <button
         onClick={() => onSort(thisKey)}
@@ -4189,7 +4328,7 @@ function AdsTable({
 }) {
   if (groups.length === 0) {
     return (
-      <div className="panel empty text-sm text-muted">
+      <div className="panel empty text-base text-muted">
         <span className="empty-icon mb-3">
           <LayoutList size={20} strokeWidth={1.75} aria-hidden />
         </span>
@@ -4197,14 +4336,14 @@ function AdsTable({
           <>
             <b className="font-semibold text-ink">{activeKeyword}</b>에서
             불러온 광고가 없어요.
-            <div className="mt-2 text-xs">
+            <div className="mt-2 text-sm">
               위 로그의 ATC 직접 확인 링크로 실제 공개 여부를 확인할 수 있어요.
             </div>
           </>
         ) : (
           <>
-            아직 불러온 광고가 없어요. 위에 브랜드명이나 도메인을 넣어보세요.
-            <div className="mt-2 text-xs">예: 올리브영 · oliveyoung.co.kr</div>
+            아직 불러온 광고가 없어요. 브랜드 아카이브 검색창에 브랜드명이나 도메인을 넣어보세요.
+            <div className="mt-2 text-sm">예: 올리브영 · oliveyoung.co.kr</div>
           </>
         )}
       </div>
@@ -4213,20 +4352,20 @@ function AdsTable({
   return (
     <section className="panel">
       <div className="overflow-x-auto" tabIndex={0} aria-label="구글 광고 표">
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-surface-soft text-xs text-muted">
+        <table className="data-table min-w-[1120px]">
+          <thead>
             <tr>
-              <th className="px-2 py-2 text-left font-medium">
+              <th className="text-left">
                 <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" aria-label="표에 표시된 광고 전체 선택"
                   checked={groups.every((group) => group.siblings.every((ad) => selectedIds.has(ad.creativeId)))}
                   onChange={(event) => onToggleGroup(groups.flatMap((group) => group.siblings.map((ad) => ad.creativeId)), event.target.checked)} />
               </th>
-              <th className="px-2 py-2 text-left font-medium">#</th>
-              <th className="px-2 py-2 text-left font-medium">썸네일</th>
-              <th className="px-2 py-2 text-left font-medium">제목</th>
-              <th className="px-2 py-2 text-left font-medium">광고</th>
-              <th className="px-2 py-2 text-left font-medium">YouTube</th>
-              <th className="px-2 py-2 text-left font-medium">유형</th>
+              <th className="text-left">#</th>
+              <th className="text-left">썸네일</th>
+              <th className="text-left">제목</th>
+              <th className="text-left">광고</th>
+              <th className="text-left">YouTube</th>
+              <th className="text-left">유형</th>
               <SortHeader
                 label="D+N"
                 sortKey={sortKey}
@@ -4439,17 +4578,17 @@ function AdRow({
 
   return (
     <tr className={`border-t border-line transition-colors ${selected ? "bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-surface-soft"}`}>
-      <td className="px-2 py-1.5">
+      <td>
         <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" aria-label={`광고 행 ${index} 선택${group.count > 1 ? ` (${group.count}개 소재)` : ""}`}
           checked={selected} onChange={(event) => onSelect(event.target.checked)} />
       </td>
-      <td className="px-2 py-1.5 text-xs tabular-nums text-faint">{index}</td>
-      <td className="px-2 py-1.5">
+      <td className="text-sm tabular-nums text-faint">{index}</td>
+      <td>
         <ThumbnailCell ad={ad} />
       </td>
-      <td className="max-w-md px-2 py-1.5">
+      <td className="max-w-md">
         <div className="flex items-start gap-1.5">
-          <div className="line-clamp-2 text-sm font-medium text-[var(--text-primary)]">
+          <div className="line-clamp-2 text-base font-medium text-[var(--text-primary)]">
             {title}
           </div>
           {variantCount > 1 && (
@@ -4463,8 +4602,8 @@ function AdRow({
           )}
         </div>
         {ad.advertiserName && (
-          <div className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
-            <span className="text-xs text-[var(--text-muted)]">광고주:</span>{" "}
+          <div className="mt-0.5 truncate text-sm text-[var(--text-secondary)]">
+            <span className="text-sm text-[var(--text-muted)]">광고주:</span>{" "}
             <span className="font-medium">{ad.advertiserName}</span>
             {isShellAd(ad) && (
               <span
@@ -4478,7 +4617,7 @@ function AdRow({
             {ad.ytChannel && ad.ytChannel !== ad.advertiserName && (
               <>
                 <span className="mx-1.5 text-[var(--text-muted)]">·</span>
-                <span className="text-xs text-[var(--text-muted)]">채널:</span>{" "}
+                <span className="text-sm text-[var(--text-muted)]">채널:</span>{" "}
                 <span className="text-[var(--text-secondary)]">
                   {ad.ytChannel}
                 </span>
@@ -4488,7 +4627,7 @@ function AdRow({
         )}
         {subtitle && (
           <div
-            className="mt-0.5 line-clamp-3 text-xs italic text-[var(--text-muted)]"
+            className="mt-0.5 line-clamp-3 text-sm italic text-[var(--text-muted)]"
             title={`광고 카피: ${subtitle}`}
           >
             <FileText size={12} strokeWidth={2} aria-hidden className="mr-1 inline align-[-1px] not-italic" />
@@ -4496,21 +4635,21 @@ function AdRow({
           </div>
         )}
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         <div className="flex items-center gap-1.5">
         {variantCount === 1 ? (
           <a
             href={atcLink(ad)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs font-medium text-accent hover:underline"
+            className="text-sm font-medium text-accent hover:underline"
           >
             보기
           </a>
         ) : (
           <details className="group relative">
             <summary
-              className="inline-flex cursor-pointer list-none items-center gap-0.5 whitespace-nowrap text-xs font-medium text-accent hover:underline"
+              className="inline-flex cursor-pointer list-none items-center gap-0.5 whitespace-nowrap text-sm font-medium text-accent hover:underline"
               title={`이 영상이 ${variantCount}개 크리에이티브로 사용 중`}
             >
               {variantCount}개
@@ -4523,7 +4662,7 @@ function AdRow({
                   href={atcLink(s)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block whitespace-nowrap rounded-sm px-2 py-1.5 text-xs text-ink hover:bg-surface-soft"
+                  className="block whitespace-nowrap rounded-sm text-sm text-ink hover:bg-surface-soft"
                 >
                   광고 #{i + 1} ({s.creativeId.slice(2, 10)}...)
                 </a>
@@ -4536,7 +4675,7 @@ function AdRow({
         )}
         </div>
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         {hasYt ? (
           <div className="flex items-center gap-1">
             <a
@@ -4566,11 +4705,11 @@ function AdRow({
           <span className="text-[var(--text-muted)]">-</span>
         )}
       </td>
-      <td className="px-2 py-1.5">
+      <td>
         <TypeBadge ad={ad} />
       </td>
       {/* D+N + 게시일 합쳐서 한 셀. whitespace-nowrap으로 줄바꿈 방지. */}
-      <td className="whitespace-nowrap px-2 py-1.5 text-xs">
+      <td className="whitespace-nowrap text-sm">
         {dN !== null ? (
           <div className="font-semibold text-[var(--text-primary)]">
             D+{dN}
@@ -4583,7 +4722,7 @@ function AdRow({
         </div>
       </td>
       {/* 조회수 — "회" 단위 제거 (헤더에 이미 표시). 큰 숫자는 K/M 축약. */}
-      <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">
+      <td className="whitespace-nowrap text-right tabular-nums">
         {hasYt && ad.ytViews !== null ? (
           <span
             className="font-medium text-[var(--text-primary)]"
@@ -4598,7 +4737,7 @@ function AdRow({
       {/* 성장률 셀 — 분석 기간 내 % 변화(메인) + before→after(보조).
           변화·성장률 중복이라 한 컬럼으로 통합. +300%↑엔 Flame 아이콘. AdStat
           스냅샷 2개+ 있어야 계산 (매일 cron 누적). */}
-      <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums text-xs">
+      <td className="whitespace-nowrap text-right tabular-nums text-sm">
         {change.hasData ? (
           <>
             <div
@@ -4624,7 +4763,7 @@ function AdRow({
               {change.percent > 0 ? "+" : ""}
               {change.percent.toFixed(1)}%
             </div>
-            <div className="mt-0.5 text-xs text-[var(--text-muted)]">
+            <div className="mt-0.5 text-sm text-[var(--text-muted)]">
               {formatCompactNum(change.before)} → {formatCompactNum(change.after)}
             </div>
           </>
@@ -4637,7 +4776,7 @@ function AdRow({
           </span>
         )}
       </td>
-      <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums">
+      <td className="whitespace-nowrap text-right tabular-nums">
         {hasYt && ad.ytViews !== null ? (
           <span
             className={
@@ -4654,9 +4793,9 @@ function AdRow({
         )}
       </td>
       {/* 상태 — classifyAd가 반환하는 분류 배지를 가로로. 최대 3개 표시. */}
-      <td className="px-2 py-1.5">
+      <td>
         {classes.length === 0 ? (
-          <span className="text-xs text-[var(--text-muted)]">—</span>
+          <span className="text-sm text-[var(--text-muted)]">—</span>
         ) : (
           <div className="flex flex-wrap items-center gap-1">
             {classes.slice(0, 3).map((c) => {
@@ -4810,6 +4949,13 @@ function CreativesView({
   const [poolViewBand, setPoolViewBand] = useState("");
   const [poolAgeBand, setPoolAgeBand] = useState("");
   const [poolSearch, setPoolSearch] = useState("");
+  // v2 §10.4 — 보조 필터는 "필터 더보기" 뒤로. 활성 개수를 버튼에 표시.
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const moreFilterCount =
+    (poolViewBand ? 1 : 0) +
+    (poolAgeBand ? 1 : 0) +
+    (poolSearch.trim() ? 1 : 0) +
+    (domainFilter ? 1 : 0);
 
   // Compute classifications and counts up front so we can filter the table
   // and badge each chip with how many ads match.
@@ -4882,13 +5028,13 @@ function CreativesView({
 
   if (pool.length === 0) {
     return (
-      <div className="panel empty text-sm text-muted">
+      <div className="panel empty text-base text-muted">
         <span className="empty-icon mb-3">
           <Clapperboard size={20} strokeWidth={1.75} aria-hidden />
         </span>
         <h3 className="text-base font-semibold text-ink">아직 영상 광고가 하나도 없어요.</h3>
-        <div className="mt-2 text-xs">
-          위 검색창에 도메인이나 브랜드명을 먼저 넣어보세요. (예: 올리브영)
+        <div className="mt-2 text-sm">
+          브랜드 아카이브 검색창에 도메인이나 브랜드명을 먼저 넣어보세요. (예: 올리브영)
         </div>
       </div>
     );
@@ -4902,135 +5048,198 @@ function CreativesView({
             소재 분석 (전체 누적)
           </h2>
         </div>
-        <p className="panel-body text-sm text-muted">
+        <p className="panel-body text-base text-muted">
           지금까지 불러온 <b>모든 도메인의 영상 광고를 한 화면에서</b> 봅니다.
           같은 영상은 한 줄로 묶이고, 며칠에 걸쳐 다시 불러올수록 일별 조회수가
           쌓여서 <b>상승세 · 급등 · 둔화</b>가 자동으로 붙어요. 아래{" "}
-          <b>광고주 필터</b>로 도메인 하나만 보거나, 사이드바{" "}
+          <b>광고주 필터</b>로 도메인 하나만 보거나, 브랜드 목록의{" "}
           <Star size={12} strokeWidth={2} aria-label="별" className="inline align-[-1px]" />로 매일 자동
           갱신되게 할 수 있습니다.
         </p>
       </section>
 
-      {/* 상단 지표 4개 — 레퍼런스 도구 "소재만보기" 스타일. 필터 반영 실시간. */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        {[
-          { label: "광고 캠페인", value: poolStats.campaigns, hint: "같은 영상 재사용 포함" },
-          { label: "고유 영상 (dedup)", value: poolStats.unique, hint: "YouTube 영상 기준" },
-          { label: "조회수 합계", value: poolStats.viewsSum, hint: "고유 영상 합", format: true },
-          { label: "업체 수", value: poolStats.owners, hint: "keyword 기준" },
-        ].map((s) => (
-          <div
-            key={s.label}
-            className="panel p-5"
-          >
-            <div className="text-xs font-medium text-muted">{s.label}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums text-ink">
-              {s.format ? formatCompactNum(s.value) : s.value.toLocaleString()}
+      {/* 상단 지표 4개 — 레퍼런스 도구 "소재만보기" 스타일. 필터 반영 실시간.
+          v2 §10.2/10.6: 값 28px, 개수에 맞춰 한 줄(좁으면 2+2). */}
+      <div className="stat-row">
+        <div className="stat-grid" data-count="4">
+          {[
+            { label: "광고 캠페인", value: poolStats.campaigns, hint: "같은 영상 재사용 포함" },
+            { label: "고유 영상 (dedup)", value: poolStats.unique, hint: "YouTube 영상 기준" },
+            { label: "조회수 합계", value: poolStats.viewsSum, hint: "고유 영상 합", format: true },
+            { label: "업체 수", value: poolStats.owners, hint: "keyword 기준" },
+          ].map((s) => (
+            <div key={s.label} className="panel stat-tile">
+              <div className="stat-label">{s.label}</div>
+              <div className="stat-value">
+                {s.format ? formatCompactNum(s.value) : s.value.toLocaleString()}
+              </div>
+              <div className="stat-hint">{s.hint}</div>
             </div>
-            <div className="mt-1 text-xs text-faint">{s.hint}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 소재풀 필터 행 — 조회수 대역 / 나이 / 캠페인수 정렬 / 검색 */}
-      <div className="flex flex-wrap items-center gap-2">
-        <select
-          value={poolViewBand}
-          onChange={(e) => setPoolViewBand(e.target.value)}
-          aria-label="조회수 대역"
-          className={`h-8 rounded-sm border px-2 text-xs ${
-            poolViewBand
-              ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
-              : "border-line-control bg-surface text-muted"
-          }`}
-        >
-          <option value="">조회수 전체</option>
-          <option value="0:30000">~3만 (테스트)</option>
-          <option value="30000:300000">3만~30만</option>
-          <option value="300000:3000000">30만~300만 (통한 소재)</option>
-          <option value="3000000:20000000">300만~2000만 (대형)</option>
-          <option value="20000000:">2000만+ (전국구)</option>
-        </select>
-        <select
-          value={poolAgeBand}
-          onChange={(e) => setPoolAgeBand(e.target.value)}
-          aria-label="소재 나이"
-          className={`h-8 rounded-sm border px-2 text-xs ${
-            poolAgeBand
-              ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
-              : "border-line-control bg-surface text-muted"
-          }`}
-        >
-          <option value="">나이 전체</option>
-          <option value="old:21">3주+ (살아남은 소재)</option>
-          <option value="old:60">2개월+ (검증된 소재)</option>
-        </select>
-        <button
-          onClick={() => onSort("campaigns")}
-          aria-pressed={sort === "campaigns"}
-          className="chip"
-          title="같은 영상이 몇 개 광고 캠페인에 재사용됐나 — 많을수록 광고주가 돈 들여 검증한 소재"
-        >
-          <Package size={14} strokeWidth={1.75} aria-hidden />
-          캠페인 수 많은순
-          {sort === "campaigns" &&
-            (sortDir === "desc" ? (
-              <ArrowDown size={12} strokeWidth={2} aria-hidden />
-            ) : (
-              <ArrowUp size={12} strokeWidth={2} aria-hidden />
-            ))}
-        </button>
-        <div className="relative ml-auto">
-          <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
-          <input
-            value={poolSearch}
-            onChange={(e) => setPoolSearch(e.target.value)}
-            placeholder="제목 / 업체명 검색..."
-            aria-label="제목 / 업체명 검색"
-            className="field-input min-h-8 w-56 py-1 pl-9 text-sm"
-          />
-        </div>
-      </div>
-
-      {/* Domain filter — opt-in scoping for this tab */}
-      {domains.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-muted">
-            광고주 필터:
-          </span>
-          <button
-            onClick={() => onDomainFilterChange(null)}
-            aria-pressed={domainFilter === null}
-            className="chip tabular-nums"
-          >
-            전체 ({domains.reduce((s, d) => s + d.count, 0)})
-          </button>
-          {domains.map((d) => (
-            <button
-              key={d.keyword}
-              onClick={() =>
-                onDomainFilterChange(domainFilter === d.keyword ? null : d.keyword)
-              }
-              aria-pressed={domainFilter === d.keyword}
-              className="chip"
-            >
-              {d.keyword}{" "}
-              <span className="tabular-nums opacity-80">({d.count})</span>
-            </button>
           ))}
         </div>
-      )}
+      </div>
 
+      {/* ===== 필터 (v2 §10.4) =====
+          1행: 분류(상태) 칩만. 조회수·나이 대역, 제목/업체 검색, 광고주
+          필터는 "필터 더보기" 뒤로 접는다. 활성 개수는 버튼에 표시. */}
+      <section className="panel p-4" aria-label="소재 필터">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-muted">
+            <Tag size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+            분류
+          </span>
+          <button
+            onClick={() => onClassFilterChange("all")}
+            aria-pressed={classFilter === "all"}
+            className="chip"
+          >
+            전체
+          </button>
+          {(
+            [
+              "신규광고",
+              "신규영상",
+              "히어로",
+              "가속도",
+              "스파이크",
+              "피로도",
+            ] as Classification[]
+          ).map((c) => {
+            const meta = CLASSIFICATION_META[c];
+            const active = classFilter === c;
+            const count = classCounts[c];
+            return (
+              <button
+                key={c}
+                onClick={() => onClassFilterChange(active ? "all" : c)}
+                aria-pressed={active}
+                className="chip disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={count === 0}
+                title={count === 0 ? `${meta.label}: 해당 없음` : meta.tip}
+              >
+                <meta.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : meta.text} /> {meta.label}{" "}
+                <span className="tabular-nums opacity-80">{count}</span>
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            onClick={() => setMoreFiltersOpen((open) => !open)}
+            aria-expanded={moreFiltersOpen}
+            aria-controls="creatives-more-filters"
+            className="btn btn-secondary btn-sm ml-auto"
+          >
+            <SlidersHorizontal size={14} strokeWidth={1.75} aria-hidden />
+            필터 더보기
+            {moreFilterCount > 0 && (
+              <span className="badge badge-accent h-5 px-1.5 tabular-nums">
+                {moreFilterCount}
+                <span className="sr-only">개 적용 중</span>
+              </span>
+            )}
+            {moreFiltersOpen ? (
+              <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
+            )}
+          </button>
+        </div>
+        <p className="mt-2 text-sm text-muted">
+          ※ 가속도/스파이크/피로도는 일별 스냅샷이 2개 이상 쌓여야 분류됩니다
+        </p>
+
+        {moreFiltersOpen && (
+          <div
+            id="creatives-more-filters"
+            className="mt-4 space-y-3 border-t border-line pt-4"
+          >
+            {/* 소재풀 필터 행 — 조회수 대역 / 나이 / 검색 */}
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={poolViewBand}
+                onChange={(e) => setPoolViewBand(e.target.value)}
+                aria-label="조회수 대역"
+                className={`h-8 rounded-sm border px-2 text-sm ${
+                  poolViewBand
+                    ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                    : "border-line-control bg-surface text-muted"
+                }`}
+              >
+                <option value="">조회수 전체</option>
+                <option value="0:30000">~3만 (테스트)</option>
+                <option value="30000:300000">3만~30만</option>
+                <option value="300000:3000000">30만~300만 (통한 소재)</option>
+                <option value="3000000:20000000">300만~2000만 (대형)</option>
+                <option value="20000000:">2000만+ (전국구)</option>
+              </select>
+              <select
+                value={poolAgeBand}
+                onChange={(e) => setPoolAgeBand(e.target.value)}
+                aria-label="소재 나이"
+                className={`h-8 rounded-sm border px-2 text-sm ${
+                  poolAgeBand
+                    ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                    : "border-line-control bg-surface text-muted"
+                }`}
+              >
+                <option value="">나이 전체</option>
+                <option value="old:21">3주+ (살아남은 소재)</option>
+                <option value="old:60">2개월+ (검증된 소재)</option>
+              </select>
+              <div className="relative">
+                <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+                <input
+                  value={poolSearch}
+                  onChange={(e) => setPoolSearch(e.target.value)}
+                  placeholder="제목 / 업체명 검색..."
+                  aria-label="제목 / 업체명 검색"
+                  className="field-input w-64 max-w-full py-1 pl-9"
+                />
+              </div>
+            </div>
+
+            {/* Domain filter — opt-in scoping for this tab */}
+            {domains.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium text-muted">
+                  광고주 필터:
+                </span>
+                <button
+                  onClick={() => onDomainFilterChange(null)}
+                  aria-pressed={domainFilter === null}
+                  className="chip tabular-nums"
+                >
+                  전체 ({domains.reduce((s, d) => s + d.count, 0)})
+                </button>
+                {domains.map((d) => (
+                  <button
+                    key={d.keyword}
+                    onClick={() =>
+                      onDomainFilterChange(domainFilter === d.keyword ? null : d.keyword)
+                    }
+                    aria-pressed={domainFilter === d.keyword}
+                    className="chip"
+                  >
+                    {d.keyword}{" "}
+                    <span className="tabular-nums opacity-80">({d.count})</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* 개수 · 정렬 */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm text-muted">
+        <div className="text-base text-muted">
           영상{" "}
           <span className="font-semibold tabular-nums text-ink">
             {filtered.length}
           </span>
           개
           {classFilter !== "all" && (
-            <span className="ml-2 text-xs text-[var(--text-muted)]">
+            <span className="ml-2 text-sm text-faint">
               / 전체 {pool.length}개
             </span>
           )}
@@ -5051,62 +5260,34 @@ function CreativesView({
           <Zap size={14} strokeWidth={1.75} aria-hidden />
           일평균 조회수
         </button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted">
-          분류:
-        </span>
         <button
-          onClick={() => onClassFilterChange("all")}
-          aria-pressed={classFilter === "all"}
+          onClick={() => onSort("campaigns")}
+          aria-pressed={sort === "campaigns"}
           className="chip"
+          title="같은 영상이 몇 개 광고 캠페인에 재사용됐나 — 많을수록 광고주가 돈 들여 검증한 소재"
         >
-          전체
+          <Package size={14} strokeWidth={1.75} aria-hidden />
+          캠페인 수 많은순
+          {sort === "campaigns" &&
+            (sortDir === "desc" ? (
+              <ArrowDown size={12} strokeWidth={2} aria-hidden />
+            ) : (
+              <ArrowUp size={12} strokeWidth={2} aria-hidden />
+            ))}
         </button>
-        {(
-          [
-            "신규광고",
-            "신규영상",
-            "히어로",
-            "가속도",
-            "스파이크",
-            "피로도",
-          ] as Classification[]
-        ).map((c) => {
-          const meta = CLASSIFICATION_META[c];
-          const active = classFilter === c;
-          const count = classCounts[c];
-          return (
-            <button
-              key={c}
-              onClick={() => onClassFilterChange(active ? "all" : c)}
-              aria-pressed={active}
-              className="chip disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={count === 0}
-              title={count === 0 ? `${meta.label}: 해당 없음` : meta.tip}
-            >
-              <meta.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : meta.text} /> {meta.label}{" "}
-              <span className="tabular-nums opacity-80">{count}</span>
-            </button>
-          );
-        })}
-        <span className="ml-2 text-xs text-faint">
-          ※ 가속도/스파이크/피로도는 일별 스냅샷이 2개 이상 쌓여야 분류됩니다
-        </span>
       </div>
 
       <section className="panel">
         <div className="overflow-x-auto" tabIndex={0} aria-label="소재 비교 표">
-          <table className="w-full text-sm">
-            <thead className="border-b border-line bg-surface-soft text-xs text-muted">
+          <table className="data-table min-w-[1120px]">
+            <thead>
               <tr>
-                <th className="px-2 py-2 text-left font-medium">#</th>
-                <th className="px-2 py-2 text-left font-medium">썸네일</th>
-                <th className="px-2 py-2 text-left font-medium">제목</th>
-                <th className="px-2 py-2 text-left font-medium">분류</th>
-                <th className="px-2 py-2 text-left font-medium">광고주</th>
-                <th className="px-2 py-2 text-left font-medium">YT</th>
+                <th className="text-left">#</th>
+                <th className="text-left">썸네일</th>
+                <th className="text-left">제목</th>
+                <th className="text-left">분류</th>
+                <th className="text-left">광고주</th>
+                <th className="text-left">YT</th>
                 <CreativesSortHeader
                   label="게시일"
                   thisKey="date"
@@ -5130,7 +5311,7 @@ function CreativesView({
                   onSort={onSort}
                   align="right"
                 />
-                <th className="px-2 py-2 text-left font-medium">7일 추이</th>
+                <th className="text-left">7일 추이</th>
                 <CreativesSortHeader
                   label="좋아요"
                   thisKey="likes"
@@ -5150,15 +5331,15 @@ function CreativesView({
                     key={ad.id}
                     className="border-t border-line transition-colors hover:bg-surface-soft"
                   >
-                    <td className="px-2 py-1.5 text-xs tabular-nums text-faint">
+                    <td className="text-sm tabular-nums text-faint">
                       {i + 1}
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td>
                       <ThumbnailCell ad={ad} />
                     </td>
-                    <td className="max-w-md px-2 py-1.5">
+                    <td className="max-w-md">
                       <div className="flex items-start gap-1.5">
-                        <div className="line-clamp-2 text-sm font-medium text-[var(--text-primary)]">
+                        <div className="line-clamp-2 text-base font-medium text-[var(--text-primary)]">
                           {ad.ytTitle ?? "(제목 없음)"}
                         </div>
                         {g.count > 1 && (
@@ -5170,7 +5351,7 @@ function CreativesView({
                       </div>
                       {(ad.adHeadline || ad.adDescription) && (
                         <div
-                          className="mt-0.5 line-clamp-1 text-xs italic text-[var(--text-muted)]"
+                          className="mt-0.5 line-clamp-1 text-sm italic text-[var(--text-muted)]"
                           title={
                             "광고 카피: " +
                             [ad.adHeadline, ad.adDescription]
@@ -5185,10 +5366,10 @@ function CreativesView({
                         </div>
                       )}
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td>
                       <div className="flex flex-wrap gap-1">
                         {g.classes.length === 0 ? (
-                          <span className="text-xs text-[var(--text-muted)]">
+                          <span className="text-sm text-[var(--text-muted)]">
                             -
                           </span>
                         ) : (
@@ -5206,22 +5387,22 @@ function CreativesView({
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-1.5 text-xs">
+                    <td className="text-sm">
                       <div className="font-medium text-[var(--text-primary)]">
                         {ad.advertiserName || "-"}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-1 text-xs text-faint">
+                      <div className="mt-0.5 flex items-center gap-1 text-sm text-faint">
                         <Globe size={12} strokeWidth={2} aria-hidden className="shrink-0" />
                         {ad.keyword}
                       </div>
                       {ad.ytChannel && ad.ytChannel !== ad.advertiserName && (
-                        <div className="flex items-center gap-1 text-xs text-muted">
+                        <div className="flex items-center gap-1 text-sm text-muted">
                           <Tv size={12} strokeWidth={2} aria-hidden className="shrink-0" />
                           {ad.ytChannel}
                         </div>
                       )}
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td>
                       <a
                         href={ytLink(ad.youtubeId!)}
                         target="_blank"
@@ -5233,10 +5414,10 @@ function CreativesView({
                         <Clapperboard size={14} strokeWidth={1.75} aria-hidden />
                       </a>
                     </td>
-                    <td className="px-2 py-1.5 text-xs text-[var(--text-secondary)]">
+                    <td className="whitespace-nowrap text-sm text-[var(--text-secondary)]">
                       {ad.ytPublishedAt ?? "-"}
                     </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap text-right tabular-nums">
                       <span
                         className={
                           sort === "views"
@@ -5247,7 +5428,7 @@ function CreativesView({
                         {(ad.ytViews ?? 0).toLocaleString()}회
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums">
+                    <td className="whitespace-nowrap text-right tabular-nums">
                       <span
                         className={
                           sort === "daily"
@@ -5258,10 +5439,10 @@ function CreativesView({
                         {dpd.toLocaleString()}회
                       </span>
                     </td>
-                    <td className="px-2 py-1.5">
+                    <td>
                       <Sparkline stats={ad.stats ?? []} />
                     </td>
-                    <td className="px-2 py-1.5 text-right tabular-nums text-[var(--text-secondary)]">
+                    <td className="whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]">
                       {(ad.ytLikes ?? 0).toLocaleString()}
                     </td>
                   </tr>
@@ -5294,9 +5475,7 @@ function CreativesSortHeader({
   return (
     <th
       aria-sort={active ? (sortDir === "desc" ? "descending" : "ascending") : undefined}
-      className={`px-2 py-2 ${
-        align === "right" ? "text-right" : "text-left"
-      } font-medium`}
+      className={align === "right" ? "text-right" : "text-left"}
     >
       <button
         onClick={() => onSort(thisKey)}
@@ -5327,12 +5506,12 @@ function CreativesSortHeader({
  */
 function Sparkline({ stats }: { stats: AdStat[] }) {
   if (stats.length === 0) {
-    return <span className="text-xs text-[var(--text-muted)]">-</span>;
+    return <span className="text-sm text-[var(--text-muted)]">-</span>;
   }
   if (stats.length === 1) {
     return (
       <span
-        className="text-xs text-[var(--text-muted)]"
+        className="text-sm text-[var(--text-muted)]"
         title="데이터 1개. 매일 검색하면 추세선이 그려져요."
       >
         스냅샷 1개
@@ -5376,7 +5555,7 @@ function Sparkline({ stats }: { stats: AdStat[] }) {
         />
       </svg>
       <span
-        className={`text-xs tabular-nums ${
+        className={`text-sm tabular-nums ${
           lastDelta > 0
             ? "text-success"
             : lastDelta < 0
@@ -5405,14 +5584,14 @@ function VideosTable({
   return (
     <section className="panel">
       <div className="overflow-x-auto" tabIndex={0} aria-label="YouTube 영상 표">
-        <table className="w-full text-sm">
-          <thead className="border-b border-line bg-surface-soft text-xs text-muted">
+        <table className="data-table min-w-[900px]">
+          <thead>
             <tr>
-              <th className="px-2 py-2 text-left font-medium">#</th>
-              <th className="px-2 py-2 text-left font-medium">제목</th>
-              <th className="px-2 py-2 text-left font-medium">채널</th>
-              <th className="px-2 py-2 text-left font-medium">키워드</th>
-              <th className="px-2 py-2 text-left font-medium">유형</th>
+              <th className="text-left">#</th>
+              <th className="text-left">제목</th>
+              <th className="text-left">채널</th>
+              <th className="text-left">키워드</th>
+              <th className="text-left">유형</th>
               <SortHeader
                 label="게시일"
                 sortKey={sortKey}
@@ -5451,7 +5630,7 @@ function VideosTable({
               <tr>
                 <td
                   colSpan={9}
-                  className="px-3 py-12 text-center text-sm text-[var(--text-muted)]"
+                  className="px-3 py-12 text-center text-base text-[var(--text-muted)]"
                 >
                   YouTube 검색 결과가 없습니다.
                 </td>
@@ -5462,8 +5641,8 @@ function VideosTable({
                   key={v.id}
                   className="border-t border-[var(--border)] hover:bg-[var(--bg-elev)]"
                 >
-                  <td className="px-2 py-1.5 text-[var(--text-muted)]">{i + 1}</td>
-                  <td className="max-w-md px-2 py-1.5">
+                  <td className="text-[var(--text-muted)]">{i + 1}</td>
+                  <td className="max-w-md">
                     <div className="flex items-start gap-2">
                       {v.thumbnail && (
                         <img
@@ -5483,13 +5662,13 @@ function VideosTable({
                       </a>
                     </div>
                   </td>
-                  <td className="px-2 py-1.5 text-[var(--text-secondary)]">
+                  <td className="text-[var(--text-secondary)]">
                     {v.channel}
                   </td>
-                  <td className="px-2 py-1.5 text-xs text-[var(--text-muted)]">
+                  <td className="text-sm text-[var(--text-muted)]">
                     {v.keyword}
                   </td>
-                  <td className="px-2 py-1.5">
+                  <td>
                     <span
                       className={
                         v.type === "쇼츠"
@@ -5500,16 +5679,16 @@ function VideosTable({
                       {v.type}
                     </span>
                   </td>
-                  <td className="px-2 py-1.5 text-[var(--text-secondary)]">
+                  <td className="whitespace-nowrap text-[var(--text-secondary)]">
                     {v.publishedAt}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="whitespace-nowrap text-right tabular-nums">
                     {v.views.toLocaleString()}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="whitespace-nowrap text-right tabular-nums">
                     {v.likes.toLocaleString()}
                   </td>
-                  <td className="px-2 py-1.5 text-right tabular-nums">
+                  <td className="whitespace-nowrap text-right tabular-nums">
                     {v.comments.toLocaleString()}
                   </td>
                 </tr>

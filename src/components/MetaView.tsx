@@ -441,7 +441,7 @@ export default function MetaView({
           </h2>
         </div>
         <div className="panel-body">
-        <p className="mb-4 max-w-[var(--prose-max)] text-sm text-muted">
+        <p className="mb-4 max-w-[var(--prose-max)] text-base text-muted">
           <b className="font-semibold text-ink">메타</b>는 한 번 훑는 데 트래픽이 약{" "}
           <b className="font-semibold text-ink">200MB</b> 듭니다 — 프록시를 쓰신다면
           그만큼 깎이니 검색 전에 한 번 물어봅니다. 입력: <b>brand 도메인</b> (예: example.co.kr) ·
@@ -496,7 +496,7 @@ export default function MetaView({
             {enqueuing ? "수집 중..." : "메타 수집"}
           </button>
         </div>
-        <div className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+        <div className="mt-2 flex items-start gap-1.5 text-sm text-muted">
           <Lightbulb size={14} strokeWidth={1.75} aria-hidden className="mt-0.5 shrink-0 text-faint" />
           <span>
             숫자만 (10자리+) 입력 → page_id 모드 (광고주 entity 직접 조회 ·
@@ -544,7 +544,7 @@ export default function MetaView({
                         : currentJob.keyword}
                     </span>
                     {currentJob.adCount > 0 && (
-                      <span className="shrink-0 text-xs text-[var(--text-muted)]">
+                      <span className="shrink-0 text-sm text-[var(--text-muted)]">
                         광고 {currentJob.adCount}·페이지 {currentJob.pageCount}
                       </span>
                     )}
@@ -592,13 +592,13 @@ export default function MetaView({
                       {enqueuing ? "..." : "수집"}
                     </button>
                   </div>
-                  <div className="mt-1 text-xs text-[var(--text-muted)]">
+                  <div className="mt-1 text-sm text-[var(--text-muted)]">
                     숫자만 입력 → page_id 모드 · 그 외 → 브랜드 search 모드
                   </div>
                 </div>
 
                 {jobs.length === 0 ? (
-                  <div className="p-4 text-center text-xs text-[var(--text-muted)]">
+                  <div className="p-4 text-center text-sm text-[var(--text-muted)]">
                     아직 수집 기록 없음
                   </div>
                 ) : (
@@ -613,7 +613,7 @@ export default function MetaView({
                             setCurrentId(`anchor:${g.anchor}`);
                             setPickerOpen(false);
                           }}
-                          className={`flex min-h-9 cursor-pointer items-center gap-2 border-b border-line px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          className={`flex min-h-9 cursor-pointer items-center gap-2 border-b border-line px-3 py-1.5 text-sm font-semibold transition-colors ${
                             currentId === `anchor:${g.anchor}`
                               ? "bg-accent-soft text-accent-ink"
                               : "bg-surface-soft text-muted hover:text-ink"
@@ -638,7 +638,7 @@ export default function MetaView({
                           return (
                             <div
                               key={j.id}
-                              className={`group flex min-h-10 cursor-pointer items-center gap-2 border-b border-line px-3 py-2 text-xs transition-colors ${
+                              className={`group flex min-h-10 cursor-pointer items-center gap-2 border-b border-line px-3 py-2 text-sm transition-colors ${
                                 j.id === currentId ? "bg-accent-soft" : "hover:bg-surface-soft"
                               }`}
                               onClick={() => {
@@ -734,12 +734,12 @@ export default function MetaView({
             <span className="empty-icon mb-3">
               <Megaphone size={20} strokeWidth={1.75} aria-hidden />
             </span>
-            <div className="text-sm text-[var(--text-muted)]">
+            <div className="text-base text-[var(--text-muted)]">
               위 셀렉터에서 브랜드를 고르거나,
               <br />
               새 brand 키워드를 입력해 수집을 시작하세요.
             </div>
-            <div className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-[var(--text-muted)]">
+            <div className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-[var(--text-muted)]">
               검색어 모드: brand → search_terms + page_id 발굴 + 페이지 단위 재수집
               <br />
               page_id 모드: 숫자만 → 광고주 entity 직접 조회
@@ -1032,7 +1032,7 @@ function DetailPane({
             통합 보기 · {detail.childKeywords?.length ?? 0}개 키워드
           </span>
         )}
-        <span className="ml-auto font-mono text-xs text-[var(--text-muted)]">
+        <span className="ml-auto font-mono text-sm text-[var(--text-muted)]">
           region={detail.region}
         </span>
       </div>
@@ -1043,7 +1043,7 @@ function DetailPane({
       {detail.isAggregate &&
         (detail.childWatches?.length ?? 0) > 0 && (
           <div className="mt-3 rounded-panel border border-line bg-surface-soft p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
               <span className="inline-flex items-center gap-1">
                 <Link2 size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
                 통합한 키워드 ({detail.childWatches!.length}개) — 광고{" "}
@@ -1135,7 +1135,7 @@ function DetailPane({
               {detail.childWatches!.map((c) => (
                 <div
                   key={c.keyword}
-                  className="flex items-center justify-between gap-2 rounded-sm border border-line bg-surface px-2 py-1.5 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-sm border border-line bg-surface px-2 py-1.5 text-sm"
                 >
                   <span className="flex min-w-0 items-center gap-1">
                     {c.source === "auto" && (
@@ -1175,7 +1175,7 @@ function DetailPane({
       {detail.isAggregate &&
         (detail.atcBrandSummary?.totalVideos ?? 0) > 0 && (
           <div className="mt-3 rounded-panel border border-line bg-surface-soft p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-ink">
               <span className="inline-flex items-center gap-1">
                 <Play size={12} strokeWidth={2} aria-hidden className="text-faint" />
                 ATC YouTube 광고 ({detail.atcBrandSummary!.totalVideos}개)
@@ -1183,7 +1183,7 @@ function DetailPane({
               <span className="text-[var(--text-muted)]">
                 · 누적 조회 {fmtViews(detail.atcBrandSummary!.totalViews)}
               </span>
-              <span className="ml-auto text-xs font-normal text-[var(--text-muted)]">
+              <span className="ml-auto text-sm font-normal text-[var(--text-muted)]">
                 같은 브랜드의 구글 광고 영상 (advertiserName 매칭)
               </span>
             </div>
@@ -1198,7 +1198,7 @@ function DetailPane({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-sm border border-line bg-surface p-2 text-xs transition-colors hover:border-line-strong"
+                  className="rounded-sm border border-line bg-surface p-2 text-sm transition-colors hover:border-line-strong"
                   title={`${v.title}\n${v.channel}\n${fmtViews(v.views)}회`}
                 >
                   <div className="flex items-center justify-between">
@@ -1238,7 +1238,7 @@ function DetailPane({
               count={pages.length}
             />
           </div>
-          <div className="ml-auto flex flex-wrap items-center gap-1.5 pb-1.5 text-xs">
+          <div className="ml-auto flex flex-wrap items-center gap-1.5 pb-1.5 text-sm">
             {/* A-tier filter pills — counts come from the live brand-
                 filtered set so the user sees how many heroes survive
                 their other toggles. */}
@@ -1271,7 +1271,7 @@ function DetailPane({
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="h-8 rounded-sm border border-line-control bg-surface px-2 text-xs font-medium text-muted transition-colors hover:border-muted"
+              className="h-8 rounded-sm border border-line-control bg-surface px-2 text-sm font-medium text-muted transition-colors hover:border-muted"
               title="정렬 기준"
               aria-label="정렬 기준"
             >
@@ -1399,18 +1399,18 @@ function DetailPane({
           <CircleX size={16} strokeWidth={1.75} aria-hidden />
           <div className="min-w-0">
             <div className="font-semibold">실패</div>
-            <div className="mt-1 break-words text-xs">{detail.errorMsg}</div>
+            <div className="mt-1 break-words text-sm">{detail.errorMsg}</div>
           </div>
         </div>
       )}
 
       {detail.logs.length > 0 && (
         <details className="group/logs mt-3">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
             <ChevronRight size={14} strokeWidth={1.75} aria-hidden className="transition-transform group-open/logs:rotate-90" />
             logs ({detail.logs.length})
           </summary>
-          <div className="mt-1 max-h-40 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-xs leading-snug text-[var(--text-secondary)]">
+          <div className="mt-1 max-h-40 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-sm leading-snug text-[var(--text-secondary)]">
             {detail.logs.slice(-30).map((l, i) => (
               <div key={i}>{l}</div>
             ))}
@@ -1451,7 +1451,7 @@ function DetailPane({
         tab === "ads" &&
         filteredAds.length === 0 &&
         totalAds > 0 && (
-          <div className="empty my-6 rounded-panel border border-dashed border-line-strong text-sm text-muted">
+          <div className="empty my-6 rounded-panel border border-dashed border-line-strong text-base text-muted">
             필터로 모든 광고가 제외됨 — 토글을 풀어보세요.
           </div>
         )}
@@ -1526,23 +1526,23 @@ function AdTable({
 }) {
   return (
     <div className="mt-3 overflow-x-auto rounded-panel border border-line" tabIndex={0} aria-label="메타 광고 표">
-      <table className="w-full min-w-[1000px] border-collapse text-xs">
+      <table className="w-full min-w-[1120px] border-collapse text-base leading-normal">
         <thead className="border-b border-line bg-surface-soft text-xs font-medium text-muted">
           <tr>
-            <th className="w-10 px-2 py-2 text-left">#</th>
-            <th className="w-14 px-2 py-2 text-center" title="A급 점수 (게재기간+변형+active+구글매칭)">
+            <th className="w-10 h-10 px-3 text-left">#</th>
+            <th className="w-14 h-10 px-3 text-center" title="A급 점수 (게재기간+변형+active+구글매칭)">
               등급
             </th>
-            <th className="w-[88px] px-2 py-2 text-left">썸네일</th>
-            <th className="px-2 py-2 text-left">제목 / 페이지 / 본문</th>
-            <th className="w-24 px-2 py-2 text-center">광고</th>
-            <th className="w-20 px-2 py-2 text-center">유형</th>
-            <th className="w-28 px-2 py-2 text-center">플랫폼</th>
-            <th className="w-24 px-2 py-2 text-center" title="시작일 → 종료일까지의 게재 기간">
+            <th className="w-[88px] h-10 px-3 text-left">썸네일</th>
+            <th className="h-10 px-3 text-left">제목 / 페이지 / 본문</th>
+            <th className="w-24 h-10 px-3 text-center">광고</th>
+            <th className="w-20 h-10 px-3 text-center">유형</th>
+            <th className="w-28 h-10 px-3 text-center">플랫폼</th>
+            <th className="w-24 h-10 px-3 text-center" title="시작일 → 종료일까지의 게재 기간">
               게시일 / 일수
             </th>
             <th
-              className="w-20 px-2 py-2 text-center"
+              className="w-20 px-3 py-2.5 text-center"
               title='Meta가 직접 표시하는 "광고 N개에서 이 크리에이티브 사용" 카운트. 브랜드가 위너를 굴리고 있다는 가장 강한 신호.'
             >
               <span className="inline-flex items-center gap-1">
@@ -1550,8 +1550,8 @@ function AdTable({
                 변형 (Meta)
               </span>
             </th>
-            <th className="w-32 px-2 py-2 text-left">LP / UTM</th>
-            <th className="w-12 px-2 py-2 text-center">상태</th>
+            <th className="w-32 h-10 px-3 text-left">LP / UTM</th>
+            <th className="w-12 h-10 px-3 text-center">상태</th>
           </tr>
         </thead>
         <tbody>
@@ -1567,16 +1567,16 @@ function AdTable({
             return (
               <tr
                 key={ad.adArchiveId}
-                className={`border-t border-line align-top transition-colors ${
+                className={`h-11 border-t border-line align-top transition-colors ${
                   susp || off ? "bg-danger-soft" : "hover:bg-surface-soft"
                 }`}
               >
-                <td className="px-2 py-2 text-xs tabular-nums text-faint">
+                <td className="px-3 py-2.5 text-sm tabular-nums text-faint">
                   {i + 1}
                 </td>
                 {/* Tier badge — A/B/C derived from composite score.
                     Hover for the breakdown that drove this rank. */}
-                <td className="px-2 py-2 text-center">
+                <td className="px-3 py-2.5 text-center">
                   <span
                     className={
                       tier === "A"
@@ -1594,7 +1594,7 @@ function AdTable({
                     {tier === "A" && <Trophy size={12} strokeWidth={2} aria-hidden />}
                     {tier}
                   </span>
-                  <div className="mt-0.5 text-xs tabular-nums text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-sm tabular-nums text-[var(--text-muted)]">
                     {sc.score.toFixed(1)}
                   </div>
                 </td>
@@ -1617,7 +1617,7 @@ function AdTable({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]">
+                      <div className="flex h-full w-full items-center justify-center text-sm text-[var(--text-muted)]">
                         —
                       </div>
                     )}
@@ -1633,13 +1633,13 @@ function AdTable({
                 <td className="px-2 py-2">
                   {title && (
                     <div
-                      className="line-clamp-1 text-xs font-semibold text-[var(--text-primary)]"
+                      className="line-clamp-1 text-sm font-semibold text-[var(--text-primary)]"
                       title={title}
                     >
                       {title}
                     </div>
                   )}
-                  <div className="mt-0.5 text-xs text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-sm text-[var(--text-muted)]">
                     <span>광고주: </span>
                     <a
                       href={
@@ -1684,7 +1684,7 @@ function AdTable({
                       Both directly drive the A-tier score so seeing them
                       next to the body text makes the rank legible. */}
                   {(sc.variants > 1 || (ad.ytTopViews ?? 0) > 0) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-sm">
                       {sc.variants > 1 && (
                         <span
                           className={
@@ -1755,7 +1755,7 @@ function AdTable({
                   )}
                   {body && (
                     <div
-                      className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--text-secondary)]"
+                      className="mt-1 line-clamp-2 text-sm leading-snug text-[var(--text-secondary)]"
                       title={body}
                     >
                       <FileText size={12} strokeWidth={2} aria-hidden className="mr-1 inline align-[-1px] text-faint" />
@@ -1764,7 +1764,7 @@ function AdTable({
                   )}
                 </td>
                 {/* Library link button */}
-                <td className="px-2 py-2 text-center">
+                <td className="px-3 py-2.5 text-center">
                   <a
                     href={metaLibraryLink(ad.adArchiveId)}
                     target="_blank"
@@ -1776,7 +1776,7 @@ function AdTable({
                   </a>
                 </td>
                 {/* Type tag */}
-                <td className="px-2 py-2 text-center">
+                <td className="px-3 py-2.5 text-center">
                   {ad.mediaType ? (
                     <span className="badge badge-neutral">
                       {ad.mediaType === "video" ? (
@@ -1791,7 +1791,7 @@ function AdTable({
                   )}
                 </td>
                 {/* Platforms */}
-                <td className="px-2 py-2 text-center">
+                <td className="px-3 py-2.5 text-center">
                   <div className="flex flex-wrap items-center justify-center gap-0.5">
                     {ad.publisherPlatforms.length > 0 ? (
                       ad.publisherPlatforms
@@ -1801,17 +1801,17 @@ function AdTable({
                       <span className="text-[var(--text-muted)]">—</span>
                     )}
                     {ad.publisherPlatforms.length > 3 && (
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-sm text-[var(--text-muted)]">
                         +{ad.publisherPlatforms.length - 3}
                       </span>
                     )}
                   </div>
                 </td>
                 {/* Start date + computed run length (key A-tier signal) */}
-                <td className="whitespace-nowrap px-2 py-2 text-center text-xs tabular-nums text-[var(--text-secondary)]">
+                <td className="whitespace-nowrap px-3 py-2.5 text-center text-sm tabular-nums text-[var(--text-secondary)]">
                   {start ?? "—"}
                   <div
-                    className={`mt-0.5 text-xs font-semibold ${
+                    className={`mt-0.5 text-sm font-semibold ${
                       sc.days >= 30
                         ? "text-success"
                         : sc.days >= 14
@@ -1831,7 +1831,7 @@ function AdTable({
                 {/* Variant count — Meta's exact figure when enriched,
                     falls back to body-hash heuristic. Source pill makes
                     confidence legible. */}
-                <td className="px-2 py-2 text-center text-xs">
+                <td className="px-3 py-2.5 text-center text-sm">
                   {ad.librarySignalsFetchedAt == null ? (
                     <div
                       className="flex flex-col items-center gap-0.5"
@@ -1847,7 +1847,7 @@ function AdTable({
                         <Repeat size={12} strokeWidth={2} aria-hidden />
                         {sc.variants}
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-sm text-[var(--text-muted)]">
                         추정
                       </span>
                     </div>
@@ -1880,7 +1880,7 @@ function AdTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={ad.lpUrl ?? undefined}
-                      className="block truncate font-mono text-xs text-accent hover:underline"
+                      className="block truncate font-mono text-sm text-accent hover:underline"
                     >
                       {ad.lpDomain}
                     </a>
@@ -1889,7 +1889,7 @@ function AdTable({
                   )}
                   {ad.utmCampaign && (
                     <div
-                      className="mt-0.5 truncate font-mono text-xs text-muted"
+                      className="mt-0.5 truncate font-mono text-sm text-muted"
                       title={ad.utmCampaign}
                     >
                       {ad.utmCampaign}
@@ -1897,7 +1897,7 @@ function AdTable({
                   )}
                 </td>
                 {/* Active status pill */}
-                <td className="px-2 py-2 text-center">
+                <td className="px-3 py-2.5 text-center">
                   <span
                     className={`inline-flex items-center justify-center ${
                       isActive ? "text-success" : "text-faint"
@@ -1981,14 +1981,14 @@ function AdCard({
             target="_blank"
             rel="noopener noreferrer"
             className={`block truncate font-semibold text-[var(--text-primary)] hover:text-accent-ink hover:underline ${
-              compact ? "text-xs" : "text-xs"
+              compact ? "text-sm" : "text-base"
             }`}
             title={ad.pageName || "(no page name)"}
           >
             {ad.pageName || "(no page name)"}
           </a>
           {!compact && (
-            <div className="text-xs text-[var(--text-muted)]">광고</div>
+            <div className="text-sm text-[var(--text-muted)]">광고</div>
           )}
         </div>
         {!compact && (
@@ -2014,7 +2014,7 @@ function AdCard({
       {/* Status / library id row — hidden in compact mode (info still in
           tooltips + footer) to save vertical space */}
       {!compact && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 text-xs text-[var(--text-muted)]">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-muted)]">
           <span className={isActive ? "badge badge-success" : "badge badge-neutral"}>
             <span aria-hidden className="status-dot" />
             {isActive ? "게재중" : "종료"}
@@ -2031,7 +2031,7 @@ function AdCard({
 
       {/* Body text — only in comfy mode */}
       {!compact && body && (
-        <div className="px-3 py-2 text-xs leading-snug">
+        <div className="px-3 py-2 text-sm leading-snug">
           <div className="line-clamp-4 whitespace-pre-line">{body}</div>
         </div>
       )}
@@ -2053,7 +2053,7 @@ function AdCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]">
+          <div className="flex h-full w-full items-center justify-center text-sm text-[var(--text-muted)]">
             (no preview)
           </div>
         )}
@@ -2105,7 +2105,7 @@ function AdCard({
 
       {/* LP domain footer + Library link */}
       <div
-        className={`flex flex-col gap-1 border-t border-[var(--border)] text-xs ${
+        className={`flex flex-col gap-1 border-t border-[var(--border)] text-sm ${
           compact ? "px-2 py-1.5" : "px-3 py-2 gap-1.5"
         }`}
       >
@@ -2136,7 +2136,7 @@ function AdCard({
           </a>
         </div>
         {!compact && ad.utmCampaign && (
-          <div className="truncate font-mono text-xs">
+          <div className="truncate font-mono text-sm">
             <span className="rounded-xs bg-surface-soft px-1 py-0.5 text-muted">
               {ad.utmCampaign}
             </span>
@@ -2212,7 +2212,7 @@ function PageCard({
           >
             {group.pageName}
           </a>
-          <div className="text-xs text-[var(--text-muted)]">
+          <div className="text-sm text-[var(--text-muted)]">
             {group.pageId && (
               <span className="font-mono">{group.pageId}</span>
             )}
@@ -2220,10 +2220,10 @@ function PageCard({
         </div>
         <div className="shrink-0 text-right">
           <div className="text-base font-semibold tabular-nums">{group.ads.length}</div>
-          <div className="text-xs text-[var(--text-muted)]">광고</div>
+          <div className="text-sm text-[var(--text-muted)]">광고</div>
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-sm">
         {isSuspicious && (
           <span
             className="badge badge-danger"
@@ -2369,7 +2369,7 @@ function MetaLiveProgress({
             지금까지 {adCount}개 잡힘
           </span>
         )}
-        <span className="ml-auto text-xs tabular-nums text-accent-ink">
+        <span className="ml-auto text-sm tabular-nums text-accent-ink">
           {percent}%
         </span>
       </div>
@@ -2383,7 +2383,7 @@ function MetaLiveProgress({
       </div>
 
       {/* Stage chips */}
-      <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5 text-sm">
         {stages.map((s, i) => {
           const isActive = i === activeIdx;
           const isDone = i < activeIdx;
@@ -2419,7 +2419,7 @@ function MetaLiveProgress({
       {logs.length > 0 && (
         <div
           ref={scrollRef}
-          className="max-h-32 overflow-y-auto rounded-sm border border-line bg-surface p-2 font-mono text-xs leading-relaxed text-[var(--text-secondary)]"
+          className="max-h-32 overflow-y-auto rounded-sm border border-line bg-surface p-2 font-mono text-sm leading-relaxed text-[var(--text-secondary)]"
         >
           {logs.slice(-12).map((l, i) => {
             const isImportant =
@@ -2440,7 +2440,7 @@ function MetaLiveProgress({
         </div>
       )}
       {logs.length === 0 && status !== "queued" && (
-        <div className="text-center text-xs text-[var(--text-muted)]">
+        <div className="text-center text-sm text-[var(--text-muted)]">
           워커 시작 중... 첫 로그 곧 표시됨
         </div>
       )}

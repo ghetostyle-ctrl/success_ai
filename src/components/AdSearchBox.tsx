@@ -20,6 +20,8 @@ type Props = {
   onSearch: () => void;
   buttonLabel: string;
   disabled: boolean;
+  /** 헤더 "브랜드 검색" 버튼이 포커스를 옮길 때 쓰는 입력칸 id. */
+  inputId?: string;
 };
 
 function adCountLabel(advertiser: AdvertiserSuggestion): string {
@@ -34,6 +36,7 @@ export function AdSearchBox({
   onSearch,
   buttonLabel,
   disabled,
+  inputId,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
@@ -97,6 +100,7 @@ export function AdSearchBox({
         className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
       />
       <input
+        id={inputId}
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
         onFocus={() => setOpen(true)}
@@ -127,19 +131,19 @@ export function AdSearchBox({
 
       {showSuggestions && (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-panel border border-line bg-surface p-2 text-sm shadow-popover"
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-panel border border-line bg-surface p-2 text-base shadow-popover"
           role="group"
           aria-label="구글 광고 투명성 센터 관련 검색어"
         >
           {!current ? (
-            <p className="flex items-center gap-2 px-3 py-3 text-xs text-faint" role="status">
+            <p className="flex items-center gap-2 px-3 py-3 text-sm text-faint" role="status">
               <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin" />
               관련 검색어를 찾는 중…
             </p>
           ) : current.error ? (
-            <p className="px-3 py-3 text-xs text-[var(--text-muted)]">{current.error}</p>
+            <p className="px-3 py-3 text-sm text-[var(--text-muted)]">{current.error}</p>
           ) : advertisers.length === 0 && current.domains.length === 0 ? (
-            <p className="px-3 py-3 text-xs text-[var(--text-muted)]">관련 검색어가 없습니다. 직접 불러오기를 눌러 검색할 수 있습니다.</p>
+            <p className="px-3 py-3 text-sm text-[var(--text-muted)]">관련 검색어가 없습니다. 직접 불러오기를 눌러 검색할 수 있습니다.</p>
           ) : (
             <>
               {advertisers.length > 0 && (
@@ -152,7 +156,7 @@ export function AdSearchBox({
                       key={advertiser.advertiserId}
                       type="button"
                       onClick={() => choose(advertiser.name)}
-                      className="grid min-h-10 w-full grid-cols-[minmax(0,1fr)_5rem_7rem] items-center gap-2 rounded-sm px-1 py-2 text-left text-xs text-ink transition-colors hover:bg-surface-soft"
+                      className="grid min-h-10 w-full grid-cols-[minmax(0,1fr)_5rem_7rem] items-center gap-2 rounded-sm px-1 py-2 text-left text-sm text-ink transition-colors hover:bg-surface-soft"
                     >
                       <span className="min-w-0 break-words font-medium">{advertiser.name}</span>
                       <span className="text-[var(--text-secondary)]">{advertiser.region === "KR" ? "대한민국" : advertiser.region}</span>
@@ -163,13 +167,13 @@ export function AdSearchBox({
               )}
               {current.domains.length > 0 && (
                 <div className="border-t border-[var(--border)] px-3 pb-1 pt-2">
-                  <div className="pb-1 text-xs text-[var(--text-muted)]">웹사이트</div>
+                  <div className="pb-1 text-sm text-[var(--text-muted)]">웹사이트</div>
                   {current.domains.map((domain) => (
                     <button
                       key={domain.domain}
                       type="button"
                       onClick={() => choose(domain.domain)}
-                      className="block min-h-10 w-full rounded-sm px-1 py-2 text-left text-xs text-ink transition-colors hover:bg-surface-soft"
+                      className="block min-h-10 w-full rounded-sm px-1 py-2 text-left text-sm text-ink transition-colors hover:bg-surface-soft"
                     >
                       {domain.domain}
                     </button>

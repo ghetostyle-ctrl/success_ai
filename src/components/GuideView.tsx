@@ -55,7 +55,7 @@ function Section({
           {title}
         </h2>
       </div>
-      <div className="panel-body space-y-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+      <div className="panel-body space-y-3 text-base leading-relaxed text-[var(--text-secondary)]">
         {children}
       </div>
     </section>
@@ -82,10 +82,10 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
         {n}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-semibold text-[var(--text-primary)]">
+        <div className="text-base font-semibold text-[var(--text-primary)]">
           {title}
         </div>
-        <div className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <div className="mt-1 text-base leading-relaxed text-[var(--text-secondary)]">
           {children}
         </div>
       </div>
@@ -95,7 +95,7 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded-xs bg-[var(--bg-elev)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)]">
+    <code className="rounded-xs bg-[var(--bg-elev)] px-1.5 py-0.5 font-mono text-sm text-[var(--text-primary)]">
       {children}
     </code>
   );
@@ -110,7 +110,7 @@ function Faq({ q, children }: { q: React.ReactNode; children: React.ReactNode })
         aria-expanded={open}
         className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-left"
       >
-        <span className="text-sm font-semibold text-[var(--text-primary)]">
+        <span className="text-base font-semibold text-[var(--text-primary)]">
           {q}
         </span>
         <ChevronDown
@@ -121,7 +121,7 @@ function Faq({ q, children }: { q: React.ReactNode; children: React.ReactNode })
         />
       </button>
       {open && (
-        <div className="pb-3 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <div className="pb-3 text-base leading-relaxed text-[var(--text-secondary)]">
           {children}
         </div>
       )}
@@ -171,7 +171,7 @@ export default function GuideView({
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="panel panel-body">
         <h2 className="text-xl font-semibold tracking-[-0.02em] text-ink">Success AI 사용법</h2>
-        <p className="mt-1.5 max-w-[var(--prose-max)] text-sm leading-relaxed text-muted">
+        <p className="mt-1.5 max-w-[var(--prose-max)] text-base leading-relaxed text-muted">
           경쟁 브랜드가 지금 어떤 광고를 돌리고 있는지 한 화면에서 봅니다.
           구글과 메타가 <b>법적으로 공개하게 돼 있는</b> 광고 데이터만
           읽습니다. 수집한 내용은 내 PC 파일에 저장되고 어디로도 보내지
@@ -182,10 +182,10 @@ export default function GuideView({
       <Section id="quickstart" title="3분 만에 시작하기" icon={Zap}>
         <div className="space-y-4">
           <Step n={1} title="브랜드 불러오기">
-            맨 위 검색창에 <b>브랜드명</b>(<Code>올리브영</Code>) 또는{" "}
+            브랜드 아카이브 검색창에 <b>브랜드명</b>(<Code>올리브영</Code>) 또는{" "}
             <b>도메인</b>(<Code>oliveyoung.co.kr</Code>)을 넣고{" "}
             <b>불러오기</b>를 누릅니다. 30~90초 걸립니다.
-            <div className="mt-1.5 text-xs text-[var(--text-muted)]">
+            <div className="mt-1.5 text-sm text-[var(--text-muted)]">
               쉼표로 여러 개를 한 번에 넣을 수 있습니다. 도메인으로 넣으면
               그 도메인이 직접 띄운 광고를, 브랜드명으로 넣으면 광고주
               단위로 찾습니다.
@@ -224,7 +224,7 @@ export default function GuideView({
       </Section>
 
       <Section id="tabs" title="탭별로 뭘 보나" icon={Compass}>
-        <table className="w-full text-sm">
+        <table className="w-full text-base">
           <tbody className="divide-y divide-[var(--border)]">
             {TAB_ROWS.map(([Icon, t, d]) => (
               <tr key={t}>
@@ -260,7 +260,7 @@ export default function GuideView({
         </p>
         <div className="notice notice-warning" role="note">
           <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
-          <div className="min-w-0 flex-1 text-xs leading-relaxed">
+          <div className="min-w-0 flex-1 text-sm leading-relaxed">
             <b className="font-semibold">그래서 주의할 점</b>
             <ul className="mt-1.5 list-disc space-y-1 pl-4 text-ink">
               <li>
@@ -282,7 +282,7 @@ export default function GuideView({
       </Section>
 
       <Section id="badges" title="배지 읽는 법" icon={Tag}>
-        <table className="w-full text-sm">
+        <table className="w-full text-base">
           <tbody className="divide-y divide-[var(--border)]">
             {BADGE_ROWS.map(([Icon, b, d]) => (
               <tr key={b}>
@@ -297,7 +297,7 @@ export default function GuideView({
             ))}
           </tbody>
         </table>
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="text-sm text-[var(--text-muted)]">
           주력 · 상승세 · 급등 · 둔화는 일별 스냅샷이 2~3개 쌓여야 계산됩니다.
           하루 한 번씩 며칠 돌려야 의미가 생깁니다.
         </p>
@@ -388,7 +388,7 @@ export default function GuideView({
 
           <Faq q="'최근 N건만 불러옴' 경고가 떠요">
             표 뷰는 첫 로딩에서 최근 수집순으로 일정 건수까지만 가져옵니다
-            (전부 받으면 화면이 느려져서). 사이드바에서 브랜드를 클릭하면 그
+            (전부 받으면 화면이 느려져서). 브랜드 목록에서 브랜드를 클릭하면 그
             브랜드 광고는 전부 로드됩니다. 브랜드 아카이브 카드의 숫자는 항상
             DB 전체 기준이라 정확합니다.
           </Faq>
@@ -405,7 +405,7 @@ export default function GuideView({
           <Faq q="수집한 데이터가 외부로 나가나요?">
             나가지 않습니다. 전부 프로젝트 폴더의 <Code>dev.db</Code> 파일
             하나에 저장됩니다. 이 앱은 내 PC에서만 돌고 로그인도 없습니다.
-            데이터를 지우려면 사이드바 맨 아래{" "}
+            데이터를 지우려면 브랜드 아카이브의 브랜드 목록 패널 맨 아래{" "}
             <b className="inline-flex items-center gap-0.5">
               <InlineIcon icon={Trash2} label="휴지통" />전체 데이터 삭제
             </b>{" "}
@@ -440,7 +440,7 @@ export default function GuideView({
             유용합니다.
           </li>
           <li>
-            사이드바 브랜드 이름 왼쪽 점을 누르면 A1/A2/A3 중요도를 매길 수
+            브랜드 목록에서 브랜드 이름 왼쪽 점을 누르면 A1/A2/A3 중요도를 매길 수
             있습니다. 추적 대상이 많아지면 필터로 쓰세요.
           </li>
           <li>
@@ -450,7 +450,7 @@ export default function GuideView({
         </ul>
       </Section>
 
-      <div className="pb-4 text-center text-xs text-[var(--text-muted)]">
+      <div className="pb-4 text-center text-sm text-[var(--text-muted)]">
         Success AI · MIT License · 공개 광고 데이터 기반
       </div>
     </div>

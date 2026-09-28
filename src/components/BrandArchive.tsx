@@ -45,7 +45,7 @@ export type ArchiveBrand = {
   videoCount: number;
   region: string;
   creatives: ArchiveCreative[];
-  /** 자동 추적 대상인지 — 사이드바 ⭐와 같은 상태. */
+  /** 자동 추적 대상인지 — 브랜드 목록 ⭐와 같은 상태. */
   tracked: boolean;
 };
 
@@ -114,7 +114,7 @@ function CreativeCard({ c }: { c: ArchiveCreative }) {
           )}
         </div>
       </div>
-      <div className="mt-1.5 line-clamp-2 text-xs leading-tight text-[var(--text-secondary)]">
+      <div className="mt-1.5 line-clamp-2 text-sm leading-tight text-[var(--text-secondary)]">
         {c.title}
       </div>
       <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
@@ -166,7 +166,7 @@ function BrandCard({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onOpen(brand.keyword)}
-              className="truncate text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"
+              className="truncate text-base font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"
             >
               {brand.keyword}
             </button>
@@ -183,15 +183,15 @@ function BrandCard({
               </span>
             )}
           </div>
-          <div className="truncate text-xs text-[var(--text-muted)]">
+          <div className="truncate text-sm text-[var(--text-muted)]">
             {brand.advertiser ?? "광고주 미확인"}
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-xs font-semibold tabular-nums text-ink">
+          <div className="text-sm font-semibold tabular-nums text-ink">
             {brand.adCount.toLocaleString()}개 게재 중
           </div>
-          <div className="text-xs tabular-nums text-faint">
+          <div className="text-sm tabular-nums text-faint">
             영상 {brand.videoCount.toLocaleString()}
           </div>
         </div>
@@ -213,11 +213,11 @@ function BrandCard({
 
       {/* 소재 캐러셀 */}
       <div className="border-t border-[var(--border)] px-4 py-3">
-        <div className="mb-2 text-xs font-medium text-muted">
+        <div className="mb-2 text-sm font-medium text-muted">
           최근 게재된 소재
         </div>
         {brand.creatives.length === 0 ? (
-          <div className="py-6 text-center text-xs text-[var(--text-muted)]">
+          <div className="py-6 text-center text-sm text-[var(--text-muted)]">
             아직 소재가 없어요
           </div>
         ) : (
@@ -256,7 +256,7 @@ export default function BrandArchive({
 
   if (brands.length === 0) {
     return (
-      <div className="panel empty text-sm text-muted">
+      <div className="panel empty text-base text-muted">
         <span className="empty-icon mb-3">
           <Archive size={20} strokeWidth={1.75} aria-hidden />
         </span>

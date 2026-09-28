@@ -116,7 +116,7 @@ export function AdSelectionToolbar({ selectedAds, visibleCount, visibleLabel, on
 
   return (
     <>
-      <div className="panel flex flex-wrap items-center gap-2 px-4 py-3 text-xs">
+      <div className="panel flex flex-wrap items-center gap-2 px-4 py-3 text-sm">
         <strong className="mr-auto text-sm font-semibold tabular-nums text-ink">선택 {selectedAds.length}개 / {visibleLabel ?? `표시 ${visibleCount}개`}</strong>
         <button type="button" onClick={onSelectAll} disabled={visibleCount === 0} className="btn btn-secondary btn-sm">표시된 광고 전체 선택</button>
         <button type="button" onClick={onClear} disabled={selectedAds.length === 0} className="btn btn-secondary btn-sm">선택 해제</button>
