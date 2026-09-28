@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 <#
 .SYNOPSIS
   Windows 작업 스케줄러에 "매일 새벽 3시 자동 수집" 등록/해제

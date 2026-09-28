@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 <#
 .SYNOPSIS
   Success AI 원클릭 설치 (Windows PowerShell 5.1 / 7 모두 동작)

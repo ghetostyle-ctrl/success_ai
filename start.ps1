@@ -1,4 +1,4 @@
-# Success AI 개발 서버 실행 + 브라우저 열기
+﻿# Success AI 개발 서버 실행 + 브라우저 열기
 param([string]$Hostname = "")
 
 $ErrorActionPreference = "Stop"
