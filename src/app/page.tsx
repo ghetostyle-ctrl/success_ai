@@ -75,6 +75,7 @@ import BrandArchive, { type ArchiveBrand } from "@/components/BrandArchive";
 import { AdSearchBox } from "@/components/AdSearchBox";
 import { AdCardGrid } from "@/components/AdCardGrid";
 import { AdSelectionToolbar } from "@/components/AdSelectionToolbar";
+import { confirmDialog } from "@/lib/confirm-dialog";
 
 const GuideView = dynamic(() => import("@/components/GuideView"), {
   ssr: false,
@@ -2726,11 +2727,11 @@ export default function Home() {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (
-                              !confirm(
+                              !(await confirmDialog(
                                 `"${g.keyword}" ${
                                   g.kind === "ad" ? "광고 수집" : "YouTube 검색"
                                 } 결과를 삭제할까요?`
-                              )
+                              ))
                             )
                               return;
                             await fetch("/api/jobs", {
@@ -2964,12 +2965,12 @@ export default function Home() {
                             // 사용자가 의식하고 누르도록 confirm. 자주 누르면
                             // 트래픽 빠르게 소진.
                             if (
-                              !confirm(
+                              !(await confirmDialog(
                                 `"${g.anchor}" 메타 광고 재수집\n\n` +
                                   `예상 트래픽: 약 200MB\n` +
                                   `프록시를 쓰신다면 그만큼 차감됩니다.\n\n` +
                                   `진행할까요?`
-                              )
+                              ))
                             )
                               return;
                             await fetch("/api/meta/queue", {
@@ -2991,9 +2992,9 @@ export default function Home() {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (
-                              !confirm(
+                              !(await confirmDialog(
                                 `"${g.anchor}" 메타 브랜드 추적을 해제할까요? (관련 키워드 ${g.keywords.length}개 모두 해제)`
-                              )
+                              ))
                             )
                               return;
                             // Delete every MetaWatch row tied to this anchor

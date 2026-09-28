@@ -51,6 +51,7 @@ import {
   ZoomIn,
   type LucideIcon,
 } from "lucide-react";
+import { confirmDialog } from "@/lib/confirm-dialog";
 
 type Status = "queued" | "in_progress" | "complete" | "error";
 
@@ -374,7 +375,7 @@ export default function MetaView({
   }
 
   async function deleteJob(id: string) {
-    if (!confirm("이 메타 수집 작업을 삭제할까?")) return;
+    if (!(await confirmDialog("이 메타 수집 작업을 삭제할까?"))) return;
     const res = await fetch(`/api/meta/${id}`, { method: "DELETE" });
     if (!res.ok) {
       alert("삭제 실패");
@@ -451,16 +452,16 @@ export default function MetaView({
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => {
+            onKeyDown={async (e) => {
               if (e.key === "Enter") {
                 const k = keyword.trim();
                 if (!k) return;
                 if (
-                  !confirm(
+                  !(await confirmDialog(
                     `"${k}" 메타 광고 수집\n\n` +
                       `예상 트래픽: 약 200MB\n` +
                       `프록시를 쓰신다면 그만큼 차감됩니다.\n\n진행할까요?`
-                  )
+                  ))
                 )
                   return;
                 void enqueue();
@@ -471,15 +472,15 @@ export default function MetaView({
             className="field-input min-w-0 flex-1"
           />
           <button
-            onClick={() => {
+            onClick={async () => {
               const k = keyword.trim();
               if (!k) return;
               if (
-                !confirm(
+                !(await confirmDialog(
                   `"${k}" 메타 광고 수집\n\n` +
                     `예상 트래픽: 약 200MB\n` +
                     `프록시를 쓰신다면 그만큼 차감됩니다.\n\n진행할까요?`
-                )
+                ))
               )
                 return;
               void enqueue();
@@ -1083,9 +1084,9 @@ function DetailPane({
                     <button
                       onClick={async () => {
                         if (
-                          !confirm(
+                          !(await confirmDialog(
                             `${unenrichedCount}개 광고에 대해 Meta가 직접 표시하는 변형 카운트("광고 N개에서...")와 브랜드 활동량("결과 ~N개")을 수집할까요?\n\n각 광고당 ~6-8초, 총 ${Math.ceil((unenrichedCount * 7) / 60)}분 예상`
-                          )
+                          ))
                         )
                           return;
                         setEnriching(true);
@@ -1346,9 +1347,9 @@ function DetailPane({
               <button
                 onClick={async () => {
                   if (
-                    !confirm(
+                    !(await confirmDialog(
                       `"${detail.keyword}" 브랜드에서 무관/위장 광고 ${droppedCount}개를 DB에서 영구 삭제할까요?\n\n(브랜드만 / 위장 숨기기 토글로 가려진 광고들이 대상)`
-                    )
+                    ))
                   )
                     return;
                   setPurging(true);

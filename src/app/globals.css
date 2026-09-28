@@ -607,6 +607,32 @@ th {
   .btn-danger:hover:not(:disabled) {
     border-color: var(--danger);
   }
+  /* 앱 안 확인창 (src/lib/confirm-dialog.ts) */
+  .app-confirm {
+    width: min(420px, calc(100vw - 32px));
+    margin: auto;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: var(--shadow-dialog);
+  }
+  .app-confirm::backdrop {
+    background: var(--overlay);
+  }
+  .app-confirm-message {
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-line;
+    word-break: keep-all;
+  }
+  .app-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
   .btn-sm {
     min-height: var(--control-sm);
     padding: 0 12px;
