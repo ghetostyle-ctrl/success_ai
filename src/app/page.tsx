@@ -2730,10 +2730,20 @@ export default function Home() {
                               !(await confirmDialog(
                                 `"${g.keyword}" ${
                                   g.kind === "ad" ? "광고 수집" : "YouTube 검색"
-                                } 결과를 삭제할까요?`
+                                } 결과를 삭제할까요?${
+                                  watched ? "\n자동 추적도 함께 해제됩니다." : ""
+                                }`
                               ))
                             )
                               return;
+                            // 추적이 남아 있으면 다음 자동 수집 때 목록에 다시 생기므로 함께 해제한다.
+                            if (watched) {
+                              await fetch("/api/watch", {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ keyword: g.keyword, kind: g.kind }),
+                              });
+                            }
                             await fetch("/api/jobs", {
                               method: "DELETE",
                               headers: { "Content-Type": "application/json" },
