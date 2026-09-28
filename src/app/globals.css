@@ -185,6 +185,8 @@ th {
     display: flex;
     align-items: center;
     gap: 12px;
+    /* AD 스위트 공통 브랜드 줄: 세 앱 모두 같은 높이(46.8px) */
+    min-height: 46.8px;
     margin: 0 8px 20px;
   }
   .sidebar-brand-mark {
@@ -193,11 +195,12 @@ th {
     height: 32px;
     flex: none;
     place-items: center;
-    border-radius: var(--radius-sm);
-    background: var(--accent);
-    color: var(--on-accent);
-    font-size: var(--text-base);
-    font-weight: 600;
+    border-radius: 8px;
+    background: var(--sidebar-text);
+    color: var(--sidebar);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
   /* v3 §11: 세 앱이 같은 픽셀 위치에 오도록 px 로 고정 (html 14px 라
      rem 기반 Tailwind 유틸은 다른 앱과 어긋난다). 블록 높이 24+2+20.8. */

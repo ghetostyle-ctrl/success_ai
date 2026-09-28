@@ -3122,11 +3122,10 @@ export default function Home() {
       <aside className="sidebar">
         <div className="sidebar-brand">
           <span aria-hidden className="sidebar-brand-mark">
-            S
+            AD
           </span>
           <div className="min-w-0">
-            <div className="sidebar-brand-name">Success AI</div>
-            <small className="sidebar-brand-sub max-[760px]:hidden">광고 레퍼런스를 모으는 곳</small>
+            <div className="sidebar-brand-name">AD 스위트</div>
           </div>
           <span className="status-chip status-chip-sidebar" role="status">
             <span
