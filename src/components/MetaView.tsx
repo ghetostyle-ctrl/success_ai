@@ -15,6 +15,42 @@
  *     footer with UTM badge + "더 알아보기" button).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowUpRight,
+  Bird,
+  ChartNoAxesColumn,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CircleCheck,
+  CirclePause,
+  CircleX,
+  Clapperboard,
+  Copy,
+  FileText,
+  Hand,
+  Hourglass,
+  Image as ImageIcon,
+  LayoutList,
+  Lightbulb,
+  Link2,
+  LoaderCircle,
+  Megaphone,
+  Package,
+  Play,
+  RefreshCw,
+  Repeat,
+  Rows3,
+  Save,
+  Search,
+  Sprout,
+  Tag,
+  Trash2,
+  Trophy,
+  X,
+  ZoomIn,
+  type LucideIcon,
+} from "lucide-react";
 
 type Status = "queued" | "in_progress" | "complete" | "error";
 
@@ -134,17 +170,26 @@ type JobDetail = {
 };
 
 const STATUS_LABEL: Record<Status, string> = {
-  queued: "🕒 대기",
-  in_progress: "🔄 처리중",
-  complete: "✅ 완료",
-  error: "❌ 실패",
+  queued: "대기",
+  in_progress: "처리중",
+  complete: "완료",
+  error: "실패",
 };
 const STATUS_CLASS: Record<Status, string> = {
-  queued: "bg-amber-500/15 text-amber-700",
-  in_progress: "bg-blue-500/15 text-blue-700",
-  complete: "bg-emerald-500/15 text-emerald-700",
-  error: "bg-rose-500/15 text-rose-700",
+  queued: "badge badge-neutral",
+  in_progress: "badge badge-accent",
+  complete: "badge badge-success",
+  error: "badge badge-danger",
 };
+
+/** 상태 배지 앞 아이콘 (스위트 v1 §4.2). */
+function StatusIcon({ status }: { status: Status }) {
+  if (status === "queued") return <CirclePause size={12} strokeWidth={2} aria-hidden />;
+  if (status === "in_progress")
+    return <LoaderCircle size={12} strokeWidth={2} aria-hidden className="animate-spin" />;
+  if (status === "complete") return <CircleCheck size={12} strokeWidth={2} aria-hidden />;
+  return <CircleX size={12} strokeWidth={2} aria-hidden />;
+}
 
 function metaLibraryLink(adArchiveId: string) {
   return `https://www.facebook.com/ads/library/?id=${adArchiveId}`;
@@ -152,14 +197,14 @@ function metaLibraryLink(adArchiveId: string) {
 
 function platformBadge(p: string) {
   const map: Record<string, { label: string; cls: string }> = {
-    FACEBOOK: { label: "FB", cls: "bg-blue-500/20 text-blue-700" },
-    INSTAGRAM: { label: "IG", cls: "bg-pink-500/20 text-pink-700" },
-    MESSENGER: { label: "MSG", cls: "bg-sky-500/20 text-sky-700" },
+    FACEBOOK: { label: "FB", cls: "bg-surface-soft text-muted" },
+    INSTAGRAM: { label: "IG", cls: "bg-surface-soft text-muted" },
+    MESSENGER: { label: "MSG", cls: "bg-surface-soft text-muted" },
     AUDIENCE_NETWORK: {
       label: "AUD",
-      cls: "bg-purple-500/20 text-purple-700",
+      cls: "bg-surface-soft text-muted",
     },
-    THREADS: { label: "TH", cls: "bg-zinc-700/20 text-zinc-800" },
+    THREADS: { label: "TH", cls: "bg-surface-soft text-muted" },
   };
   // "PLATFORM_1" 같은 placeholder 는 scraper 가 aria-label 매칭 실패 시
   // mask-position 갯수로만 채운 fallback. 노출하지 말고 "?" 로 묶음.
@@ -168,12 +213,12 @@ function platformBadge(p: string) {
   const m =
     map[p] ??
     (isPlaceholder
-      ? { label: "?", cls: "bg-slate-400/20 text-slate-500" }
-      : { label: p, cls: "bg-slate-500/20 text-slate-700" });
+      ? { label: "?", cls: "bg-surface-soft text-faint" }
+      : { label: p, cls: "bg-surface-soft text-muted" });
   return (
     <span
       key={p}
-      className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${m.cls}`}
+      className={`badge h-5 px-1.5 ${m.cls}`}
       title={isPlaceholder ? "플랫폼 정보 누락 (재수집 시 채워짐)" : p}
     >
       {m.label}
@@ -387,12 +432,18 @@ export default function MetaView({
     <div className="space-y-4">
       {/* 메인 검색 section — ATC 탭과 동일한 패턴. 드롭다운 안 input 안
           찾아도 바로 검색 가능. 비용 confirm 으로 의도치 않은 메타 수집
-          방지 (사이드바 🔄 와 동일). */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-        <h2 className="mb-2 text-sm font-semibold">메타 광고 라이브러리 불러오기</h2>
-        <p className="mb-4 text-xs text-[var(--text-muted)]">
-          <b className="text-indigo-700">📘 메타</b>는 한 번 훑는 데 트래픽이 약{" "}
-          <b className="text-fuchsia-700">200MB</b> 듭니다 — 프록시를 쓰신다면
+          방지 (사이드바 재수집 버튼과 동일). */}
+      <section className="panel">
+        <div className="panel-header">
+          <h2>
+            <Megaphone size={16} strokeWidth={1.75} aria-hidden />
+            메타 광고 라이브러리 불러오기
+          </h2>
+        </div>
+        <div className="panel-body">
+        <p className="mb-4 max-w-[var(--prose-max)] text-sm text-muted">
+          <b className="font-semibold text-ink">메타</b>는 한 번 훑는 데 트래픽이 약{" "}
+          <b className="font-semibold text-ink">200MB</b> 듭니다 — 프록시를 쓰신다면
           그만큼 깎이니 검색 전에 한 번 물어봅니다. 입력: <b>brand 도메인</b> (예: example.co.kr) ·
           <b> 페이지명</b> (한글) · <b>page_id 숫자</b> (10자리+).
         </p>
@@ -407,7 +458,7 @@ export default function MetaView({
                 if (
                   !confirm(
                     `"${k}" 메타 광고 수집\n\n` +
-                      `📊 예상 트래픽: 약 200MB\n` +
+                      `예상 트래픽: 약 200MB\n` +
                       `프록시를 쓰신다면 그만큼 차감됩니다.\n\n진행할까요?`
                   )
                 )
@@ -416,7 +467,8 @@ export default function MetaView({
               }
             }}
             placeholder="예: example.co.kr, example-shop.com, 예시브랜드, 또는 page_id 숫자"
-            className="flex-1 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+            aria-label="메타 광고 검색어"
+            className="field-input min-w-0 flex-1"
           />
           <button
             onClick={() => {
@@ -425,7 +477,7 @@ export default function MetaView({
               if (
                 !confirm(
                   `"${k}" 메타 광고 수집\n\n` +
-                    `📊 예상 트래픽: 약 200MB\n` +
+                    `예상 트래픽: 약 200MB\n` +
                     `프록시를 쓰신다면 그만큼 차감됩니다.\n\n진행할까요?`
                 )
               )
@@ -433,47 +485,66 @@ export default function MetaView({
               void enqueue();
             }}
             disabled={enqueuing || !keyword.trim()}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-busy={enqueuing}
+            className="btn btn-primary"
           >
-            {enqueuing ? "수집 중..." : "📘 메타 수집"}
+            {enqueuing ? (
+              <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin" />
+            ) : (
+              <Megaphone size={16} strokeWidth={1.75} aria-hidden />
+            )}
+            {enqueuing ? "수집 중..." : "메타 수집"}
           </button>
         </div>
-        <div className="mt-2 text-[11px] text-[var(--text-secondary)]">
-          💡 숫자만 (10자리+) 입력 → page_id 모드 (광고주 entity 직접 조회 ·
-          가장 정확). 그 외 → brand search 모드 (search_terms + page_id 발굴).
+        <div className="mt-2 flex items-start gap-1.5 text-xs text-muted">
+          <Lightbulb size={14} strokeWidth={1.75} aria-hidden className="mt-0.5 shrink-0 text-faint" />
+          <span>
+            숫자만 (10자리+) 입력 → page_id 모드 (광고주 entity 직접 조회 ·
+            가장 정확). 그 외 → brand search 모드 (search_terms + page_id 발굴).
+          </span>
+        </div>
         </div>
       </section>
 
       {/* Single-line toolbar: dropdown selector + new-task button */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3">
+      <div className="panel px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-semibold">📘 메타 광고</span>
+          <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+            <Megaphone size={16} strokeWidth={1.75} aria-hidden className="text-faint" />
+            메타 광고
+          </span>
 
           {/* Job picker dropdown */}
           <div className="relative min-w-[260px] flex-1">
             <button
               onClick={() => setPickerOpen((v) => !v)}
-              className={`flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm transition ${
+              aria-expanded={pickerOpen}
+              className={`flex min-h-10 w-full items-center justify-between gap-2 rounded-sm border px-3 py-2 text-left text-sm transition-colors ${
                 pickerOpen
-                  ? "border-blue-400 bg-blue-500/5"
-                  : "border-[var(--border-strong)] bg-[var(--bg-elev)] hover:border-[var(--border)]"
+                  ? "border-accent bg-surface"
+                  : "border-line-control bg-surface hover:border-muted"
               }`}
             >
               <span className="flex min-w-0 items-center gap-2">
                 {currentJob ? (
                   <>
                     <span
-                      className={`rounded-full px-1.5 py-0.5 text-[9px] font-bold ${STATUS_CLASS[currentJob.status]}`}
+                      className={`${STATUS_CLASS[currentJob.status]} shrink-0 px-1.5`}
+                      title={STATUS_LABEL[currentJob.status]}
                     >
-                      {STATUS_LABEL[currentJob.status].slice(0, 2)}
+                      <StatusIcon status={currentJob.status} />
+                      <span className="sr-only">{STATUS_LABEL[currentJob.status]}</span>
                     </span>
-                    <span className="truncate font-semibold">
+                    <span className="inline-flex min-w-0 items-center gap-1 truncate font-semibold">
+                      {currentJob.keyword.startsWith("page:") && (
+                        <FileText size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-faint" />
+                      )}
                       {currentJob.keyword.startsWith("page:")
-                        ? `📄 page ${currentJob.keyword.slice(5)}`
+                        ? `page ${currentJob.keyword.slice(5)}`
                         : currentJob.keyword}
                     </span>
                     {currentJob.adCount > 0 && (
-                      <span className="shrink-0 text-[11px] text-[var(--text-muted)]">
+                      <span className="shrink-0 text-xs text-[var(--text-muted)]">
                         광고 {currentJob.adCount}·페이지 {currentJob.pageCount}
                       </span>
                     )}
@@ -486,11 +557,16 @@ export default function MetaView({
                   </span>
                 )}
               </span>
-              <span className="shrink-0 text-[var(--text-muted)]">▾</span>
+              <ChevronDown
+                size={16}
+                strokeWidth={1.75}
+                aria-hidden
+                className={`shrink-0 text-faint transition-transform ${pickerOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {pickerOpen && (
-              <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-[60vh] overflow-y-auto rounded-md border border-[var(--border-strong)] bg-[var(--bg-card)] shadow-2xl">
+              <div className="absolute left-0 right-0 top-full z-30 mt-1.5 max-h-[60vh] overflow-y-auto rounded-panel border border-line bg-surface shadow-popover">
                 {/* Inline new-task input — first row of the dropdown */}
                 <div className="border-b border-[var(--border)] p-2">
                   <div className="flex gap-2">
@@ -503,19 +579,20 @@ export default function MetaView({
                         }
                       }}
                       placeholder="새 brand / 페이지명 / page_id 숫자"
-                      className="min-w-0 flex-1 rounded-md border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs outline-none focus:border-blue-400"
+                      aria-label="새 메타 수집 검색어"
+                      className="field-input min-h-8 min-w-0 flex-1 py-1 text-sm"
                     />
                     <button
                       onClick={() =>
                         void enqueue().then(() => setPickerOpen(false))
                       }
                       disabled={enqueuing || !keyword.trim()}
-                      className="shrink-0 rounded-md bg-blue-500 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                      className="btn btn-primary btn-sm shrink-0"
                     >
                       {enqueuing ? "..." : "수집"}
                     </button>
                   </div>
-                  <div className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  <div className="mt-1 text-xs text-[var(--text-muted)]">
                     숫자만 입력 → page_id 모드 · 그 외 → 브랜드 search 모드
                   </div>
                 </div>
@@ -536,18 +613,22 @@ export default function MetaView({
                             setCurrentId(`anchor:${g.anchor}`);
                             setPickerOpen(false);
                           }}
-                          className={`flex cursor-pointer items-center gap-2 border-b border-[var(--border)] bg-[var(--bg-elev)]/40 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide hover:bg-[var(--bg-elev)] ${
+                          className={`flex min-h-9 cursor-pointer items-center gap-2 border-b border-line px-3 py-1.5 text-xs font-semibold transition-colors ${
                             currentId === `anchor:${g.anchor}`
-                              ? "bg-blue-500/10 text-blue-700"
-                              : "text-[var(--text-muted)]"
+                              ? "bg-accent-soft text-accent-ink"
+                              : "bg-surface-soft text-muted hover:text-ink"
                           }`}
                         >
-                          <span>🏷️ {g.anchor}</span>
-                          <span className="text-[var(--text-secondary)] normal-case">
+                          <span className="inline-flex items-center gap-1">
+                            <Tag size={12} strokeWidth={2} aria-hidden />
+                            {g.anchor}
+                          </span>
+                          <span className="font-normal tabular-nums text-faint">
                             {g.items.length} entries · {g.adCount} ads
                           </span>
-                          <span className="ml-auto rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold text-indigo-700">
-                            🔗 통합 보기
+                          <span className="badge badge-accent ml-auto">
+                            <Link2 size={12} strokeWidth={2} aria-hidden />
+                            통합 보기
                           </span>
                         </div>
                         {g.items.map((j) => {
@@ -557,8 +638,8 @@ export default function MetaView({
                           return (
                             <div
                               key={j.id}
-                              className={`group flex cursor-pointer items-center gap-2 border-b border-[var(--border)] px-3 py-2 text-xs hover:bg-[var(--bg-elev)] ${
-                                j.id === currentId ? "bg-blue-500/10" : ""
+                              className={`group flex min-h-10 cursor-pointer items-center gap-2 border-b border-line px-3 py-2 text-xs transition-colors ${
+                                j.id === currentId ? "bg-accent-soft" : "hover:bg-surface-soft"
                               }`}
                               onClick={() => {
                                 setCurrentId(j.id);
@@ -566,33 +647,40 @@ export default function MetaView({
                               }}
                             >
                               <span
-                                className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${STATUS_CLASS[j.status]}`}
+                                className={`${STATUS_CLASS[j.status]} shrink-0 px-1.5`}
+                                title={STATUS_LABEL[j.status]}
                               >
-                                {STATUS_LABEL[j.status].slice(0, 2)}
+                                <StatusIcon status={j.status} />
+                                <span className="sr-only">{STATUS_LABEL[j.status]}</span>
                               </span>
-                              <span className="min-w-0 flex-1 truncate font-semibold">
+                              <span className="inline-flex min-w-0 flex-1 items-center gap-1 truncate font-semibold">
+                                {isPage && (
+                                  <FileText size={12} strokeWidth={2} aria-hidden className="shrink-0 text-faint" />
+                                )}
                                 {isPage
-                                  ? `📄 ${j.keyword.slice(5).slice(0, 16)}…`
+                                  ? `${j.keyword.slice(5).slice(0, 16)}…`
                                   : j.keyword}
                               </span>
                               {source === "auto" && (
                                 <span
-                                  className="shrink-0 rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700"
+                                  className="badge badge-success shrink-0"
                                   title="자동 발견된 광고주 entity (stage 1.5)"
                                 >
-                                  🌱 auto
+                                  <Sprout size={12} strokeWidth={2} aria-hidden />
+                                  auto
                                 </span>
                               )}
                               {source === "manual" && (
                                 <span
-                                  className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-700"
+                                  className="badge badge-warning shrink-0"
                                   title="사용자가 page-id로 수동 등록"
                                 >
-                                  ✋ manual
+                                  <Hand size={12} strokeWidth={2} aria-hidden />
+                                  manual
                                 </span>
                               )}
                               {j.adCount > 0 && (
-                                <span className="shrink-0 text-[10px] text-[var(--text-muted)]">
+                                <span className="shrink-0 text-xs tabular-nums text-faint">
                                   {j.adCount}·{j.pageCount}
                                 </span>
                               )}
@@ -601,10 +689,11 @@ export default function MetaView({
                                   e.stopPropagation();
                                   void deleteJob(j.id);
                                 }}
-                                className="ml-1 rounded px-1 text-rose-600 opacity-0 hover:bg-rose-500/20 group-hover:opacity-100"
+                                className="ml-1 inline-grid h-7 w-7 place-items-center rounded-sm text-faint opacity-0 transition-colors hover:bg-danger-soft hover:text-danger focus-visible:opacity-100 group-hover:opacity-100"
                                 title="삭제"
+                                aria-label="삭제"
                               >
-                                ×
+                                <X size={14} strokeWidth={1.75} aria-hidden />
                               </button>
                             </div>
                           );
@@ -621,35 +710,39 @@ export default function MetaView({
             href={`http://127.0.0.1:4317/?import=success-ai&platform=meta&keyword=${encodeURIComponent(detail && !detail.isAggregate ? detail.keyword : "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1.5 text-[11px] font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
+            className="btn btn-secondary btn-sm shrink-0"
             title="AD FACTORY에서 프로젝트를 고른 뒤 Success AI에 저장된 광고를 확인하고 가져옵니다."
           >
-            ↗ AD FACTORY로 보내기
+            <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
+            AD FACTORY로 보내기
           </a>
           <button
             onClick={() => void loadJobs()}
-            className="shrink-0 rounded border border-[var(--border-strong)] px-2 py-1.5 text-[11px] text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
+            className="btn btn-ghost btn-sm btn-icon shrink-0"
             title="작업 목록 새로고침"
+            aria-label="작업 목록 새로고침"
           >
-            ↻
+            <RefreshCw size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
       </div>
 
       {/* Detail pane */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
+      <section className="panel p-5">
         {!detail ? (
-          <div className="py-16 text-center">
-            <div className="mb-2 text-4xl">📘</div>
+          <div className="empty">
+            <span className="empty-icon mb-3">
+              <Megaphone size={20} strokeWidth={1.75} aria-hidden />
+            </span>
             <div className="text-sm text-[var(--text-muted)]">
               위 셀렉터에서 브랜드를 고르거나,
               <br />
               새 brand 키워드를 입력해 수집을 시작하세요.
             </div>
-            <div className="mx-auto mt-4 max-w-md text-[11px] leading-relaxed text-[var(--text-muted)]">
-              🔍 검색어 모드: brand → search_terms + page_id 발굴 + 페이지 단위 재수집
+            <div className="mx-auto mt-4 max-w-md text-xs leading-relaxed text-[var(--text-muted)]">
+              검색어 모드: brand → search_terms + page_id 발굴 + 페이지 단위 재수집
               <br />
-              📄 page_id 모드: 숫자만 → 광고주 entity 직접 조회
+              page_id 모드: 숫자만 → 광고주 entity 직접 조회
             </div>
           </div>
         ) : (
@@ -918,24 +1011,28 @@ function DetailPane({
     <div>
       {/* Brand header */}
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="text-base font-semibold">
+        <h3 className="inline-flex items-center gap-1.5 text-xl font-semibold tracking-[-0.02em]">
+          {detail.isAggregate ? (
+            <Link2 size={16} strokeWidth={1.75} aria-hidden className="text-faint" />
+          ) : isPageMode ? (
+            <FileText size={16} strokeWidth={1.75} aria-hidden className="text-faint" />
+          ) : null}
           {detail.isAggregate
-            ? `🔗 ${detail.keyword}`
+            ? detail.keyword
             : isPageMode
-              ? `📄 page_id ${detail.keyword.slice(5)}`
+              ? `page_id ${detail.keyword.slice(5)}`
               : detail.keyword}
         </h3>
-        <span
-          className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_CLASS[detail.status]}`}
-        >
+        <span className={STATUS_CLASS[detail.status]}>
+          <StatusIcon status={detail.status} />
           {STATUS_LABEL[detail.status]}
         </span>
         {detail.isAggregate && (
-          <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
+          <span className="badge badge-accent tabular-nums">
             통합 보기 · {detail.childKeywords?.length ?? 0}개 키워드
           </span>
         )}
-        <span className="ml-auto text-[11px] text-[var(--text-muted)]">
+        <span className="ml-auto font-mono text-xs text-[var(--text-muted)]">
           region={detail.region}
         </span>
       </div>
@@ -945,20 +1042,22 @@ function DetailPane({
           Only rendered for /api/meta/anchor/:anchor responses. */}
       {detail.isAggregate &&
         (detail.childWatches?.length ?? 0) > 0 && (
-          <div className="mt-3 rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-indigo-700">
-              <span>
-                🔗 통합한 키워드 ({detail.childWatches!.length}개) — 광고{" "}
+          <div className="mt-3 rounded-panel border border-line bg-surface-soft p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink">
+              <span className="inline-flex items-center gap-1">
+                <Link2 size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                통합한 키워드 ({detail.childWatches!.length}개) — 광고{" "}
                 {detail.adCount}개 (중복 제거)
               </span>
               {/* Brand-level Meta activity total — shown when at least
                   one child watch has been enriched. */}
               {(detail.metaResultCountTotal ?? 0) > 0 && (
                 <span
-                  className="rounded-full bg-amber-500/15 px-2 py-1 text-amber-700"
+                  className="badge badge-neutral tabular-nums"
                   title='메타 검색 결과 페이지의 "결과 ~N개" 합산. 브랜드의 실제 메타 광고 활동량 (중복 제거 전).'
                 >
-                  📊 메타 활동량 {detail.metaResultCountTotal}개
+                  <ChartNoAxesColumn size={12} strokeWidth={2} aria-hidden />
+                  메타 활동량 {detail.metaResultCountTotal}개
                 </span>
               )}
               {/* Phase-2 library-signals enrichment trigger + progress */}
@@ -973,9 +1072,9 @@ function DetailPane({
                     ? Math.round((enr.done / enr.total) * 100)
                     : 0;
                   return (
-                    <span className="ml-auto inline-flex items-center gap-2 rounded-full bg-blue-500/20 px-3 py-1 text-blue-700">
-                      <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-400" />
-                      📊 메타 신호 수집 중 {enr.done}/{enr.total} ({pct}%)
+                    <span className="badge badge-accent ml-auto tabular-nums" role="status">
+                      <LoaderCircle size={12} strokeWidth={2} aria-hidden className="animate-spin" />
+                      메타 신호 수집 중 {enr.done}/{enr.total} ({pct}%)
                     </span>
                   );
                 }
@@ -1012,17 +1111,20 @@ function DetailPane({
                         }
                       }}
                       disabled={enriching}
-                      className="ml-auto rounded-full border border-indigo-500/60 bg-indigo-500/15 px-3 py-1 font-bold text-indigo-700 hover:bg-indigo-500/30 disabled:opacity-50"
+                      aria-busy={enriching}
+                      className="btn btn-secondary btn-sm ml-auto"
                       title='Meta 라이브러리 페이지에서 정확한 변형 카운트 + 브랜드 활동량 스크랩'
                     >
-                      📊 메타 신호 수집 ({unenrichedCount}개)
+                      <ChartNoAxesColumn size={14} strokeWidth={1.75} aria-hidden />
+                      메타 신호 수집 ({unenrichedCount}개)
                     </button>
                   );
                 }
                 if (totalCount > 0) {
                   return (
-                    <span className="ml-auto rounded-full bg-emerald-500/15 px-3 py-1 text-emerald-700">
-                      ✅ 모든 광고 메타 신호 수집 완료
+                    <span className="badge badge-success ml-auto">
+                      <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                      모든 광고 메타 신호 수집 완료
                     </span>
                   );
                 }
@@ -1033,21 +1135,23 @@ function DetailPane({
               {detail.childWatches!.map((c) => (
                 <div
                   key={c.keyword}
-                  className="flex items-center justify-between gap-2 rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1.5 text-[11px]"
+                  className="flex items-center justify-between gap-2 rounded-sm border border-line bg-surface px-2 py-1.5 text-xs"
                 >
                   <span className="flex min-w-0 items-center gap-1">
                     {c.source === "auto" && (
-                      <span title="auto-discovered" className="text-emerald-600">
-                        🌱
+                      <span title="auto-discovered" className="text-success">
+                        <Sprout size={12} strokeWidth={2} aria-hidden />
                       </span>
                     )}
                     {c.source === "manual" && (
-                      <span title="user-pinned" className="text-amber-600">
-                        ✋
+                      <span title="user-pinned" className="text-warning">
+                        <Hand size={12} strokeWidth={2} aria-hidden />
                       </span>
                     )}
                     {c.source === "seed" && (
-                      <span title="brand keyword seed">🏷️</span>
+                      <span title="brand keyword seed" className="text-faint">
+                        <Tag size={12} strokeWidth={2} aria-hidden />
+                      </span>
                     )}
                     <span className="truncate font-medium">
                       {c.keyword.startsWith("page:")
@@ -1055,7 +1159,7 @@ function DetailPane({
                         : c.keyword}
                     </span>
                   </span>
-                  <span className="shrink-0 font-bold text-[var(--text-primary)]">
+                  <span className="shrink-0 font-semibold tabular-nums text-[var(--text-primary)]">
                     {c.adCount}
                   </span>
                 </div>
@@ -1070,15 +1174,16 @@ function DetailPane({
           ground-truth view counts on the Google side. */}
       {detail.isAggregate &&
         (detail.atcBrandSummary?.totalVideos ?? 0) > 0 && (
-          <div className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/5 p-3">
-            <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] font-bold text-rose-700">
-              <span>
-                ▶ ATC YouTube 광고 ({detail.atcBrandSummary!.totalVideos}개)
+          <div className="mt-3 rounded-panel border border-line bg-surface-soft p-3">
+            <div className="mb-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-ink">
+              <span className="inline-flex items-center gap-1">
+                <Play size={12} strokeWidth={2} aria-hidden className="text-faint" />
+                ATC YouTube 광고 ({detail.atcBrandSummary!.totalVideos}개)
               </span>
               <span className="text-[var(--text-muted)]">
                 · 누적 조회 {fmtViews(detail.atcBrandSummary!.totalViews)}
               </span>
-              <span className="ml-auto text-[10px] font-normal text-[var(--text-muted)]">
+              <span className="ml-auto text-xs font-normal text-[var(--text-muted)]">
                 같은 브랜드의 구글 광고 영상 (advertiserName 매칭)
               </span>
             </div>
@@ -1093,12 +1198,13 @@ function DetailPane({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded border border-[var(--border)] bg-[var(--bg-elev)] p-2 text-[10px] hover:border-rose-500/50"
+                  className="rounded-sm border border-line bg-surface p-2 text-xs transition-colors hover:border-line-strong"
                   title={`${v.title}\n${v.channel}\n${fmtViews(v.views)}회`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-rose-700">
-                      ▶ {fmtViews(v.views)}
+                    <span className="inline-flex items-center gap-1 font-semibold tabular-nums text-ink">
+                      <Play size={12} strokeWidth={2} aria-hidden className="text-faint" />
+                      {fmtViews(v.views)}
                     </span>
                     <span className="text-[var(--text-muted)]">
                       {v.channel?.slice(0, 12) ?? ""}
@@ -1116,66 +1222,58 @@ function DetailPane({
       {/* Tabs + filter toolbar */}
       {!inProgress && (detail.ads?.length ?? 0) > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[var(--border)]">
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-5">
             <TabButton
               active={tab === "ads"}
               onClick={() => setTab("ads")}
-              icon="📋"
+              icon={LayoutList}
               label="광고"
               count={adsCount}
             />
             <TabButton
               active={tab === "pages"}
               onClick={() => setTab("pages")}
-              icon="🏷️"
+              icon={Tag}
               label="페이지"
               count={pages.length}
             />
           </div>
-          <div className="ml-auto flex flex-wrap items-center gap-1.5 pb-1.5 text-[10px]">
+          <div className="ml-auto flex flex-wrap items-center gap-1.5 pb-1.5 text-xs">
             {/* A-tier filter pills — counts come from the live brand-
                 filtered set so the user sees how many heroes survive
                 their other toggles. */}
-            <div className="flex items-center gap-0.5 rounded-full border border-[var(--border)] p-0.5">
+            <div className="segmented">
               <button
                 onClick={() => setTierFilter("all")}
-                className={`rounded-full px-2 py-0.5 font-bold transition ${
-                  tierFilter === "all"
-                    ? "bg-[var(--bg-elev)] text-[var(--text-primary)]"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-                }`}
+                aria-pressed={tierFilter === "all"}
+                className="tabular-nums"
               >
                 전체 {baseFiltered.length}
               </button>
               <button
                 onClick={() => setTierFilter("A")}
-                className={`rounded-full px-2 py-0.5 font-bold transition ${
-                  tierFilter === "A"
-                    ? "bg-amber-500/30 text-amber-200"
-                    : "text-amber-600 hover:bg-amber-500/10"
-                }`}
+                aria-pressed={tierFilter === "A"}
+                className="inline-flex items-center gap-1 tabular-nums"
                 title="상위 20% — 게재 기간 + 변형 수 + active + 구글 매칭 합산"
               >
-                🥇 A {tierCounts.A}
+                <Trophy size={12} strokeWidth={2} aria-hidden />A {tierCounts.A}
               </button>
               <button
                 onClick={() => setTierFilter("AB")}
-                className={`rounded-full px-2 py-0.5 font-bold transition ${
-                  tierFilter === "AB"
-                    ? "bg-slate-500/30 text-slate-200"
-                    : "text-slate-700 hover:bg-slate-500/10"
-                }`}
+                aria-pressed={tierFilter === "AB"}
+                className="tabular-nums"
                 title="상위 50%"
               >
-                🥈 A+B {tierCounts.A + tierCounts.B}
+                A+B {tierCounts.A + tierCounts.B}
               </button>
             </div>
             {/* Sort selector */}
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              className="rounded-full border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 font-bold text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
+              className="h-8 rounded-sm border border-line-control bg-surface px-2 text-xs font-medium text-muted transition-colors hover:border-muted"
               title="정렬 기준"
+              aria-label="정렬 기준"
             >
               <option value="tier">A급 점수 순</option>
               <option value="longRun">게재 기간 순</option>
@@ -1184,43 +1282,58 @@ function DetailPane({
             <div className="mx-1 h-3 w-px bg-[var(--border)]" />
             <button
               onClick={() => setBrandOnly((v) => !v)}
-              className={`rounded-full border px-2 py-1 font-bold transition ${
-                brandOnly
-                  ? "border-emerald-500/60 bg-emerald-500/15 text-emerald-700"
-                  : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
-              }`}
+              aria-pressed={brandOnly}
+              className="chip"
               title={`pageName / lpDomain에 "${stem}" 들어간 광고만`}
             >
-              {brandOnly ? "✓ " : ""}브랜드만
+              {brandOnly && <Check size={12} strokeWidth={2} aria-hidden />}
+              브랜드만
             </button>
             <button
               onClick={() => setHideSuspicious((v) => !v)}
-              className={`rounded-full border px-2 py-1 font-bold transition ${
-                hideSuspicious
-                  ? "border-rose-500/60 bg-rose-500/15 text-rose-700"
-                  : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--border-strong)]"
-              }`}
+              aria-pressed={hideSuspicious}
+              className="chip"
               title="유니코드 위장 / novel·drama·capital sock-puppet 페이지 광고 숨기기"
             >
-              {hideSuspicious ? "✓ " : ""}🐤 위장 숨기기
+              {hideSuspicious ? (
+                <Check size={12} strokeWidth={2} aria-hidden />
+              ) : (
+                <Bird size={12} strokeWidth={2} aria-hidden />
+              )}
+              위장 숨기기
             </button>
             <div className="mx-1 h-3 w-px bg-[var(--border)]" />
             <button
               onClick={copyLinks}
               disabled={filteredAds.length === 0}
-              className="rounded-full border border-[var(--border)] px-2 py-1 font-bold text-[var(--text-muted)] hover:border-[var(--border-strong)] disabled:opacity-50"
+              className="btn btn-secondary btn-sm"
               title="보이는 광고 링크를 '브랜드 | URL' 형식으로 복사 — ad-factory refs/inbox/list.txt 에 붙여넣기"
             >
-              {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 링크 복사"}
+              {copiedCount !== null ? (
+                <>
+                  <CircleCheck size={14} strokeWidth={1.75} aria-hidden />
+                  {copiedCount}개 복사됨
+                </>
+              ) : (
+                <>
+                  <Copy size={14} strokeWidth={1.75} aria-hidden />
+                  링크 복사
+                </>
+              )}
             </button>
             <button
               onClick={() =>
                 setDensity(density === "compact" ? "comfy" : "compact")
               }
-              className="rounded-full border border-[var(--border)] px-2 py-1 font-bold text-[var(--text-muted)] hover:border-[var(--border-strong)]"
+              className="btn btn-secondary btn-sm"
               title="카드 크기 전환"
             >
-              {density === "compact" ? "🔍 크게" : "🗂️ 조밀"}
+              {density === "compact" ? (
+                <ZoomIn size={14} strokeWidth={1.75} aria-hidden />
+              ) : (
+                <Rows3 size={14} strokeWidth={1.75} aria-hidden />
+              )}
+              {density === "compact" ? "크게" : "조밀"}
             </button>
             {droppedCount > 0 && (
               <span className="text-[var(--text-muted)]">
@@ -1262,10 +1375,12 @@ function DetailPane({
                   }
                 }}
                 disabled={purging}
-                className="rounded-full border border-rose-500/60 bg-rose-500/15 px-2 py-1 font-bold text-rose-700 hover:bg-rose-500/30 disabled:opacity-50"
+                aria-busy={purging}
+                className="btn btn-danger btn-sm"
                 title="제외된 광고를 DB에서 영구 삭제"
               >
-                🗑️ {droppedCount}개 영구삭제
+                <Trash2 size={14} strokeWidth={1.75} aria-hidden />
+                {droppedCount}개 영구삭제
               </button>
             )}
           </div>
@@ -1280,18 +1395,22 @@ function DetailPane({
       )}
 
       {detail.status === "error" && (
-        <div className="my-6 rounded-md border border-rose-500/40 bg-rose-500/5 px-4 py-3 text-sm text-rose-700">
-          <div className="font-bold">❌ 실패</div>
-          <div className="mt-1 break-words text-xs">{detail.errorMsg}</div>
+        <div className="notice notice-error my-6" role="alert">
+          <CircleX size={16} strokeWidth={1.75} aria-hidden />
+          <div className="min-w-0">
+            <div className="font-semibold">실패</div>
+            <div className="mt-1 break-words text-xs">{detail.errorMsg}</div>
+          </div>
         </div>
       )}
 
       {detail.logs.length > 0 && (
-        <details className="mt-3">
-          <summary className="cursor-pointer text-[11px] text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
-            ▸ logs ({detail.logs.length})
+        <details className="group/logs mt-3">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
+            <ChevronRight size={14} strokeWidth={1.75} aria-hidden className="transition-transform group-open/logs:rotate-90" />
+            logs ({detail.logs.length})
           </summary>
-          <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--bg-elev)] p-3 font-mono text-[10px] leading-snug text-[var(--text-secondary)]">
+          <div className="mt-1 max-h-40 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-xs leading-snug text-[var(--text-secondary)]">
             {detail.logs.slice(-30).map((l, i) => (
               <div key={i}>{l}</div>
             ))}
@@ -1332,7 +1451,7 @@ function DetailPane({
         tab === "ads" &&
         filteredAds.length === 0 &&
         totalAds > 0 && (
-          <div className="my-10 rounded-md border border-dashed border-[var(--border-strong)] bg-[var(--bg-elev)] py-8 text-center text-xs text-[var(--text-muted)]">
+          <div className="empty my-6 rounded-panel border border-dashed border-line-strong text-sm text-muted">
             필터로 모든 광고가 제외됨 — 토글을 풀어보세요.
           </div>
         )}
@@ -1357,26 +1476,28 @@ function TabButton({
 }: {
   active: boolean;
   onClick: () => void;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   count: number;
 }) {
+  const Icon = icon;
   return (
     <button
       onClick={onClick}
-      className={`relative -mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-semibold transition ${
+      aria-pressed={active}
+      className={`relative flex h-10 items-center gap-1.5 text-sm transition-colors ${
         active
-          ? "border-blue-400 text-[var(--text-primary)]"
-          : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+          ? "font-semibold text-ink shadow-[inset_0_-2px_0_var(--accent)]"
+          : "font-medium text-muted hover:text-ink"
       }`}
     >
-      <span>{icon}</span>
+      <Icon size={16} strokeWidth={1.75} aria-hidden />
       <span>{label}</span>
       <span
-        className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums ${
           active
-            ? "bg-blue-500/20 text-blue-700"
-            : "bg-[var(--bg-elev)] text-[var(--text-muted)]"
+            ? "bg-accent-soft text-accent-ink"
+            : "bg-surface-soft text-muted"
         }`}
       >
         {count}
@@ -1404,9 +1525,9 @@ function AdTable({
   tierMap: Map<string, "A" | "B" | "C">;
 }) {
   return (
-    <div className="mt-3 overflow-x-auto rounded-lg border border-[var(--border)]">
+    <div className="mt-3 overflow-x-auto rounded-panel border border-line" tabIndex={0} aria-label="메타 광고 표">
       <table className="w-full min-w-[1000px] border-collapse text-xs">
-        <thead className="bg-[var(--bg-elev)] text-[10px] uppercase tracking-wide text-[var(--text-muted)]">
+        <thead className="border-b border-line bg-surface-soft text-xs font-medium text-muted">
           <tr>
             <th className="w-10 px-2 py-2 text-left">#</th>
             <th className="w-14 px-2 py-2 text-center" title="A급 점수 (게재기간+변형+active+구글매칭)">
@@ -1424,7 +1545,10 @@ function AdTable({
               className="w-20 px-2 py-2 text-center"
               title='Meta가 직접 표시하는 "광고 N개에서 이 크리에이티브 사용" 카운트. 브랜드가 위너를 굴리고 있다는 가장 강한 신호.'
             >
-              🔁 변형 (Meta)
+              <span className="inline-flex items-center gap-1">
+                <Repeat size={12} strokeWidth={2} aria-hidden />
+                변형 (Meta)
+              </span>
             </th>
             <th className="w-32 px-2 py-2 text-left">LP / UTM</th>
             <th className="w-12 px-2 py-2 text-center">상태</th>
@@ -1443,33 +1567,34 @@ function AdTable({
             return (
               <tr
                 key={ad.adArchiveId}
-                className={`border-t border-[var(--border)] align-top hover:bg-[var(--bg-elev)]/40 ${
-                  susp || off ? "bg-rose-500/5" : ""
+                className={`border-t border-line align-top transition-colors ${
+                  susp || off ? "bg-danger-soft" : "hover:bg-surface-soft"
                 }`}
               >
-                <td className="px-2 py-2 font-mono text-[10px] text-[var(--text-muted)]">
+                <td className="px-2 py-2 text-xs tabular-nums text-faint">
                   {i + 1}
                 </td>
                 {/* Tier badge — A/B/C derived from composite score.
                     Hover for the breakdown that drove this rank. */}
                 <td className="px-2 py-2 text-center">
                   <span
-                    className={`inline-flex items-center justify-center rounded-md px-1.5 py-1 text-[10px] font-bold ${
+                    className={
                       tier === "A"
-                        ? "bg-amber-500/20 text-amber-700 ring-1 ring-amber-500/40"
+                        ? "badge badge-warning"
                         : tier === "B"
-                          ? "bg-slate-500/20 text-slate-200"
-                          : "bg-slate-700/40 text-slate-500"
-                    }`}
+                          ? "badge badge-neutral text-ink"
+                          : "badge badge-neutral"
+                    }
                     title={`${tier}급 · 점수 ${sc.score.toFixed(1)}\n게재 ${Math.round(sc.days)}일${
                       sc.isActive ? " (active)" : ""
                     }\n변형 ${sc.variants}개${
                       sc.ytViews ? `\nATC YouTube ${fmtViews(sc.ytViews)} 조회` : ""
                     }`}
                   >
-                    {tier === "A" ? "🥇" : tier === "B" ? "🥈" : "🥉"} {tier}
+                    {tier === "A" && <Trophy size={12} strokeWidth={2} aria-hidden />}
+                    {tier}
                   </span>
-                  <div className="mt-0.5 font-mono text-[9px] text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-xs tabular-nums text-[var(--text-muted)]">
                     {sc.score.toFixed(1)}
                   </div>
                 </td>
@@ -1479,7 +1604,7 @@ function AdTable({
                     href={metaLibraryLink(ad.adArchiveId)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="relative block h-[72px] w-[72px] overflow-hidden rounded-md bg-[var(--bg-elev)]"
+                    className="relative block h-[72px] w-[72px] overflow-hidden rounded-sm bg-surface-sunken"
                     title="라이브러리에서 열기"
                   >
                     {ad.mediaUrl ? (
@@ -1492,13 +1617,14 @@ function AdTable({
                         className="h-full w-full object-cover"
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] text-[var(--text-muted)]">
+                      <div className="flex h-full w-full items-center justify-center text-xs text-[var(--text-muted)]">
                         —
                       </div>
                     )}
                     {ad.mediaType === "video" && (
-                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-black/70 px-1 text-[9px] font-bold text-white">
-                        ▶
+                      <span className="pointer-events-none absolute bottom-0.5 right-0.5 grid h-5 w-5 place-items-center rounded-xs bg-black/70 text-white">
+                        <Play size={12} strokeWidth={2} fill="currentColor" aria-hidden />
+                        <span className="sr-only">영상</span>
                       </span>
                     )}
                   </a>
@@ -1507,13 +1633,13 @@ function AdTable({
                 <td className="px-2 py-2">
                   {title && (
                     <div
-                      className="line-clamp-1 text-[12px] font-semibold text-[var(--text-primary)]"
+                      className="line-clamp-1 text-xs font-semibold text-[var(--text-primary)]"
                       title={title}
                     >
                       {title}
                     </div>
                   )}
-                  <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-xs text-[var(--text-muted)]">
                     <span>광고주: </span>
                     <a
                       href={
@@ -1523,22 +1649,23 @@ function AdTable({
                       }
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-semibold text-[var(--text-secondary)] hover:text-blue-700 hover:underline"
+                      className="font-semibold text-[var(--text-secondary)] hover:text-accent-ink hover:underline"
                       title={ad.pageName}
                     >
                       {ad.pageName || "(unknown)"}
                     </a>
                     {susp && (
                       <span
-                        className="ml-1.5 rounded-full bg-rose-500/20 px-1 py-0.5 font-bold text-rose-700"
+                        className="badge badge-danger ml-1.5 h-5 px-1.5"
                         title="유니코드 위장 / sock-puppet 의심"
                       >
-                        🐤
+                        <Bird size={12} strokeWidth={2} aria-hidden />
+                        <span className="sr-only">위장 의심</span>
                       </span>
                     )}
                     {off && !susp && (
                       <span
-                        className="ml-1.5 rounded-full bg-rose-500/20 px-1 py-0.5 font-bold text-rose-700"
+                        className="badge badge-danger ml-1.5 h-5 px-1.5"
                         title="브랜드 키워드와 무관한 페이지"
                       >
                         ≠ 무관
@@ -1557,29 +1684,30 @@ function AdTable({
                       Both directly drive the A-tier score so seeing them
                       next to the body text makes the rank legible. */}
                   {(sc.variants > 1 || (ad.ytTopViews ?? 0) > 0) && (
-                    <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px]">
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-xs">
                       {sc.variants > 1 && (
                         <span
-                          className={`rounded px-1.5 py-0.5 font-bold ${
+                          className={
                             sc.variantsSource === "meta"
-                              ? "bg-emerald-500/20 text-emerald-700"
-                              : "bg-indigo-500/20 text-indigo-700"
-                          }`}
+                              ? "badge badge-success"
+                              : "badge badge-neutral"
+                          }
                           title={
                             sc.variantsSource === "meta"
                               ? `Meta가 직접 표시: "광고 ${sc.variants}개에서 이 크리에이티브 사용"`
                               : "추정값 (body 해시 기반). 메타 신호 수집하면 정확해짐."
                           }
                         >
-                          🔁 변형 {sc.variants}
+                          <Repeat size={12} strokeWidth={2} aria-hidden />
+                          변형 {sc.variants}
                           {sc.variantsSource === "meta" && (
-                            <span className="ml-1 opacity-70">·Meta</span>
+                            <span className="opacity-80">·Meta</span>
                           )}
                         </span>
                       )}
                       {ad.ytMatches && ad.ytMatches.length > 0 && (
                         <span
-                          className="rounded bg-rose-500/20 px-1.5 py-0.5 font-bold text-rose-700"
+                          className="badge badge-neutral tabular-nums"
                           title={ad.ytMatches
                             .map(
                               (m) =>
@@ -1591,7 +1719,8 @@ function AdTable({
                             )
                             .join("\n")}
                         >
-                          ▶ ATC {fmtViews(ad.ytTopViews ?? 0)}회
+                          <Play size={12} strokeWidth={2} aria-hidden />
+                          ATC {fmtViews(ad.ytTopViews ?? 0)}회
                         </span>
                       )}
                       {/* Phase-3a: BIT.LY-resolved YouTube id without an
@@ -1604,10 +1733,11 @@ function AdTable({
                             href={`https://www.youtube.com/watch?v=${ad.resolvedYoutubeId}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="rounded bg-rose-500/10 px-1.5 py-0.5 font-bold text-rose-700/70 hover:bg-rose-500/20"
+                            className="badge badge-neutral hover:text-ink"
                             title={`BIT.LY 따라가니 YouTube 영상: ${ad.resolvedYoutubeId}\n(ATC DB에 색인 안 됨 — 수동 추가하면 조회수 매칭됨)`}
                           >
-                            ▶ YT (미색인)
+                            <Play size={12} strokeWidth={2} aria-hidden />
+                            YT (미색인)
                           </a>
                         )}
                       {/* Resolved final domain — for non-YT BIT.LY chains
@@ -1615,7 +1745,7 @@ function AdTable({
                       {ad.resolvedLpDomain &&
                         ad.resolvedLpDomain !== ad.lpDomain && (
                           <span
-                            className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono text-emerald-700"
+                            className="badge badge-neutral font-mono"
                             title={`BIT.LY 최종 도착지: ${ad.resolvedLpUrl}`}
                           >
                             → {ad.resolvedLpDomain}
@@ -1625,10 +1755,11 @@ function AdTable({
                   )}
                   {body && (
                     <div
-                      className="mt-1 line-clamp-2 text-[11px] leading-snug text-[var(--text-secondary)]"
+                      className="mt-1 line-clamp-2 text-xs leading-snug text-[var(--text-secondary)]"
                       title={body}
                     >
-                      📝 {body}
+                      <FileText size={12} strokeWidth={2} aria-hidden className="mr-1 inline align-[-1px] text-faint" />
+                      {body}
                     </div>
                   )}
                 </td>
@@ -1638,22 +1769,22 @@ function AdTable({
                     href={metaLibraryLink(ad.adArchiveId)}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block rounded bg-amber-500/15 px-2 py-1 text-[10px] font-bold text-amber-700 hover:bg-amber-500/30"
+                    className="btn btn-secondary btn-sm"
                   >
-                    ▶ 보기
+                    <ArrowUpRight size={14} strokeWidth={1.75} aria-hidden />
+                    보기
                   </a>
                 </td>
                 {/* Type tag */}
                 <td className="px-2 py-2 text-center">
                   {ad.mediaType ? (
-                    <span
-                      className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                        ad.mediaType === "video"
-                          ? "bg-rose-500/20 text-rose-700"
-                          : "bg-slate-500/20 text-slate-700"
-                      }`}
-                    >
-                      {ad.mediaType === "video" ? "🎬 영상" : "🖼️ 이미지"}
+                    <span className="badge badge-neutral">
+                      {ad.mediaType === "video" ? (
+                        <Clapperboard size={12} strokeWidth={2} aria-hidden />
+                      ) : (
+                        <ImageIcon size={12} strokeWidth={2} aria-hidden />
+                      )}
+                      {ad.mediaType === "video" ? "영상" : "이미지"}
                     </span>
                   ) : (
                     <span className="text-[var(--text-muted)]">—</span>
@@ -1670,21 +1801,21 @@ function AdTable({
                       <span className="text-[var(--text-muted)]">—</span>
                     )}
                     {ad.publisherPlatforms.length > 3 && (
-                      <span className="text-[9px] text-[var(--text-muted)]">
+                      <span className="text-xs text-[var(--text-muted)]">
                         +{ad.publisherPlatforms.length - 3}
                       </span>
                     )}
                   </div>
                 </td>
                 {/* Start date + computed run length (key A-tier signal) */}
-                <td className="whitespace-nowrap px-2 py-2 text-center font-mono text-[10px] text-[var(--text-secondary)]">
+                <td className="whitespace-nowrap px-2 py-2 text-center text-xs tabular-nums text-[var(--text-secondary)]">
                   {start ?? "—"}
                   <div
-                    className={`mt-0.5 text-[10px] font-bold ${
+                    className={`mt-0.5 text-xs font-semibold ${
                       sc.days >= 30
-                        ? "text-emerald-700"
+                        ? "text-success"
                         : sc.days >= 14
-                          ? "text-amber-700"
+                          ? "text-ink"
                           : "text-[var(--text-muted)]"
                     }`}
                     title={
@@ -1700,22 +1831,23 @@ function AdTable({
                 {/* Variant count — Meta's exact figure when enriched,
                     falls back to body-hash heuristic. Source pill makes
                     confidence legible. */}
-                <td className="px-2 py-2 text-center text-[10px]">
+                <td className="px-2 py-2 text-center text-xs">
                   {ad.librarySignalsFetchedAt == null ? (
                     <div
                       className="flex flex-col items-center gap-0.5"
                       title={`추정값 (body 해시 기반). 메타 신호 수집하면 정확한 카운트로 갱신.`}
                     >
                       <span
-                        className={`font-bold ${
+                        className={`inline-flex items-center gap-1 font-semibold tabular-nums ${
                           sc.variants > 1
-                            ? "text-indigo-700"
+                            ? "text-ink"
                             : "text-[var(--text-muted)]"
                         }`}
                       >
-                        🔁 {sc.variants}
+                        <Repeat size={12} strokeWidth={2} aria-hidden />
+                        {sc.variants}
                       </span>
-                      <span className="text-[9px] text-[var(--text-muted)]">
+                      <span className="text-xs text-[var(--text-muted)]">
                         추정
                       </span>
                     </div>
@@ -1725,15 +1857,16 @@ function AdTable({
                       title={`Meta가 직접 표시한 카운트 — "광고 ${ad.metaVariantCount}개에서 이 크리에이티브 사용"`}
                     >
                       <span
-                        className={`font-bold ${
+                        className={`inline-flex items-center gap-1 font-semibold tabular-nums ${
                           (ad.metaVariantCount ?? 1) > 1
-                            ? "text-emerald-700"
+                            ? "text-success"
                             : "text-[var(--text-muted)]"
                         }`}
                       >
-                        🔁 {ad.metaVariantCount ?? 1}
+                        <Repeat size={12} strokeWidth={2} aria-hidden />
+                        {ad.metaVariantCount ?? 1}
                       </span>
-                      <span className="rounded bg-emerald-500/10 px-1 text-[9px] font-bold text-emerald-700">
+                      <span className="badge badge-success h-5 px-1.5">
                         Meta
                       </span>
                     </div>
@@ -1747,7 +1880,7 @@ function AdTable({
                       target="_blank"
                       rel="noopener noreferrer"
                       title={ad.lpUrl ?? undefined}
-                      className="block truncate font-mono text-[10px] uppercase text-emerald-600 hover:underline"
+                      className="block truncate font-mono text-xs text-accent hover:underline"
                     >
                       {ad.lpDomain}
                     </a>
@@ -1756,7 +1889,7 @@ function AdTable({
                   )}
                   {ad.utmCampaign && (
                     <div
-                      className="mt-0.5 truncate font-mono text-[10px] text-amber-700/80"
+                      className="mt-0.5 truncate font-mono text-xs text-muted"
                       title={ad.utmCampaign}
                     >
                       {ad.utmCampaign}
@@ -1766,14 +1899,13 @@ function AdTable({
                 {/* Active status pill */}
                 <td className="px-2 py-2 text-center">
                   <span
-                    className={`inline-block rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                      isActive
-                        ? "bg-emerald-500/20 text-emerald-700"
-                        : "bg-slate-500/20 text-slate-700"
+                    className={`inline-flex items-center justify-center ${
+                      isActive ? "text-success" : "text-faint"
                     }`}
                     title={isActive ? "현재 게재중" : "종료됨"}
                   >
-                    {isActive ? "●" : "○"}
+                    <span aria-hidden className="status-dot" />
+                    <span className="sr-only">{isActive ? "게재중" : "종료"}</span>
                   </span>
                 </td>
               </tr>
@@ -1809,10 +1941,10 @@ function AdCard({
 
   return (
     <div
-      className={`flex flex-col overflow-hidden rounded-xl border bg-[var(--bg-elev)] shadow-sm transition hover:border-[var(--border-strong)] ${
+      className={`flex flex-col overflow-hidden rounded-panel border bg-surface transition-colors ${
         suspicious || offBrand
-          ? "border-rose-500/30 ring-1 ring-rose-500/10"
-          : "border-[var(--border)]"
+          ? "border-danger-line"
+          : "border-line hover:border-line-strong hover:shadow-xs"
       }`}
     >
       {/* Page header — denser in compact mode */}
@@ -1828,13 +1960,13 @@ function AdCard({
             alt=""
             loading="lazy"
             referrerPolicy="no-referrer"
-            className={`shrink-0 rounded-full bg-slate-700 object-cover ${
+            className={`shrink-0 rounded-sm bg-surface-sunken object-cover ${
               compact ? "h-6 w-6" : "h-8 w-8"
             }`}
           />
         ) : (
           <div
-            className={`shrink-0 rounded-full bg-slate-700 ${
+            className={`shrink-0 rounded-sm bg-surface-sunken ${
               compact ? "h-6 w-6" : "h-8 w-8"
             }`}
           />
@@ -1848,15 +1980,15 @@ function AdCard({
             }
             target="_blank"
             rel="noopener noreferrer"
-            className={`block truncate font-bold text-[var(--text-primary)] hover:text-blue-700 hover:underline ${
-              compact ? "text-[11px]" : "text-xs"
+            className={`block truncate font-semibold text-[var(--text-primary)] hover:text-accent-ink hover:underline ${
+              compact ? "text-xs" : "text-xs"
             }`}
             title={ad.pageName || "(no page name)"}
           >
             {ad.pageName || "(no page name)"}
           </a>
           {!compact && (
-            <div className="text-[10px] text-[var(--text-muted)]">광고</div>
+            <div className="text-xs text-[var(--text-muted)]">광고</div>
           )}
         </div>
         {!compact && (
@@ -1866,14 +1998,15 @@ function AdCard({
         )}
         {(suspicious || offBrand) && (
           <span
-            className="shrink-0 rounded-full bg-rose-500/20 px-1.5 py-0.5 text-[9px] font-bold text-rose-700"
+            className="badge badge-danger h-5 shrink-0 px-1.5"
             title={
               suspicious
                 ? "유니코드 위장 / sock-puppet 의심"
                 : "브랜드 키워드와 무관한 페이지"
             }
           >
-            {suspicious ? "🐤" : "≠"}
+            {suspicious ? <Bird size={12} strokeWidth={2} aria-hidden /> : "≠"}
+            <span className="sr-only">{suspicious ? "위장 의심" : "무관"}</span>
           </span>
         )}
       </div>
@@ -1881,15 +2014,10 @@ function AdCard({
       {/* Status / library id row — hidden in compact mode (info still in
           tooltips + footer) to save vertical space */}
       {!compact && (
-        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 text-[10px] text-[var(--text-muted)]">
-          <span
-            className={`inline-flex items-center rounded px-1.5 py-0.5 font-bold ${
-              isActive
-                ? "bg-emerald-500/20 text-emerald-700"
-                : "bg-slate-500/20 text-slate-700"
-            }`}
-          >
-            {isActive ? "● 게재중" : "○ 종료"}
+        <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 text-xs text-[var(--text-muted)]">
+          <span className={isActive ? "badge badge-success" : "badge badge-neutral"}>
+            <span aria-hidden className="status-dot" />
+            {isActive ? "게재중" : "종료"}
           </span>
           <span className="font-mono">ID {ad.adArchiveId}</span>
           {start && (
@@ -1903,7 +2031,7 @@ function AdCard({
 
       {/* Body text — only in comfy mode */}
       {!compact && body && (
-        <div className="px-3 py-2 text-[12px] leading-snug">
+        <div className="px-3 py-2 text-xs leading-snug">
           <div className="line-clamp-4 whitespace-pre-line">{body}</div>
         </div>
       )}
@@ -1911,7 +2039,7 @@ function AdCard({
       {/* Media — square in comfy, capped 4:5 in compact so we get more
           cards on screen without losing the visual */}
       <div
-        className={`relative w-full bg-[var(--bg-elev)] ${
+        className={`relative w-full bg-surface-sunken ${
           compact ? "aspect-[4/5]" : "aspect-square"
         }`}
       >
@@ -1932,43 +2060,44 @@ function AdCard({
         {/* Media-type indicator — top-left corner badge */}
         {ad.mediaType && (
           <span
-            className={`absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-bold backdrop-blur-md ${
-              ad.mediaType === "video"
-                ? "bg-rose-500/80 text-white"
-                : "bg-slate-900/70 text-slate-100"
-            } ${compact ? "text-[9px]" : "text-[10px]"}`}
+            className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-xs bg-black/70 px-1.5 py-0.5 text-xs font-semibold text-white backdrop-blur-md"
             title={ad.mediaType === "video" ? "영상 광고" : "이미지 광고"}
           >
-            {ad.mediaType === "video"
-              ? compact
-                ? "🎬"
-                : "🎬 영상"
-              : compact
-                ? "🖼️"
-                : "🖼️ 이미지"}
+            {ad.mediaType === "video" ? (
+              <Clapperboard size={12} strokeWidth={2} aria-hidden />
+            ) : (
+              <ImageIcon size={12} strokeWidth={2} aria-hidden />
+            )}
+            {compact ? (
+              <span className="sr-only">{ad.mediaType === "video" ? "영상" : "이미지"}</span>
+            ) : ad.mediaType === "video" ? (
+              "영상"
+            ) : (
+              "이미지"
+            )}
           </span>
         )}
         {/* Active-status pill in compact (since we hide the separate row) */}
         {compact && (
           <span
-            className={`absolute right-1.5 top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-bold backdrop-blur-md ${
-              isActive
-                ? "bg-emerald-500/80 text-white"
-                : "bg-slate-700/80 text-slate-200"
+            className={`absolute right-1.5 top-1.5 inline-flex h-5 items-center rounded-xs bg-black/70 px-1.5 backdrop-blur-md ${
+              isActive ? "text-sidebar-success" : "text-sidebar-muted"
             }`}
+            title={isActive ? "현재 게재중" : "종료됨"}
           >
-            {isActive ? "●" : "○"}
+            <span aria-hidden className="status-dot" />
+            <span className="sr-only">{isActive ? "게재중" : "종료"}</span>
           </span>
         )}
         {/* Center play overlay — only for video, smaller in compact */}
         {ad.mediaType === "video" && ad.mediaUrl && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div
-              className={`flex items-center justify-center rounded-full bg-black/60 text-white shadow-lg backdrop-blur-md ${
-                compact ? "h-8 w-8 text-base" : "h-12 w-12 text-2xl"
+              className={`flex items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md ${
+                compact ? "h-8 w-8" : "h-12 w-12"
               }`}
             >
-              ▶
+              <Play size={compact ? 14 : 20} strokeWidth={1.75} fill="currentColor" aria-hidden />
             </div>
           </div>
         )}
@@ -1976,18 +2105,18 @@ function AdCard({
 
       {/* LP domain footer + Library link */}
       <div
-        className={`flex flex-col gap-1 border-t border-[var(--border)] text-[10px] ${
+        className={`flex flex-col gap-1 border-t border-[var(--border)] text-xs ${
           compact ? "px-2 py-1.5" : "px-3 py-2 gap-1.5"
         }`}
       >
         <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0 truncate font-mono uppercase tracking-wide">
+          <div className="min-w-0 truncate font-mono">
             {ad.lpDomain ? (
               <a
                 href={ad.lpUrl ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-emerald-600 hover:underline"
+                className="text-accent hover:underline"
                 title={ad.lpUrl ?? undefined}
               >
                 {ad.lpDomain}
@@ -2000,14 +2129,15 @@ function AdCard({
             href={metaLibraryLink(ad.adArchiveId)}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 rounded bg-slate-700/40 px-1.5 py-0.5 text-[var(--text-muted)] hover:bg-slate-700 hover:text-[var(--text-primary)]"
+            className="inline-flex shrink-0 items-center gap-0.5 rounded-xs bg-surface-soft px-1.5 py-0.5 text-muted transition-colors hover:text-ink"
           >
-            Library ↗
+            Library
+            <ArrowUpRight size={12} strokeWidth={2} aria-hidden />
           </a>
         </div>
         {!compact && ad.utmCampaign && (
-          <div className="truncate font-mono text-[10px]">
-            <span className="rounded bg-amber-500/15 px-1 py-0.5 text-amber-700">
+          <div className="truncate font-mono text-xs">
+            <span className="rounded-xs bg-surface-soft px-1 py-0.5 text-muted">
               {ad.utmCampaign}
             </span>
             {ad.utmTerm && (
@@ -2027,7 +2157,7 @@ function AdCard({
             href={ad.lpUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 block rounded-md bg-blue-500/15 px-2 py-1.5 text-center text-[11px] font-semibold text-blue-700 hover:bg-blue-500/30"
+            className="btn btn-secondary btn-sm mt-1 w-full"
           >
             더 알아보기 →
           </a>
@@ -2055,7 +2185,7 @@ function PageCard({
   const lpDomains = new Set<string>();
   for (const a of group.ads) if (a.lpDomain) lpDomains.add(a.lpDomain);
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] p-3">
+    <div className="overflow-hidden rounded-panel border border-line bg-surface p-3 transition-colors hover:border-line-strong">
       <div className="flex items-center gap-2">
         {sample?.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -2064,10 +2194,10 @@ function PageCard({
             alt=""
             loading="lazy"
             referrerPolicy="no-referrer"
-            className="h-10 w-10 shrink-0 rounded-full bg-slate-700 object-cover"
+            className="h-10 w-10 shrink-0 rounded-sm bg-surface-sunken object-cover"
           />
         ) : (
-          <div className="h-10 w-10 shrink-0 rounded-full bg-slate-700" />
+          <div className="h-10 w-10 shrink-0 rounded-sm bg-surface-sunken" />
         )}
         <div className="min-w-0 flex-1">
           <a
@@ -2078,28 +2208,29 @@ function PageCard({
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="block truncate text-sm font-semibold hover:text-blue-700 hover:underline"
+            className="block truncate text-sm font-semibold hover:text-accent-ink hover:underline"
           >
             {group.pageName}
           </a>
-          <div className="text-[10px] text-[var(--text-muted)]">
+          <div className="text-xs text-[var(--text-muted)]">
             {group.pageId && (
               <span className="font-mono">{group.pageId}</span>
             )}
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-base font-bold">{group.ads.length}</div>
-          <div className="text-[9px] text-[var(--text-muted)]">광고</div>
+          <div className="text-base font-semibold tabular-nums">{group.ads.length}</div>
+          <div className="text-xs text-[var(--text-muted)]">광고</div>
         </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px]">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-xs">
         {isSuspicious && (
           <span
-            className="rounded-full bg-rose-500/20 px-1.5 py-0.5 font-bold text-rose-700"
+            className="badge badge-danger"
             title="페이지명에 유니코드 위장 글리프 또는 i/l 노이즈 감지"
           >
-            🐤 위장
+            <Bird size={12} strokeWidth={2} aria-hidden />
+            위장
           </span>
         )}
         {Array.from(lpDomains)
@@ -2107,7 +2238,7 @@ function PageCard({
           .map((d) => (
             <span
               key={d}
-              className="rounded bg-emerald-500/15 px-1.5 py-0.5 font-mono uppercase text-emerald-700"
+              className="badge badge-neutral font-mono"
             >
               {d}
             </span>
@@ -2129,12 +2260,12 @@ function PageCard({
               alt=""
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="h-16 w-16 shrink-0 rounded object-cover"
+              className="h-16 w-16 shrink-0 rounded-xs object-cover"
             />
           ) : (
             <div
               key={a.adArchiveId}
-              className="h-16 w-16 shrink-0 rounded bg-[var(--bg-elev)]"
+              className="h-16 w-16 shrink-0 rounded-xs bg-surface-sunken"
             />
           )
         )}
@@ -2202,11 +2333,11 @@ function MetaLiveProgress({
     percent = 20;
   }
 
-  const stages: { key: Stage; label: string; emoji: string }[] = [
-    { key: "search", label: "검색어 스캔", emoji: "🔍" },
-    { key: "discover", label: "광고주 발굴", emoji: "🌱" },
-    { key: "scoop", label: "광고 수집", emoji: "📦" },
-    { key: "merge", label: "저장", emoji: "💾" },
+  const stages: { key: Stage; label: string; Icon: LucideIcon }[] = [
+    { key: "search", label: "검색어 스캔", Icon: Search },
+    { key: "discover", label: "광고주 발굴", Icon: Sprout },
+    { key: "scoop", label: "광고 수집", Icon: Package },
+    { key: "merge", label: "저장", Icon: Save },
   ];
   const stageOrder: Stage[] = ["search", "discover", "scoop", "merge"];
   const activeIdx = stageOrder.indexOf(activeStage);
@@ -2222,57 +2353,62 @@ function MetaLiveProgress({
     }, null) ?? null;
 
   return (
-    <div className="my-4 rounded-xl border border-blue-500/30 bg-blue-500/5 p-4">
+    <div className="my-4 rounded-panel border border-accent-line bg-accent-soft p-4" role="status" aria-busy="true">
       {/* Header — animated dot + status text + percent */}
       <div className="mb-3 flex items-center gap-3">
-        <span className="relative flex h-3 w-3">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400/60" />
-          <span className="relative inline-flex h-3 w-3 rounded-full bg-blue-400" />
-        </span>
-        <span className="text-sm font-bold text-blue-700">
-          {status === "queued" ? "🕒 대기 중..." : "📘 메타 수집 중"}
+        {status === "queued" ? (
+          <CirclePause size={16} strokeWidth={1.75} aria-hidden className="text-accent-ink" />
+        ) : (
+          <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin text-accent-ink" />
+        )}
+        <span className="text-sm font-semibold text-accent-ink">
+          {status === "queued" ? "대기 중..." : "메타 수집 중"}
         </span>
         {adCount !== null && (
-          <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-bold text-emerald-700">
+          <span className="badge badge-success tabular-nums">
             지금까지 {adCount}개 잡힘
           </span>
         )}
-        <span className="ml-auto text-xs font-mono text-blue-700">
+        <span className="ml-auto text-xs tabular-nums text-accent-ink">
           {percent}%
         </span>
       </div>
 
       {/* Progress bar */}
-      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-[var(--bg-base)]">
+      <div className="progress mb-4 bg-surface">
         <div
-          className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-all duration-500"
+          className="h-full rounded-full bg-accent transition-all duration-500"
           style={{ width: `${percent}%` }}
         />
       </div>
 
       {/* Stage chips */}
-      <div className="mb-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+      <div className="mb-3 flex flex-wrap items-center gap-1.5 text-xs">
         {stages.map((s, i) => {
           const isActive = i === activeIdx;
           const isDone = i < activeIdx;
           return (
             <div key={s.key} className="flex items-center gap-1.5">
               <span
-                className={`flex items-center gap-1 rounded-full px-2 py-1 font-bold ${
+                className={
                   isActive
-                    ? "bg-blue-500/30 text-blue-200 ring-1 ring-blue-400/50"
+                    ? "badge border border-accent-line bg-surface text-accent-ink"
                     : isDone
-                      ? "bg-emerald-500/15 text-emerald-700"
-                      : "bg-[var(--bg-elev)] text-[var(--text-muted)]"
-                }`}
+                      ? "badge badge-success"
+                      : "badge badge-neutral"
+                }
               >
-                <span>
-                  {isDone ? "✅" : isActive ? s.emoji : "⏳"}
-                </span>
+                {isDone ? (
+                  <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                ) : isActive ? (
+                  <s.Icon size={12} strokeWidth={2} aria-hidden />
+                ) : (
+                  <Hourglass size={12} strokeWidth={2} aria-hidden />
+                )}
                 {s.label}
               </span>
               {i < stages.length - 1 && (
-                <span className="text-[var(--text-muted)]">→</span>
+                <ChevronRight size={12} strokeWidth={2} aria-hidden className="text-faint" />
               )}
             </div>
           );
@@ -2283,7 +2419,7 @@ function MetaLiveProgress({
       {logs.length > 0 && (
         <div
           ref={scrollRef}
-          className="max-h-32 overflow-y-auto rounded-md border border-[var(--border)] bg-[var(--bg-base)] p-2 font-mono text-[10px] leading-relaxed text-[var(--text-secondary)]"
+          className="max-h-32 overflow-y-auto rounded-sm border border-line bg-surface p-2 font-mono text-xs leading-relaxed text-[var(--text-secondary)]"
         >
           {logs.slice(-12).map((l, i) => {
             const isImportant =
@@ -2293,7 +2429,7 @@ function MetaLiveProgress({
                 key={i}
                 className={
                   isImportant
-                    ? "text-emerald-700"
+                    ? "text-success"
                     : "text-[var(--text-muted)]"
                 }
               >
@@ -2304,7 +2440,7 @@ function MetaLiveProgress({
         </div>
       )}
       {logs.length === 0 && status !== "queued" && (
-        <div className="text-center text-[11px] text-[var(--text-muted)]">
+        <div className="text-center text-xs text-[var(--text-muted)]">
           워커 시작 중... 첫 로그 곧 표시됨
         </div>
       )}

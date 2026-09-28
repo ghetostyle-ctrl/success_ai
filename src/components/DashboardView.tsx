@@ -13,6 +13,23 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
+import {
+  Activity,
+  Calendar,
+  CircleStop,
+  Clapperboard,
+  Flame,
+  Globe,
+  LayoutDashboard,
+  LoaderCircle,
+  Package,
+  Sparkles,
+  Sprout,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 
 ChartJS.register(
   CategoryScale,
@@ -69,20 +86,35 @@ type DashboardData = {
 
 type Range = 1 | 7 | 30;
 
-// Stable color palette for the line chart
-const COLORS = [
-  "#f59e0b", // amber
-  "#f43f5e", // rose
-  "#10b981", // emerald
-  "#6366f1", // indigo
-  "#06b6d4", // cyan
-  "#a855f7", // purple
-  "#ec4899", // pink
-  "#84cc16", // lime
-];
+// 차트 색은 스위트 토큰에서 읽는다 (SUITE-DESIGN §4.11). 시리즈 1 = --accent,
+// 나머지는 톤 다운된 보조 팔레트 상수.
+const css = (name: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-function colorFor(index: number) {
-  return COLORS[index % COLORS.length];
+function readChartTheme() {
+  return {
+    series: [
+      css("--accent"),
+      "#6b7a90",
+      "#3f8f73",
+      "#b0822b",
+      "#b8505a",
+      "#7d6bb3",
+      "#8d909c",
+      "#0891b2",
+    ],
+    muted: css("--muted"),
+    line: css("--line"),
+    surface: css("--surface"),
+    ink: css("--ink"),
+    fontFamily: css("--font-sans"),
+  };
+}
+
+type ChartTheme = ReturnType<typeof readChartTheme>;
+
+function colorFor(theme: ChartTheme, index: number) {
+  return theme.series[index % theme.series.length];
 }
 
 function formatUnixDate(unix: string | null): string {
@@ -118,6 +150,8 @@ export default function DashboardView() {
       .finally(() => setLoading(false));
   }, [range]);
 
+  const theme = useMemo(() => readChartTheme(), []);
+
   const chartData = useMemo(() => {
     if (!data) return null;
     const labels = data.timeseries.map((p) => p.date as string);
@@ -126,19 +160,28 @@ export default function DashboardView() {
       datasets: data.domains.map((dom, i) => ({
         label: dom,
         data: data.timeseries.map((p) => Number(p[dom] ?? 0)),
-        borderColor: colorFor(i),
-        backgroundColor: colorFor(i) + "33",
+        borderColor: colorFor(theme, i),
+        backgroundColor: colorFor(theme, i),
+        borderWidth: 2,
         tension: 0.3,
-        pointRadius: 4,
-        pointHoverRadius: 6,
+        // 점 1개뿐이면 선이 안 그려지므로 그때만 점을 보인다.
+        pointRadius: data.timeseries.length === 1 ? 3 : 0,
+        pointHoverRadius: 3,
       })),
     };
-  }, [data]);
+  }, [data, theme]);
 
   if (!data) {
     return (
-      <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-6 py-16 text-center text-sm text-[var(--text-muted)]">
-        {loading ? "불러오는 중..." : "데이터 없음"}
+      <div className="panel empty text-sm text-muted" aria-busy={loading}>
+        <span className="empty-icon mb-3">
+          {loading ? (
+            <LoaderCircle size={20} strokeWidth={1.75} aria-hidden className="animate-spin" />
+          ) : (
+            <LayoutDashboard size={20} strokeWidth={1.75} aria-hidden />
+          )}
+        </span>
+        <div>{loading ? "불러오는 중..." : "데이터 없음"}</div>
       </div>
     );
   }
@@ -148,24 +191,23 @@ export default function DashboardView() {
   return (
     <div className="space-y-5">
       {/* Header + range toggle */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="panel">
+        <div className="panel-header flex-wrap">
           <div>
-            <h2 className="text-sm font-semibold">📊 대시보드</h2>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
+            <h2>
+              <LayoutDashboard size={16} strokeWidth={1.75} aria-hidden />
+              대시보드
+            </h2>
+            <p className="mt-1 text-xs tabular-nums text-muted">
               {data.range.rangeStart} ~ {data.range.today} ({range}일치 분석)
             </p>
           </div>
-          <div className="flex rounded-lg border border-[var(--border)] bg-[var(--bg-elev)] p-0.5">
+          <div className="segmented">
             {([1, 7, 30] as Range[]).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                  range === r
-                    ? "bg-indigo-500 text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                }`}
+                aria-pressed={range === r}
               >
                 {r === 1 ? "1일" : `${r}일`}
               </button>
@@ -176,47 +218,49 @@ export default function DashboardView() {
 
       {/* Snapshot status banner (graceful degradation) */}
       {!snapshot.hasTrendData && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-xs">
-          <div className="flex items-start gap-2">
-            <span className="text-base">📅</span>
-            <div className="flex-1 space-y-0.5">
-              <div className="font-semibold text-amber-700">
-                시계열 스냅샷 누적 중 ({snapshot.totalDays}일치)
-              </div>
-              <div className="text-[var(--text-secondary)]">
-                상승세 / 급등 지표는 스냅샷이 최소 2일치 쌓여야 계산됩니다.
-                자동 갱신을 걸어뒀다면 내일부터 채워집니다.
-              </div>
+        <div className="notice notice-warning" role="status">
+          <Calendar size={16} strokeWidth={1.75} aria-hidden />
+          <div className="flex-1 space-y-0.5">
+            <div className="font-semibold">
+              시계열 스냅샷 누적 중 ({snapshot.totalDays}일치)
+            </div>
+            <div className="text-ink">
+              상승세 / 급등 지표는 스냅샷이 최소 2일치 쌓여야 계산됩니다.
+              자동 갱신을 걸어뒀다면 내일부터 채워집니다.
             </div>
           </div>
         </div>
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
         <KpiCard
           label="활성 광고"
+          icon={Activity}
           value={kpis.activeAds}
           unit="개"
           accent="indigo"
           hint={`최근 ${range}일 내 투명성 센터 노출`}
         />
         <KpiCard
-          label="🌱 새 캠페인"
+          label="새 캠페인"
+          icon={Sprout}
           value={kpis.newAds}
           unit="개"
           accent="emerald"
           hint={`첫 노출 ${range}일 이내`}
         />
         <KpiCard
-          label="🛑 내린 광고"
+          label="내린 광고"
+          icon={CircleStop}
           value={kpis.endedAds}
           unit="개"
           accent="slate"
           hint={`마지막 노출 ${range}일 이전`}
         />
         <KpiCard
-          label="📈 상승세 영상"
+          label="상승세 영상"
+          icon={TrendingUp}
           value={kpis.accelTop}
           unit="개"
           accent="teal"
@@ -228,7 +272,8 @@ export default function DashboardView() {
           dim={!snapshot.hasTrendData}
         />
         <KpiCard
-          label="⚡ 급등"
+          label="급등"
+          icon={Zap}
           value={kpis.spike}
           unit="개"
           accent="fuchsia"
@@ -242,10 +287,14 @@ export default function DashboardView() {
       </div>
 
       {/* Line chart: per-domain ad-count timeseries */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-        <h3 className="mb-3 text-sm font-semibold">
-          🌐 도메인별 일별 광고 수 추이
-        </h3>
+      <section className="panel">
+        <div className="panel-header">
+          <h2>
+            <Globe size={16} strokeWidth={1.75} aria-hidden />
+            도메인별 일별 광고 수 추이
+          </h2>
+        </div>
+        <div className="panel-body">
         {chartData && data.timeseries.length > 0 ? (
           <div className="h-72">
             <Line
@@ -257,29 +306,31 @@ export default function DashboardView() {
                   legend: {
                     position: "bottom",
                     labels: {
-                      color: "#98a3b8",
+                      color: theme.muted,
                       boxWidth: 10,
                       boxHeight: 10,
                       padding: 12,
-                      font: { size: 11 },
+                      font: { size: 12, family: theme.fontFamily },
                     },
                   },
                   tooltip: {
-                    backgroundColor: "#131c2e",
-                    titleColor: "#e6e9f2",
-                    bodyColor: "#e6e9f2",
-                    borderColor: "#243047",
+                    backgroundColor: theme.surface,
+                    titleColor: theme.ink,
+                    bodyColor: theme.ink,
+                    borderColor: theme.line,
                     borderWidth: 1,
+                    padding: 10,
+                    cornerRadius: 6,
                   },
                 },
                 scales: {
                   x: {
-                    grid: { color: "#243047" },
-                    ticks: { color: "#98a3b8", font: { size: 10 } },
+                    grid: { color: theme.line },
+                    ticks: { color: theme.muted, font: { size: 12, family: theme.fontFamily } },
                   },
                   y: {
-                    grid: { color: "#243047" },
-                    ticks: { color: "#98a3b8", font: { size: 10 } },
+                    grid: { color: theme.line },
+                    ticks: { color: theme.muted, font: { size: 12, family: theme.fontFamily } },
                     beginAtZero: true,
                   },
                 },
@@ -293,21 +344,25 @@ export default function DashboardView() {
           </div>
         )}
         {data.timeseries.length === 1 && (
-          <div className="mt-2 text-[10px] text-[var(--text-muted)]">
+          <div className="mt-2 text-xs text-[var(--text-muted)]">
             ※ 데이터 1점만 있어요. 내일부터 라인이 그려집니다.
           </div>
         )}
+        </div>
       </section>
 
       {/* Top movers */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-        <div className="border-b border-[var(--border)] p-4">
-          <h3 className="text-sm font-semibold">
-            🔥 가장 큰 변화 (조회수 변동 Top 10)
-          </h3>
-          <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-            기간 시작 ↔ 끝 사이 누적 조회수 차이 기준
-          </p>
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>
+              <Flame size={16} strokeWidth={1.75} aria-hidden />
+              가장 큰 변화 (조회수 변동 Top 10)
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              기간 시작 ↔ 끝 사이 누적 조회수 차이 기준
+            </p>
+          </div>
         </div>
         {data.topMovers.length === 0 ? (
           <div className="py-12 text-center text-xs text-[var(--text-muted)]">
@@ -316,26 +371,26 @@ export default function DashboardView() {
               : "스냅샷 2개 이상 쌓이면 표시됩니다."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} aria-label="조회수 변동 Top 10 표">
             <table className="w-full text-sm">
-              <thead className="bg-[var(--bg-elev)] text-xs text-[var(--text-secondary)]">
+              <thead className="border-b border-line bg-surface-soft text-xs text-muted">
                 <tr>
-                  <th className="px-3 py-2 text-left font-semibold">#</th>
-                  <th className="px-3 py-2 text-left font-semibold">썸네일</th>
-                  <th className="px-3 py-2 text-left font-semibold">제목</th>
-                  <th className="px-3 py-2 text-left font-semibold">광고주</th>
-                  <th className="px-3 py-2 text-right font-semibold">시작</th>
-                  <th className="px-3 py-2 text-right font-semibold">끝</th>
-                  <th className="px-3 py-2 text-right font-semibold">증감</th>
+                  <th className="px-3 py-2 text-left font-medium">#</th>
+                  <th className="px-3 py-2 text-left font-medium">썸네일</th>
+                  <th className="px-3 py-2 text-left font-medium">제목</th>
+                  <th className="px-3 py-2 text-left font-medium">광고주</th>
+                  <th className="px-3 py-2 text-right font-medium">시작</th>
+                  <th className="px-3 py-2 text-right font-medium">끝</th>
+                  <th className="px-3 py-2 text-right font-medium">증감</th>
                 </tr>
               </thead>
               <tbody>
                 {data.topMovers.map((m, i) => (
                   <tr
                     key={m.creativeId}
-                    className="border-t border-[var(--border)] hover:bg-[var(--bg-elev)]"
+                    className="border-t border-line transition-colors hover:bg-surface-soft"
                   >
-                    <td className="px-3 py-2 text-[var(--text-muted)]">
+                    <td className="px-3 py-2 text-xs tabular-nums text-faint">
                       {i + 1}
                     </td>
                     <td className="px-3 py-2">
@@ -348,20 +403,20 @@ export default function DashboardView() {
                           <img
                             src={ytThumbnail(m.youtubeId)}
                             alt=""
-                            className="h-12 w-20 rounded object-cover"
+                            className="h-12 w-20 rounded-xs object-cover"
                             loading="lazy"
                           />
                         </a>
                       )}
                     </td>
                     <td className="max-w-md px-3 py-2">
-                      <div className="line-clamp-2 text-[12px] font-medium text-[var(--text-primary)]">
+                      <div className="line-clamp-2 text-xs font-medium text-[var(--text-primary)]">
                         {m.title}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-xs text-[var(--text-secondary)]">
                       {m.advertiserName}
-                      <div className="text-[10px] text-[var(--text-muted)]">
+                      <div className="text-xs text-[var(--text-muted)]">
                         {m.keyword}
                       </div>
                     </td>
@@ -375,12 +430,17 @@ export default function DashboardView() {
                       <span
                         className={
                           m.delta > 0
-                            ? "font-bold text-emerald-600"
+                            ? "inline-flex items-center gap-1 font-semibold text-success"
                             : m.delta < 0
-                            ? "font-bold text-rose-600"
+                            ? "inline-flex items-center gap-1 font-semibold text-danger"
                             : "text-[var(--text-muted)]"
                         }
                       >
+                        {m.delta > 0 ? (
+                          <TrendingUp size={12} strokeWidth={2} aria-hidden />
+                        ) : m.delta < 0 ? (
+                          <TrendingDown size={12} strokeWidth={2} aria-hidden />
+                        ) : null}
                         {m.delta > 0 ? "+" : ""}
                         {m.delta.toLocaleString()}
                       </span>
@@ -394,21 +454,24 @@ export default function DashboardView() {
       </section>
 
       {/* New ads grid */}
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-        <div className="border-b border-[var(--border)] p-4">
-          <h3 className="text-sm font-semibold">
-            ✨ 최근 등장한 광고 ({data.newAds.length}/{data.kpis.newAds}개)
-          </h3>
-          <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-            ATC 첫 노출 {range}일 이내. 새로 시작된 캠페인.
-          </p>
+      <section className="panel">
+        <div className="panel-header">
+          <div>
+            <h2>
+              <Sparkles size={16} strokeWidth={1.75} aria-hidden />
+              최근 등장한 광고 ({data.newAds.length}/{data.kpis.newAds}개)
+            </h2>
+            <p className="mt-1 text-xs text-muted">
+              ATC 첫 노출 {range}일 이내. 새로 시작된 캠페인.
+            </p>
+          </div>
         </div>
         {data.newAds.length === 0 ? (
           <div className="py-12 text-center text-xs text-[var(--text-muted)]">
             기간 내 신규 광고가 없습니다.
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 p-5 sm:grid-cols-3 lg:grid-cols-4">
             {data.newAds.map((ad) => (
               <NewAdCard key={ad.id} ad={ad} />
             ))}
@@ -421,6 +484,7 @@ export default function DashboardView() {
 
 function KpiCard({
   label,
+  icon: Icon,
   value,
   unit,
   accent,
@@ -428,38 +492,43 @@ function KpiCard({
   dim = false,
 }: {
   label: string;
+  icon: LucideIcon;
   value: number;
   unit: string;
   accent: "indigo" | "cyan" | "rose" | "emerald" | "orange" | "teal" | "fuchsia" | "slate";
   hint: string;
   dim?: boolean;
 }) {
+  // 스위트 v1: 지표 값은 accent 색 없이 모두 --ink (SUITE-DESIGN §4.9).
   const accentText: Record<typeof accent, string> = {
-    indigo: "text-indigo-600",
-    cyan: "text-cyan-600",
-    rose: "text-rose-600",
-    emerald: "text-emerald-600",
-    orange: "text-orange-600",
-    teal: "text-teal-600",
-    fuchsia: "text-fuchsia-600",
-    slate: "text-slate-500",
+    indigo: "text-ink",
+    cyan: "text-ink",
+    rose: "text-ink",
+    emerald: "text-ink",
+    orange: "text-ink",
+    teal: "text-ink",
+    fuchsia: "text-ink",
+    slate: "text-ink",
   };
   return (
     <div
-      className={`rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 ${
+      className={`panel p-5 ${
         dim ? "opacity-60" : ""
       }`}
     >
-      <div className="text-[11px] text-[var(--text-secondary)]">{label}</div>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-muted">
+        <Icon size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+        {label}
+      </div>
       <div className="mt-2 flex items-baseline gap-1">
         <span
-          className={`text-2xl font-bold tabular-nums ${accentText[accent]}`}
+          className={`text-xl font-semibold tabular-nums ${accentText[accent]}`}
         >
           {value.toLocaleString()}
         </span>
         <span className="text-xs text-[var(--text-muted)]">{unit}</span>
       </div>
-      <div className="mt-1 text-[10px] text-[var(--text-muted)]">{hint}</div>
+      <div className="mt-1 text-xs text-faint">{hint}</div>
     </div>
   );
 }
@@ -473,8 +542,8 @@ function NewAdCard({ ad }: { ad: DashboardData["newAds"][number] }) {
   const showThumb =
     ad.youtubeId || (ad.type === "image" && ad.imageHtml) || ad.previewImage;
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elev)] transition hover:border-[var(--border-strong)]">
-      <div className="aspect-video w-full overflow-hidden bg-[var(--bg-elev)]">
+    <div className="overflow-hidden rounded-panel border border-line bg-surface transition-colors hover:border-line-strong hover:shadow-xs">
+      <div className="aspect-video w-full overflow-hidden bg-surface-sunken">
         {ad.youtubeId ? (
           <a
             href={ytLink(ad.youtubeId)}
@@ -515,16 +584,20 @@ function NewAdCard({ ad }: { ad: DashboardData["newAds"][number] }) {
             />
           </a>
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-3xl text-[var(--text-muted)]">
-            {ad.type === "video" ? "🎬" : "📦"}
+          <div className="flex h-full w-full items-center justify-center text-faint">
+            {ad.type === "video" ? (
+              <Clapperboard size={20} strokeWidth={1.75} aria-hidden />
+            ) : (
+              <Package size={20} strokeWidth={1.75} aria-hidden />
+            )}
           </div>
         )}
       </div>
       <div className="space-y-1 p-3">
-        <div className="line-clamp-2 text-[12px] font-medium text-[var(--text-primary)]">
+        <div className="line-clamp-2 text-xs font-medium text-[var(--text-primary)]">
           {title}
         </div>
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-xs">
           <span className="text-[var(--text-secondary)]">
             {ad.advertiserName || ad.keyword}
           </span>
@@ -533,7 +606,7 @@ function NewAdCard({ ad }: { ad: DashboardData["newAds"][number] }) {
           </span>
         </div>
         {ad.ytViews !== null && (
-          <div className="text-[10px] tabular-nums text-rose-600">
+          <div className="text-xs tabular-nums text-muted">
             {ad.ytViews.toLocaleString()}회
           </div>
         )}

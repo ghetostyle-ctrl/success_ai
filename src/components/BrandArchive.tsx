@@ -10,6 +10,15 @@
  */
 
 import { useMemo, useState } from "react";
+import {
+  Archive,
+  Calendar,
+  Eye,
+  Image as ImageIcon,
+  LoaderCircle,
+  RefreshCw,
+  Star,
+} from "lucide-react";
 
 export type ArchiveCreative = {
   creativeId: string;
@@ -76,7 +85,7 @@ function CreativeCard({ c }: { c: ArchiveCreative }) {
       title={c.title}
       className="group relative block w-[150px] shrink-0"
     >
-      <div className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-elev)]">
+      <div className="relative overflow-hidden rounded-panel border border-[var(--border)] bg-[var(--bg-elev)]">
         {/* 9:16 에 가까운 세로 비율 — 요즘 광고 소재 대부분이 세로다. */}
         <div className="relative aspect-[3/4] w-full">
           {c.thumb ? (
@@ -88,36 +97,43 @@ function CreativeCard({ c }: { c: ArchiveCreative }) {
               className="h-full w-full object-cover transition group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl text-[var(--text-muted)]">
-              🖼
+            <div className="flex h-full w-full items-center justify-center bg-surface-sunken text-faint">
+              <ImageIcon size={20} strokeWidth={1.75} aria-hidden />
             </div>
           )}
           {c.percentile !== null && (
-            <span className="absolute left-1.5 top-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
-              👁 상위 {c.percentile}%
+            <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-white backdrop-blur">
+              <Eye size={12} strokeWidth={2} aria-hidden />
+              상위 {c.percentile}%
             </span>
           )}
           {views && (
-            <span className="absolute bottom-1.5 right-1.5 rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur">
+            <span className="absolute bottom-1.5 right-1.5 rounded-sm bg-black/70 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-white backdrop-blur">
               {views}
             </span>
           )}
         </div>
       </div>
-      <div className="mt-1.5 line-clamp-2 text-[11px] leading-tight text-[var(--text-secondary)]">
+      <div className="mt-1.5 line-clamp-2 text-xs leading-tight text-[var(--text-secondary)]">
         {c.title}
       </div>
-      <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
+      <div className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
         {c.firstSeenLabel && <span>{c.firstSeenLabel}</span>}
         <span className="flex items-center gap-1">
           <span
+            aria-hidden
             className={`inline-block h-1.5 w-1.5 rounded-full ${
-              c.running ? "bg-emerald-500" : "bg-slate-300"
+              c.running ? "bg-success" : "bg-line-strong"
             }`}
           />
           {c.running ? "게재 중" : "종료"}
         </span>
-        {c.runDays !== null && <span>🗓 {c.runDays}일</span>}
+        {c.runDays !== null && (
+          <span className="inline-flex items-center gap-0.5 tabular-nums">
+            <Calendar size={12} strokeWidth={2} aria-hidden />
+            {c.runDays}일
+          </span>
+        )}
       </div>
     </a>
   );
@@ -136,12 +152,12 @@ function BrandCard({
 }) {
   const hue = avatarHue(brand.keyword);
   return (
-    <section className="mv-card overflow-hidden">
+    <section className="panel transition-colors hover:border-line-strong">
       {/* 헤더 — 아바타 / 브랜드 / 게재 수 / 액션 */}
       <div className="flex items-center gap-3 px-4 py-3">
         <span
           aria-hidden
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black text-white"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-sm text-sm font-semibold text-white"
           style={{ background: `hsl(${hue} 62% 55%)` }}
         >
           {initial(brand.keyword)}
@@ -150,31 +166,32 @@ function BrandCard({
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onOpen(brand.keyword)}
-              className="truncate text-sm font-bold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"
+              className="truncate text-sm font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline"
             >
               {brand.keyword}
             </button>
-            <span className="shrink-0 rounded border border-[var(--border-strong)] px-1 text-[10px] font-medium text-[var(--text-muted)]">
+            <span className="badge badge-neutral shrink-0">
               {brand.region}
             </span>
             {brand.tracked && (
               <span
                 title="매일 자동으로 다시 불러옵니다"
-                className="shrink-0 text-[11px]"
+                className="shrink-0 text-warning"
               >
-                ⭐
+                <Star size={14} strokeWidth={1.75} fill="currentColor" aria-hidden />
+                <span className="sr-only">자동 추적 중</span>
               </span>
             )}
           </div>
-          <div className="truncate text-[11px] text-[var(--text-muted)]">
+          <div className="truncate text-xs text-[var(--text-muted)]">
             {brand.advertiser ?? "광고주 미확인"}
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-xs font-semibold text-[var(--text-secondary)]">
+          <div className="text-xs font-semibold tabular-nums text-ink">
             {brand.adCount.toLocaleString()}개 게재 중
           </div>
-          <div className="text-[10px] text-[var(--text-muted)]">
+          <div className="text-xs tabular-nums text-faint">
             영상 {brand.videoCount.toLocaleString()}
           </div>
         </div>
@@ -182,19 +199,25 @@ function BrandCard({
           onClick={() => onRefresh(brand.keyword)}
           disabled={busy}
           title="지금 다시 불러오기"
-          className="shrink-0 rounded-lg bg-[var(--accent-soft)] px-2.5 py-1.5 text-xs font-semibold text-[var(--accent)] transition hover:bg-[var(--accent)] hover:text-white disabled:cursor-wait disabled:opacity-60"
+          aria-label="지금 다시 불러오기"
+          aria-busy={busy}
+          className="btn btn-secondary btn-sm btn-icon shrink-0 disabled:cursor-wait"
         >
-          {busy ? "⏳" : "🔄"}
+          {busy ? (
+            <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin" />
+          ) : (
+            <RefreshCw size={16} strokeWidth={1.75} aria-hidden />
+          )}
         </button>
       </div>
 
       {/* 소재 캐러셀 */}
       <div className="border-t border-[var(--border)] px-4 py-3">
-        <div className="mb-2 text-[11px] font-semibold text-[var(--text-secondary)]">
+        <div className="mb-2 text-xs font-medium text-muted">
           최근 게재된 소재
         </div>
         {brand.creatives.length === 0 ? (
-          <div className="py-6 text-center text-[11px] text-[var(--text-muted)]">
+          <div className="py-6 text-center text-xs text-[var(--text-muted)]">
             아직 소재가 없어요
           </div>
         ) : (
@@ -233,8 +256,11 @@ export default function BrandArchive({
 
   if (brands.length === 0) {
     return (
-      <div className="mv-card px-6 py-16 text-center text-sm text-[var(--text-muted)]">
-        {emptyHint}
+      <div className="panel empty text-sm text-muted">
+        <span className="empty-icon mb-3">
+          <Archive size={20} strokeWidth={1.75} aria-hidden />
+        </span>
+        <div>{emptyHint}</div>
       </div>
     );
   }
@@ -242,13 +268,13 @@ export default function BrandArchive({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold text-[var(--text-primary)]">
+        <h2 className="text-lg font-semibold tracking-[-0.02em] text-ink">
           내 브랜드{" "}
-          <span className="font-medium text-[var(--text-muted)]">
+          <span className="text-sm font-medium tabular-nums text-faint">
             {brands.length}개
           </span>
         </h2>
-        <div className="flex items-center gap-1 text-[11px]">
+        <div className="segmented">
           {(
             [
               ["ads", "게재 많은 순"],
@@ -258,11 +284,7 @@ export default function BrandArchive({
             <button
               key={key}
               onClick={() => setSort(key)}
-              className={`rounded-full px-2.5 py-1 font-medium transition ${
-                sort === key
-                  ? "bg-[var(--accent)] text-white"
-                  : "text-[var(--text-muted)] hover:bg-[var(--bg-elev)]"
-              }`}
+              aria-pressed={sort === key}
             >
               {label}
             </button>

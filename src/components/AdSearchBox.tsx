@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import type { AdvertiserSuggestion, DomainSuggestion } from "@/lib/atc-scraper";
+import {
+  LoaderCircle,
+  Search,
+} from "lucide-react";
 
 type Suggestions = {
   query: string;
@@ -86,9 +90,12 @@ export function AdSearchBox({
         }
       }}
     >
-      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base text-[var(--text-muted)]">
-        🔍
-      </span>
+      <Search
+        size={16}
+        strokeWidth={1.75}
+        aria-hidden
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint"
+      />
       <input
         value={query}
         onChange={(event) => onQueryChange(event.target.value)}
@@ -104,7 +111,7 @@ export function AdSearchBox({
         placeholder="브랜드명 또는 도메인으로 검색 (예: 올리브영, oliveyoung.co.kr)"
         aria-label="브랜드명 또는 도메인 검색"
         autoComplete="off"
-        className="w-full rounded-full border border-[var(--border-strong)] bg-[var(--bg-elev)] py-3 pl-11 pr-32 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:bg-[var(--bg-card)] focus:ring-4 focus:ring-[var(--accent-soft)]"
+        className="field-input w-full pl-9 pr-28"
       />
       <button
         type="button"
@@ -113,19 +120,22 @@ export function AdSearchBox({
           onSearch();
         }}
         disabled={disabled}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-bold text-white transition hover:bg-[var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+        className="btn btn-primary btn-sm absolute right-1 top-1/2 -translate-y-1/2"
       >
         {buttonLabel}
       </button>
 
       {showSuggestions && (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-2 text-sm shadow-xl"
+          className="absolute left-0 right-0 top-[calc(100%+6px)] z-50 max-h-80 overflow-y-auto rounded-panel border border-line bg-surface p-2 text-sm shadow-popover"
           role="group"
           aria-label="구글 광고 투명성 센터 관련 검색어"
         >
           {!current ? (
-            <p className="px-3 py-3 text-xs text-[var(--text-muted)]">관련 검색어를 찾는 중…</p>
+            <p className="flex items-center gap-2 px-3 py-3 text-xs text-faint" role="status">
+              <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin" />
+              관련 검색어를 찾는 중…
+            </p>
           ) : current.error ? (
             <p className="px-3 py-3 text-xs text-[var(--text-muted)]">{current.error}</p>
           ) : advertisers.length === 0 && current.domains.length === 0 ? (
@@ -134,7 +144,7 @@ export function AdSearchBox({
             <>
               {advertisers.length > 0 && (
                 <div className="px-3 pb-1 pt-2">
-                  <div className="grid grid-cols-[minmax(0,1fr)_5rem_7rem] gap-2 border-b border-[var(--border)] pb-2 text-[11px] text-[var(--text-muted)]">
+                  <div className="grid grid-cols-[minmax(0,1fr)_5rem_7rem] gap-2 border-b border-[var(--border)] pb-2 text-xs text-[var(--text-muted)]">
                     <span>광고주</span><span>위치</span><span className="text-right">광고 개수</span>
                   </div>
                   {advertisers.map((advertiser) => (
@@ -142,24 +152,24 @@ export function AdSearchBox({
                       key={advertiser.advertiserId}
                       type="button"
                       onClick={() => choose(advertiser.name)}
-                      className="grid w-full grid-cols-[minmax(0,1fr)_5rem_7rem] gap-2 rounded-md px-1 py-2 text-left text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elev)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                      className="grid min-h-10 w-full grid-cols-[minmax(0,1fr)_5rem_7rem] items-center gap-2 rounded-sm px-1 py-2 text-left text-xs text-ink transition-colors hover:bg-surface-soft"
                     >
                       <span className="min-w-0 break-words font-medium">{advertiser.name}</span>
                       <span className="text-[var(--text-secondary)]">{advertiser.region === "KR" ? "대한민국" : advertiser.region}</span>
-                      <span className="text-right text-[var(--text-secondary)]">{adCountLabel(advertiser)}</span>
+                      <span className="text-right tabular-nums text-[var(--text-secondary)]">{adCountLabel(advertiser)}</span>
                     </button>
                   ))}
                 </div>
               )}
               {current.domains.length > 0 && (
                 <div className="border-t border-[var(--border)] px-3 pb-1 pt-2">
-                  <div className="pb-1 text-[11px] text-[var(--text-muted)]">웹사이트</div>
+                  <div className="pb-1 text-xs text-[var(--text-muted)]">웹사이트</div>
                   {current.domains.map((domain) => (
                     <button
                       key={domain.domain}
                       type="button"
                       onClick={() => choose(domain.domain)}
-                      className="block w-full rounded-md px-1 py-2 text-left text-xs text-[var(--text-primary)] hover:bg-[var(--bg-elev)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+                      className="block min-h-10 w-full rounded-sm px-1 py-2 text-left text-xs text-ink transition-colors hover:bg-surface-soft"
                     >
                       {domain.domain}
                     </button>

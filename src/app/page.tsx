@@ -2,6 +2,61 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import {
+  Archive,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Bird,
+  Calendar,
+  Camera,
+  ChartNoAxesColumn,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
+  ChevronUp,
+  CircleCheck,
+  CircleHelp,
+  CircleX,
+  Clapperboard,
+  Copy,
+  Database,
+  Download,
+  FileText,
+  Film,
+  Flame,
+  Globe,
+  Hourglass,
+  Image as ImageIcon,
+  Info,
+  Layers,
+  LayoutDashboard,
+  LayoutList,
+  LoaderCircle,
+  Megaphone,
+  Package,
+  Plus,
+  Radio,
+  RefreshCw,
+  Rocket,
+  Scissors,
+  Search,
+  Sprout,
+  Star,
+  Tag,
+  Target,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  TriangleAlert,
+  Trophy,
+  Tv,
+  Upload,
+  X,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 // 첫 진입 tab='ads' 만 보임. 나머지 view 는 dynamic import 로 lazy —
 // 사용자가 그 tab 클릭 시 그제서야 chunk 다운로드.
 const DashboardView = dynamic(() => import("@/components/DashboardView"), {
@@ -54,10 +109,12 @@ type Watch = {
 
 // tier 시각화 상수 — 레퍼런스 도구 벤치마크 (2026-07-13). A1=레드(최우선),
 // A2=오렌지, A3=옐로우. null=미지정 (무채색).
+// 스위트 v1: A1 danger / A2 warning / A3 neutral 배지 톤. 점은 사이드바(어두운
+// 배경)에서도 보이게 밝은 상태점 색을 쓴다.
 const TIER_META: Record<string, { label: string; dot: string; chip: string }> = {
-  A1: { label: "A1", dot: "bg-rose-500", chip: "bg-rose-500/15 text-rose-700 border-rose-500/40" },
-  A2: { label: "A2", dot: "bg-orange-500", chip: "bg-orange-500/15 text-orange-700 border-orange-500/40" },
-  A3: { label: "A3", dot: "bg-yellow-500", chip: "bg-yellow-500/15 text-yellow-700 border-yellow-500/40" },
+  A1: { label: "A1", dot: "bg-sidebar-danger", chip: "badge badge-danger" },
+  A2: { label: "A2", dot: "bg-[#d97706]", chip: "badge badge-warning" },
+  A3: { label: "A3", dot: "bg-sidebar-faint", chip: "badge badge-neutral" },
 };
 const TIER_CYCLE: (string | null)[] = ["A1", "A2", "A3", null];
 
@@ -268,53 +325,87 @@ function statusRank(ad: Ad): number {
 
 const CLASSIFICATION_META: Record<
   Classification,
-  { emoji: string; label: string; tip: string; bg: string; text: string }
+  { Icon: LucideIcon; label: string; tip: string; bg: string; text: string }
 > = {
   신규광고: {
-    emoji: "🌱",
+    Icon: Sprout,
     label: "새 캠페인",
     tip: "이 광고가 투명성 센터에 처음 잡힌 지 10일 이내. 영상 자체는 오래됐어도 집행은 새로 시작된 것.",
-    bg: "bg-lime-500/20",
-    text: "text-lime-700",
+    bg: "bg-accent-soft",
+    text: "text-accent-ink",
   },
   신규영상: {
-    emoji: "🎞",
+    Icon: Film,
     label: "새 소재",
     tip: "YouTube 영상이 최근 21일 이내에 게시됨.",
-    bg: "bg-violet-500/20",
-    text: "text-violet-700",
+    bg: "bg-accent-soft",
+    text: "text-accent-ink",
   },
   히어로: {
-    emoji: "⭐",
+    Icon: Star,
     label: "주력",
     tip: "누적 50만+ 조회수 AND 일평균 5천+ — 오래 밀고 있는 간판 소재.",
-    bg: "bg-indigo-500/20",
-    text: "text-indigo-700",
+    bg: "bg-warning-soft",
+    text: "text-warning",
   },
   가속도: {
-    emoji: "📈",
+    Icon: TrendingUp,
     label: "상승세",
     tip: "최근 3일 평균 증가량이 전체 평균의 1.25배 이상. (스냅샷 3+개 필요)",
-    bg: "bg-teal-500/20",
-    text: "text-teal-700",
+    bg: "bg-success-soft",
+    text: "text-success",
   },
   스파이크: {
-    emoji: "⚡",
+    Icon: Zap,
     label: "급등",
     tip: "직전 대비 180% 이상 폭증. (스냅샷 2+개 필요)",
-    bg: "bg-fuchsia-500/20",
-    text: "text-fuchsia-700",
+    bg: "bg-danger-soft",
+    text: "text-danger",
   },
   피로도: {
-    emoji: "📉",
+    Icon: TrendingDown,
     label: "둔화",
     tip: "최근 3일 연속 증가량 하락. (스냅샷 3+개 필요)",
-    bg: "bg-slate-400/25",
-    text: "text-slate-600",
+    bg: "bg-surface-soft",
+    text: "text-muted",
   },
 };
 
 type Tab = "archive" | "ads" | "meta" | "creatives" | "dashboard" | "guide";
+
+// 사이드바 nav · 브레드크럼 · 페이지 제목이 함께 쓰는 탭 이름과 아이콘.
+const TAB_META: Record<Tab, { label: string; description: string; Icon: LucideIcon }> = {
+  archive: {
+    label: "브랜드 아카이브",
+    description: "불러온 브랜드를 카드로 모아 보고, 브랜드별 광고로 들어갑니다.",
+    Icon: Archive,
+  },
+  ads: {
+    label: "구글 광고",
+    description: "구글 광고 투명성 센터의 광고와 YouTube 영상 공개 통계를 함께 봅니다.",
+    Icon: LayoutList,
+  },
+  meta: {
+    label: "메타 광고",
+    description: "메타 광고 라이브러리에서 수집한 브랜드별 광고를 봅니다.",
+    Icon: Megaphone,
+  },
+  creatives: {
+    label: "소재 비교",
+    description: "수집한 광고 소재를 조회수와 상태 분류로 비교합니다.",
+    Icon: Clapperboard,
+  },
+  dashboard: {
+    label: "대시보드",
+    description: "기간별 수집 현황과 광고 추이를 한눈에 봅니다.",
+    Icon: LayoutDashboard,
+  },
+  guide: {
+    label: "사용법",
+    description: "Success AI로 광고 레퍼런스를 모으고 보는 방법입니다.",
+    Icon: CircleHelp,
+  },
+};
 type CreativesSort =
   | "views"
   | "daily"
@@ -383,38 +474,39 @@ function humanizeErrorMsg(raw: string): string {
     s.includes("302") ||
     s.includes("recaptcha")
   ) {
-    return "🤖 Google이 이 IP를 봇으로 의심 중 — 1~3시간 후 재시도";
+    return "Google이 이 IP를 봇으로 의심 중 — 1~3시간 후 재시도";
   }
   if (s.includes("curl exit 28") || s.includes("timeout"))
-    return "⏱ 네트워크 timeout — 잠시 후 재시도";
+    return "네트워크 timeout — 잠시 후 재시도";
   if (s.includes("curl exit 6") || s.includes("could not resolve"))
-    return "📡 DNS 해석 실패 — 네트워크 확인";
+    return "DNS 해석 실패 — 네트워크 확인";
   if (s.includes("curl exit 56") || s.includes("connection reset"))
-    return "📡 연결 끊김 — 잠시 후 재시도";
-  if (s.includes("fetch failed")) return "📡 fetch 실패 — 네트워크 확인";
+    return "연결 끊김 — 잠시 후 재시도";
+  if (s.includes("fetch failed")) return "fetch 실패 — 네트워크 확인";
   // fallback: 80자 cap
   return raw.length > 80 ? raw.slice(0, 80) + "…" : raw;
 }
 
 /**
  * progress.step (server-side phase tag) → user-friendly label.
- * "atc" → "📡 광고 페이지 수집 중", etc.
+ * "atc" → "광고 페이지 수집 중", etc.
  */
 /**
  * 태그별 색상 자동 배정 — 같은 태그는 어디서든 같은 색.
- * hash(tag) → 8개 팔레트 중 하나 (Tailwind classes).
+ * hash(tag) → 8개 팔레트 중 하나 (Tailwind classes). 칩은 중립이고 색은
+ * 앞의 8px 점에만 쓴다 (스위트 v1).
  * 한국 사용자가 식이섬유/화장품/음료/건강식품 등으로 라벨링 시
  * chip + 카드 표시 모두 같은 색으로 일관성.
  */
 const TAG_PALETTE = [
-  { bg: "bg-cyan-500/20", border: "border-cyan-500/40", text: "text-cyan-700", ring: "ring-cyan-500/50", active: "bg-cyan-500/30 text-cyan-200" },
-  { bg: "bg-amber-500/20", border: "border-amber-500/40", text: "text-amber-700", ring: "ring-amber-500/50", active: "bg-amber-500/30 text-amber-200" },
-  { bg: "bg-rose-500/20", border: "border-rose-500/40", text: "text-rose-700", ring: "ring-rose-500/50", active: "bg-rose-500/30 text-rose-200" },
-  { bg: "bg-emerald-500/20", border: "border-emerald-500/40", text: "text-emerald-700", ring: "ring-emerald-500/50", active: "bg-emerald-500/30 text-emerald-200" },
-  { bg: "bg-violet-500/20", border: "border-violet-500/40", text: "text-violet-700", ring: "ring-violet-500/50", active: "bg-violet-500/30 text-violet-200" },
-  { bg: "bg-sky-500/20", border: "border-sky-500/40", text: "text-sky-700", ring: "ring-sky-500/50", active: "bg-sky-500/30 text-sky-200" },
-  { bg: "bg-orange-500/20", border: "border-orange-500/40", text: "text-orange-700", ring: "ring-orange-500/50", active: "bg-orange-500/30 text-orange-200" },
-  { bg: "bg-pink-500/20", border: "border-pink-500/40", text: "text-pink-700", ring: "ring-pink-500/50", active: "bg-pink-500/30 text-pink-200" },
+  { dot: "bg-[#d97706]" },
+  { dot: "bg-[#e11d48]" },
+  { dot: "bg-[#059669]" },
+  { dot: "bg-[#7c3aed]" },
+  { dot: "bg-[#0284c7]" },
+  { dot: "bg-[#ea580c]" },
+  { dot: "bg-[#db2777]" },
+  { dot: "bg-[#0891b2]" },
 ] as const;
 function tagColor(tag: string): (typeof TAG_PALETTE)[number] {
   let h = 0;
@@ -425,19 +517,39 @@ function tagColor(tag: string): (typeof TAG_PALETTE)[number] {
 function phaseLabel(step: string): string {
   switch (step) {
     case "starting":
-      return "🚀 시작 중";
+      return "시작 중";
     case "atc":
-      return "📡 광고 페이지 수집 중";
+      return "광고 페이지 수집 중";
     case "save":
-      return "💾 DB 저장 중";
+      return "DB 저장 중";
     case "yt-extract":
-      return "🎬 YouTube 영상 매칭 중";
+      return "YouTube 영상 매칭 중";
     case "yt-stats":
-      return "📊 영상 통계 수집 중";
+      return "영상 통계 수집 중";
     case "done":
-      return "✅ 완료";
+      return "완료";
     default:
       return step;
+  }
+}
+
+/** progress.step → Lucide 아이콘 (phaseLabel 과 짝). 모르는 단계는 null. */
+function phaseIcon(step: string): LucideIcon | null {
+  switch (step) {
+    case "starting":
+      return Rocket;
+    case "atc":
+      return Radio;
+    case "save":
+      return Database;
+    case "yt-extract":
+      return Clapperboard;
+    case "yt-stats":
+      return ChartNoAxesColumn;
+    case "done":
+      return CircleCheck;
+    default:
+      return null;
   }
 }
 
@@ -1109,7 +1221,7 @@ export default function Home() {
             ...c,
             logs: [
               ...c.logs,
-              { time: new Date(), msg: `❌ ${d.message}`, level: "error" },
+              { time: new Date(), msg: `${d.message}`, level: "error" },
             ],
           }));
         }
@@ -1974,945 +2086,988 @@ export default function Home() {
     }
   };
 
+  const tabMeta = TAB_META[tab];
+
   return (
-    <div className="flex min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="app-shell bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <a href="#main-content" className="skip-link">
+        본문으로 건너뛰기
+      </a>
       {/* 태그 input 자동완성 — 기존에 라벨링된 태그들 suggest */}
       <datalist id="known-tags">
         {allTags.map((t) => (
           <option key={t} value={t} />
         ))}
       </datalist>
-      {/* 아이콘 레일 — 최상위 이동. 레이블은 툴팁으로만 (폭 절약). */}
-      <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-[#2b3141] bg-[#20242f] py-3">
-        <span
-          aria-hidden
-          className="mb-2 grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 text-sm font-black text-white shadow-lg shadow-blue-500/25"
-        >
-          S
-        </span>
-        {(
-          [
-            ["archive", "🗂", "브랜드 아카이브"],
-            ["ads", "📋", "구글 광고 (YouTube 영상)"],
-            ["meta", "📘", "메타 광고"],
-            ["creatives", "🎬", "소재 비교"],
-            ["dashboard", "📊", "대시보드"],
-            ["guide", "❓", "사용법"],
-          ] as const
-        ).map(([key, icon, label]) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            title={label}
-            aria-label={label}
-            aria-current={tab === key ? "page" : undefined}
-            className={`grid h-10 w-10 place-items-center rounded-xl text-lg transition ${
-              tab === key
-                ? "bg-blue-500/20 text-blue-200"
-                : "text-slate-400 hover:bg-[#2b3141] hover:text-slate-100"
-            }`}
-          >
-            {icon}
-          </button>
-        ))}
-      </nav>
 
-      {/* Sidebar */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-[#2b3141] bg-[#20242f] [--accent-soft:rgba(96,165,250,0.16)] [--bg-base:#20242f] [--bg-card:#2a2f3b] [--bg-elev:#242936] [--border-strong:#465166] [--border:#343b4c] [--shadow-card:none] [--text-muted:#94a3b8] [--text-primary:#f8fafc] [--text-secondary:#cbd5e1]">
-        <div className="px-5 pb-4 pt-6">
-          <div className="flex items-center gap-3">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 text-sm font-black text-white shadow-lg shadow-blue-500/25">S</span>
-            <div>
-              <div className="text-[17px] font-extrabold tracking-tight text-white">Success AI</div>
-              <div className="mt-0.5 text-[13px] font-medium text-slate-300">광고 레퍼런스를 모으는 곳</div>
-            </div>
+      {/* Sidebar — 스위트 공통 차콜 사이드바 (globals.css .sidebar) */}
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <span aria-hidden className="sidebar-brand-mark">
+            S
+          </span>
+          <div className="min-w-0">
+            <div className="text-[15px] font-semibold leading-5 tracking-[-0.02em] text-sidebar-text">Success AI</div>
+            <small className="block truncate text-xs text-sidebar-muted max-[760px]:hidden">광고 레퍼런스를 모으는 곳</small>
           </div>
+          <span className="status-chip status-chip-sidebar" role="status">
+            <span
+              aria-hidden
+              className={`status-dot ${anyBusyAds ? "text-accent-on-dark" : "text-sidebar-success"}`}
+            />
+            {anyBusyAds ? "수집 중" : "대기 중"}
+          </span>
         </div>
 
-        <div className="border-b border-[#2b3141] px-3 pb-4">
-          <label htmlFor="app-switcher" className="mb-2 block px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-5">
+          <label htmlFor="app-switcher" className="sr-only">
             앱 선택
           </label>
           <details className="group relative">
             <summary
               id="app-switcher"
-              className="flex cursor-pointer list-none items-center gap-3 rounded-xl border border-[#2b3141] bg-[#171b26] p-3 text-left text-white shadow-[0_10px_28px_rgba(23,27,38,0.16)] outline-none transition hover:border-[#3c465f] focus-visible:ring-4 focus-visible:ring-blue-500/20"
+              className="switcher-trigger"
               aria-label="앱 선택"
             >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">S</span>
+              <span className="app-avatar app-avatar-successai h-7 w-7">S</span>
               <span className="min-w-0 flex-1">
-                <strong className="block truncate text-[13px] font-bold leading-5">Success AI 광고수집기</strong>
-                <small className="block truncate text-[12px] font-medium leading-5 text-slate-300">구글·메타 광고 레퍼런스 수집</small>
+                <strong className="block truncate text-sm font-semibold leading-5 text-sidebar-text">Success AI 광고수집기</strong>
+                <small className="block truncate text-xs leading-5 text-sidebar-muted">구글·메타 광고 레퍼런스 수집</small>
               </span>
-              <span className="text-slate-400 transition group-open:rotate-180">⌄</span>
+              <ChevronsUpDown size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-sidebar-faint" />
             </summary>
-            <div className="absolute left-0 top-[calc(100%+8px)] z-20 flex w-full flex-col gap-1 rounded-xl border border-[#2b3141] bg-[#171b26] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.25)]">
-              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:3000/">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">K</span>
-                <span>
-                  <strong className="block text-[13px] font-bold leading-5">키워드워처</strong>
-                  <small className="block text-[11px] font-medium leading-4 text-slate-400">검색량·시장 트렌드 추적</small>
+            <div className="switcher-menu">
+              <a className="switcher-item" href="http://127.0.0.1:3000/">
+                <span className="app-avatar app-avatar-trendwatch h-6 w-6">K</span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm font-semibold leading-5">키워드워처</strong>
+                  <small className="block truncate text-xs leading-4 text-sidebar-muted">검색량·시장 트렌드 추적</small>
                 </span>
               </a>
-              <a className="flex items-center gap-3 rounded-lg bg-[#242b3a] px-2 py-2 text-white" href="/" aria-current="page">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-500 text-sm font-bold text-white">S</span>
-                <span>
-                  <strong className="block text-[13px] font-bold leading-5">Success AI 광고수집기</strong>
-                  <small className="block text-[11px] font-medium leading-4 text-slate-300">구글·메타 광고 레퍼런스 수집</small>
+              <a className="switcher-item" href="/" aria-current="page">
+                <span className="app-avatar app-avatar-successai h-6 w-6">S</span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm font-semibold leading-5">Success AI 광고수집기</strong>
+                  <small className="block truncate text-xs leading-4 text-sidebar-muted">구글·메타 광고 레퍼런스 수집</small>
                 </span>
+                <Check size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-accent-on-dark" />
               </a>
-              <a className="flex items-center gap-3 rounded-lg px-2 py-2 text-white transition hover:bg-[#242b3a]" href="http://127.0.0.1:4317/">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#242b3a] text-sm font-bold text-blue-300">A</span>
-                <span>
-                  <strong className="block text-[13px] font-bold leading-5">AD FACTORY</strong>
-                  <small className="block text-[11px] font-medium leading-4 text-slate-400">광고 설계·제작·배포 자동화</small>
+              <a className="switcher-item" href="http://127.0.0.1:4317/">
+                <span className="app-avatar app-avatar-adfactory h-6 w-6">A</span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm font-semibold leading-5">AD FACTORY</strong>
+                  <small className="block truncate text-xs leading-4 text-sidebar-muted">광고 설계·제작·배포 자동화</small>
                 </span>
               </a>
             </div>
           </details>
-          <p className="mt-2 px-1 text-[11px] leading-4 text-slate-400">
+          <p className="mt-2 line-clamp-2 px-1 text-xs leading-4 text-sidebar-faint">
             현재 화면은 광고 레퍼런스를 수집하는 Success AI입니다. 키워드워처는 검색량 추적 도구로 분리합니다.
           </p>
         </div>
 
-        <nav className="space-y-1 px-3 py-3" aria-label="Success AI 메뉴">
+        <nav className="sidebar-nav" aria-label="Success AI 메뉴">
           {(
             [
-              ["archive", "🗂", "브랜드 아카이브", archiveBrands.length],
-              ["ads", "▥", "구글 광고", scopedAds.length],
-              ["meta", "▣", "메타 광고", null],
-              ["creatives", "🎬", "소재 비교", creativePool.length],
-              ["dashboard", "▥", "대시보드", null],
-              ["guide", "?", "사용법", null],
+              ["archive", archiveBrands.length],
+              ["ads", scopedAds.length],
+              ["meta", null],
+              ["creatives", creativePool.length],
+              ["dashboard", null],
+              ["guide", null],
             ] as const
-          ).map(([key, icon, label, count]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              aria-current={tab === key ? "page" : undefined}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${
-                tab === key
-                  ? "bg-[#343846] text-white shadow-sm"
-                  : "text-slate-400 hover:bg-[#2b3141] hover:text-slate-100"
-              }`}
-            >
-              <span className="grid h-5 w-5 shrink-0 place-items-center text-[15px] text-slate-400">{icon}</span>
-              <span className="min-w-0 flex-1 truncate">{label}</span>
-              {count !== null && count > 0 && (
-                <span className="rounded-full px-1.5 py-0.5 text-[11px] font-bold text-blue-200">{count.toLocaleString()}</span>
-              )}
-            </button>
-          ))}
+          ).map(([key, count]) => {
+            const { label, Icon } = TAB_META[key];
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                aria-current={tab === key ? "page" : undefined}
+                className="nav-item"
+              >
+                <Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
+                <span className="min-w-0 flex-1 truncate">{label}</span>
+                {count !== null && count > 0 && (
+                  <span className="nav-count">{count.toLocaleString()}</span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Source switcher — splits the brand list into 🟦 구글 / 📘 메타.
-            Auto-syncs to the active main tab via the useEffect above;
-            manual click here overrides until the next main-tab change. */}
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-[var(--bg-elev)] p-1 mx-3 mt-3">
-          {(
-            [
-              ["google", "🟦 구글", groupedJobs.length],
-              ["meta", "📘 메타", metaBrandGroups.length],
-            ] as const
-          ).map(([key, label, n]) => (
-            <button
-              key={key}
-              onClick={() => setSidebarSource(key)}
-              className={`rounded-full px-2 py-1.5 text-xs font-bold transition ${
-                sidebarSource === key
-                  ? "bg-[var(--bg-card)] text-[var(--accent)] shadow-sm"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-              }`}
-            >
-              {label} <span className="ml-0.5 opacity-70">{n}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* 첫 진입 안내 — keyword가 하나도 없을 때만 표시 (가벼움) */}
-        {groupedJobs.length === 0 && metaBrandGroups.length === 0 && (
-          <div className="px-4 py-3 text-xs text-[var(--text-muted)]">
-            검색을 누르면 여기로 바로 들어오고, 위에서부터 순서대로 자동
-            수집돼요.
+        <div className="sidebar-secondary">
+          {/* Source switcher — 브랜드 목록을 구글 / 메타로 나눈다.
+              Auto-syncs to the active main tab via the useEffect above;
+              manual click here overrides until the next main-tab change. */}
+          <div className="segmented mt-4 grid w-full grid-cols-2">
+            {(
+              [
+                ["google", "구글", groupedJobs.length],
+                ["meta", "메타", metaBrandGroups.length],
+              ] as const
+            ).map(([key, label, n]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSidebarSource(key)}
+                aria-pressed={sidebarSource === key}
+                className="inline-flex items-center justify-center gap-1.5"
+              >
+                {key === "google" ? (
+                  <LayoutList size={14} strokeWidth={1.75} aria-hidden />
+                ) : (
+                  <Megaphone size={14} strokeWidth={1.75} aria-hidden />
+                )}
+                {label} <span className="text-xs tabular-nums opacity-80">{n}</span>
+              </button>
+            ))}
           </div>
-        )}
 
-        <div className="mv-card mx-3 mt-3 px-3 py-2.5">
-          <div className="text-xs text-[var(--text-secondary)]">
-            불러온 광고{" "}
-            <span className="font-bold text-[var(--text-primary)]">
-              {ads.length.toLocaleString()}개
-            </span>
-          </div>
-          {watches.filter((w) => w.active).length > 0 && (
-            <div className="mt-1.5 text-[11px] text-[var(--text-muted)]">
-              ⭐{" "}
-              <b className="text-amber-600">
-                {watches.filter((w) => w.active).length}개 추적 중
-              </b>
-              <span className="mx-1.5 text-[var(--text-muted)]">·</span>
-              매일 새벽 3시 자동 재수집
+          {/* 첫 진입 안내 — keyword가 하나도 없을 때만 표시 (가벼움) */}
+          {groupedJobs.length === 0 && metaBrandGroups.length === 0 && (
+            <div className="px-2.5 pt-3 text-xs text-sidebar-muted">
+              검색을 누르면 여기로 바로 들어오고, 위에서부터 순서대로 자동
+              수집돼요.
             </div>
           )}
-        </div>
 
-        {/* ===== 자동수집 현황 위젯 — 어제 새벽 3시 cron 결과 시각화 =====
-            레퍼런스 대시보드 "오늘 자동 수집 13/25 (52%) · 누락 12개" 패턴.
-            누락된 keyword는 펼침 가능 — 클릭 시 광고 수집 탭 + 그 keyword
-            검색 입력에 자동 채움 → 사용자가 [📢 광고 수집] 한 번 누르면 됨. */}
-        {autoCollectStatus.total > 0 && (
-          <div className="mv-card mx-3 mt-3 px-3 py-2.5">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="font-medium text-[var(--text-muted)]">
-                자동수집 · 지난 24h
-              </span>
-              <span
-                className={
-                  autoCollectStatus.successRate >= 100
-                    ? "font-semibold text-emerald-600/90"
-                    : "font-semibold text-[var(--text-secondary)]"
-                }
-              >
-                {autoCollectStatus.success}/{autoCollectStatus.total} (
-                {autoCollectStatus.successRate}%)
+          <div className="mt-3 space-y-1.5 px-2.5">
+            <div className="flex items-center justify-between gap-2 text-sm text-sidebar-muted">
+              <span>불러온 광고</span>
+              <span className="text-xs font-semibold tabular-nums text-sidebar-text">
+                {ads.length.toLocaleString()}개
               </span>
             </div>
-            {/* 진행바 — 성공률 시각화. 빨강 없이 차분하게:
-                100%면 emerald, 그 외엔 amber. */}
-            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-elev)]">
-              <div
-                className={
-                  autoCollectStatus.successRate >= 100
-                    ? "h-full bg-emerald-500/70"
-                    : "h-full bg-amber-500/60"
-                }
-                style={{
-                  width: `${Math.max(autoCollectStatus.successRate, 2)}%`,
-                }}
-              />
-            </div>
-            {autoCollectStatus.missingCount > 0 ? (
-              <button
-                onClick={() => setShowMissing((s) => !s)}
-                className="mt-2 flex w-full items-center justify-between rounded-md border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] hover:border-amber-500/40 hover:text-amber-700"
-              >
-                <span>
-                  미수집 {autoCollectStatus.missingCount}개
-                  {autoCollectStatus.failedCount > 0 && (
-                    <span className="ml-1 text-[10px] font-normal text-[var(--text-muted)]">
-                      (실패 {autoCollectStatus.failedCount} · 미실행{" "}
-                      {autoCollectStatus.notRunCount})
-                    </span>
-                  )}
+            {watches.filter((w) => w.active).length > 0 && (
+              <div className="flex min-w-0 items-center gap-1.5 text-xs text-sidebar-faint">
+                <Star size={12} strokeWidth={2} aria-hidden className="shrink-0 text-sidebar-muted" />
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-sidebar-text">
+                  {watches.filter((w) => w.active).length}개 추적 중
                 </span>
-                <span className="text-[var(--text-muted)]">
-                  {showMissing ? "▴ 닫기" : "▾ 즉시복구"}
-                </span>
-              </button>
-            ) : (
-              <div className="mt-1.5 text-[10px] font-medium text-emerald-600/70">
-                정상 · 누락 없음
+                <span aria-hidden>·</span>
+                <span className="truncate">매일 새벽 3시 자동 재수집</span>
               </div>
             )}
-            {showMissing && autoCollectStatus.missing.length > 0 && (
-              <ul className="mt-1.5 max-h-40 space-y-1 overflow-y-auto">
-                {autoCollectStatus.missing.map((m) => (
-                  <li key={`${m.source}::${m.keyword}`}>
-                    <button
-                      onClick={() => {
-                        if (m.source === "meta") {
-                          setTab("meta");
-                          setSelectedKeyword(m.keyword);
-                        } else {
-                          setAdQuery(m.keyword);
-                          setTab("ads");
-                          setSelectedKeyword(m.keyword);
-                        }
-                      }}
-                      title={`${m.reason} · 클릭하면 검색창에 채움`}
-                      className="flex w-full items-center justify-between rounded border border-[var(--border)] bg-[var(--bg-elev)] px-2 py-1 text-[10px] text-[var(--text-secondary)] hover:border-amber-500/40 hover:text-amber-700"
-                    >
-                      <span className="truncate">
-                        {m.source === "meta" ? "📘" : "🟦"} {m.keyword}
+          </div>
+
+          {/* ===== 자동수집 현황 — 어제 새벽 3시 cron 결과 =====
+              누락된 keyword는 펼침 가능 — 클릭 시 광고 수집 탭 + 그 keyword
+              검색 입력에 자동 채움 → 사용자가 불러오기 한 번 누르면 됨. */}
+          {autoCollectStatus.total > 0 && (
+            <div className="mt-3 space-y-1.5 px-2.5">
+              <div className="flex items-center justify-between gap-2 text-sm text-sidebar-muted">
+                <span>자동수집 · 지난 24h</span>
+                <span
+                  className={
+                    autoCollectStatus.successRate >= 100
+                      ? "text-xs font-semibold tabular-nums text-sidebar-success"
+                      : "text-xs font-semibold tabular-nums text-sidebar-text"
+                  }
+                >
+                  {autoCollectStatus.success}/{autoCollectStatus.total} (
+                  {autoCollectStatus.successRate}%)
+                </span>
+              </div>
+              {/* 진행바 — 성공률. 단색 */}
+              <div className="progress">
+                <div
+                  className={
+                    autoCollectStatus.successRate >= 100
+                      ? "h-full rounded-full bg-sidebar-success"
+                      : "h-full rounded-full bg-accent-on-dark"
+                  }
+                  style={{
+                    width: `${Math.max(autoCollectStatus.successRate, 2)}%`,
+                  }}
+                />
+              </div>
+              {autoCollectStatus.missingCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowMissing((s) => !s)}
+                  aria-expanded={showMissing}
+                  className="btn btn-secondary btn-sm w-full justify-between font-medium"
+                >
+                  <span className="truncate">
+                    미수집 {autoCollectStatus.missingCount}개
+                    {autoCollectStatus.failedCount > 0 && (
+                      <span className="ml-1 font-normal text-sidebar-faint">
+                        (실패 {autoCollectStatus.failedCount} · 미실행{" "}
+                        {autoCollectStatus.notRunCount})
                       </span>
-                      <span
-                        className={
-                          m.reason === "실패"
-                            ? "ml-1 text-amber-600/80"
-                            : "ml-1 text-[var(--text-muted)]"
-                        }
+                    )}
+                  </span>
+                  <span className="inline-flex shrink-0 items-center gap-1 text-sidebar-muted">
+                    {showMissing ? (
+                      <ChevronUp size={14} strokeWidth={1.75} aria-hidden />
+                    ) : (
+                      <ChevronDown size={14} strokeWidth={1.75} aria-hidden />
+                    )}
+                    {showMissing ? "닫기" : "즉시복구"}
+                  </span>
+                </button>
+              ) : (
+                <div className="text-xs font-medium text-sidebar-success">
+                  정상 · 누락 없음
+                </div>
+              )}
+              {showMissing && autoCollectStatus.missing.length > 0 && (
+                <ul className="max-h-40 space-y-0.5 overflow-y-auto">
+                  {autoCollectStatus.missing.map((m) => (
+                    <li key={`${m.source}::${m.keyword}`}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (m.source === "meta") {
+                            setTab("meta");
+                            setSelectedKeyword(m.keyword);
+                          } else {
+                            setAdQuery(m.keyword);
+                            setTab("ads");
+                            setSelectedKeyword(m.keyword);
+                          }
+                        }}
+                        title={`${m.reason} · 클릭하면 검색창에 채움`}
+                        className="flex min-h-8 w-full items-center justify-between gap-2 rounded-sm px-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
                       >
-                        {m.reason}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
-        {/* ===== 그룹 (tier) 필터 chip — A1/A2/A3 중요도. 레퍼런스 도구 벤치마크. */}
-        <div className="px-3 pt-3">
-          <div className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-            🎨 그룹
-          </div>
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => setTierFilter(null)}
-              className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition ${
-                tierFilter === null
-                  ? "bg-slate-700 text-white"
-                  : "border border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
-              }`}
-            >
-              전체
-            </button>
-            {(["A1", "A2", "A3"] as const).map((t) => {
-              const m = TIER_META[t];
-              const active = tierFilter === t;
-              return (
-                <button
-                  key={t}
-                  onClick={() => setTierFilter(active ? null : t)}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium transition ${
-                    active
-                      ? `${m.chip} border ring-1`
-                      : "border border-[var(--border-strong)] text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
-                  }`}
-                >
-                  <span className={`inline-block h-2 w-2 rounded-full ${m.dot}`} />
-                  {m.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ===== 태그 필터 chip group =====
-            적어도 태그 1개라도 라벨링된 keyword가 있으면 표시. 클릭 → 그
-            태그 가진 keyword만 사이드바에 보임 (groupedJobs 필터링). */}
-        {/* 태그 chip 필터 — 메타 / 구글 두 모드 모두 적용. 클릭 → 해당 태그
-            가진 keyword만 사이드바에 표시. allTags.length === 0 이면 hidden. */}
-        {allTags.length > 0 && (
-          <div className="px-3 pt-3">
-            <div className="mb-1.5 flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-              <span>🏷 태그</span>
-              {selectedTag && (
-                <button
-                  onClick={() => setSelectedTag(null)}
-                  className="text-[10px] font-normal text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-                >
-                  ✕ 해제
-                </button>
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          {m.source === "meta" ? (
+                            <Megaphone size={12} strokeWidth={2} aria-hidden className="shrink-0" />
+                          ) : (
+                            <LayoutList size={12} strokeWidth={2} aria-hidden className="shrink-0" />
+                          )}
+                          <span className="truncate">{m.keyword}</span>
+                        </span>
+                        <span
+                          className={
+                            m.reason === "실패"
+                              ? "shrink-0 text-sidebar-danger"
+                              : "shrink-0 text-sidebar-faint"
+                          }
+                        >
+                          {m.reason}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
-            <div className="flex flex-wrap gap-1">
-              {allTags.map((t) => {
-                const active = selectedTag === t;
-                const c = tagColor(t);
+          )}
+
+          {/* ===== 그룹 (tier) 필터 chip — A1/A2/A3 중요도. */}
+          <div>
+            <div className="sidebar-group-label">
+              <span className="inline-flex items-center gap-1.5">
+                <Layers size={14} strokeWidth={1.75} aria-hidden />
+                그룹
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1 px-2.5">
+              <button
+                type="button"
+                onClick={() => setTierFilter(null)}
+                aria-pressed={tierFilter === null}
+                className="chip h-6"
+              >
+                전체
+              </button>
+              {(["A1", "A2", "A3"] as const).map((t) => {
+                const m = TIER_META[t];
+                const active = tierFilter === t;
                 return (
                   <button
                     key={t}
-                    onClick={() => setSelectedTag(active ? null : t)}
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition ${
-                      active
-                        ? `${c.active} ring-1 ${c.ring}`
-                        : `border ${c.border} ${c.text} hover:${c.bg}`
-                    }`}
+                    type="button"
+                    onClick={() => setTierFilter(active ? null : t)}
+                    aria-pressed={active}
+                    className="chip h-6"
                   >
-                    #{t}
+                    <span aria-hidden className={`chip-dot ${m.dot}`} />
+                    {m.label}
                   </button>
                 );
               })}
             </div>
           </div>
-        )}
 
-        <div
-          className={`px-3 pb-3 ${
-            sidebarSource === "google" ? "" : "hidden"
-          }`}
-        >
-          {!loaded ? (
-            <div className="rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-6 text-center text-xs text-[var(--text-muted)]">
-              불러오는 중...
-            </div>
-          ) : groupedJobs.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-6 text-center text-xs text-[var(--text-muted)]">
-              기록이 없습니다
-            </div>
-          ) : (
-            <ul className="max-h-[calc(100vh-260px)] space-y-2 overflow-y-auto">
-              {groupedJobs
-                .filter((g) => {
-                  // 태그 필터 적용 — selectedTag 가 있을 때만.
-                  if (selectedTag && !(tagMap[g.keyword] ?? []).includes(selectedTag))
-                    return false;
-                  // tier(그룹) 필터 — 선택 시 그 tier 인 keyword 만.
-                  if (tierFilter) {
-                    const w = watches.find(
-                      (x) => x.keyword === g.keyword && x.kind === g.kind
-                    );
-                    if ((w?.tier ?? null) !== tierFilter) return false;
-                  }
-                  return true;
-                })
-                .map((g) => {
-                const active = selectedKeyword === g.keyword;
-                const watched = isWatched(g.keyword, g.kind);
-                const wInfo = watchInfo(g.keyword, g.kind);
-                const inFlight =
-                  g.kind === "ad" ? adCollections[g.keyword] : null;
-                const isRunning = inFlight?.busy ?? false;
-                const lastLog = inFlight?.logs.length
-                  ? inFlight.logs[inFlight.logs.length - 1]
-                  : null;
-                return (
-                  <li key={`${g.kind}::${g.keyword}`}>
-                    <div
-                      className={`group/job relative overflow-hidden rounded-xl border bg-[var(--bg-card)] shadow-[var(--shadow-card)] transition ${
-                        active
-                          ? "border-[var(--accent)] ring-2 ring-[var(--accent-soft)]"
-                          : isRunning
-                          ? "border-[var(--accent)]/50"
-                          : "border-[var(--border)] hover:border-[var(--border-strong)]"
-                      }`}
+          {/* ===== 태그 필터 chip group =====
+              클릭 → 그 태그 가진 keyword만 사이드바에 보임 (메타 / 구글 두
+              모드 모두 적용). allTags.length === 0 이면 hidden. */}
+          {allTags.length > 0 && (
+            <div>
+              <div className="sidebar-group-label">
+                <span className="inline-flex items-center gap-1.5">
+                  <Tag size={14} strokeWidth={1.75} aria-hidden />
+                  태그
+                </span>
+                {selectedTag && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTag(null)}
+                    className="inline-flex items-center gap-1 rounded-sm px-1 text-xs font-normal text-sidebar-muted transition-colors hover:text-sidebar-text"
+                  >
+                    <X size={12} strokeWidth={2} aria-hidden />
+                    해제
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1 px-2.5">
+                {allTags.map((t) => {
+                  const active = selectedTag === t;
+                  const c = tagColor(t);
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setSelectedTag(active ? null : t)}
+                      aria-pressed={active}
+                      className="chip h-6"
                     >
-                      <button
-                        onClick={() => {
-                          setSelectedKeyword(active ? null : g.keyword);
-                          if (!active) {
-                            // Only switch tab if currently on an
-                            // incompatible one. Stay on 소재 분석 if user
-                            // is exploring there.
-                            if (g.kind !== "ad") {
-                              setTab("ads");
-                            }
-                          }
-                        }}
-                        className="w-full px-3 py-2 pr-2 text-left text-xs transition-all group-hover/job:pr-[7.5rem]"
+                      <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`pb-3 pt-2 ${
+              sidebarSource === "google" ? "" : "hidden"
+            }`}
+          >
+            {!loaded ? (
+              <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
+                불러오는 중...
+              </div>
+            ) : groupedJobs.length === 0 ? (
+              <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
+                기록이 없습니다
+              </div>
+            ) : (
+              <ul className="space-y-0.5">
+                {groupedJobs
+                  .filter((g) => {
+                    // 태그 필터 적용 — selectedTag 가 있을 때만.
+                    if (selectedTag && !(tagMap[g.keyword] ?? []).includes(selectedTag))
+                      return false;
+                    // tier(그룹) 필터 — 선택 시 그 tier 인 keyword 만.
+                    if (tierFilter) {
+                      const w = watches.find(
+                        (x) => x.keyword === g.keyword && x.kind === g.kind
+                      );
+                      if ((w?.tier ?? null) !== tierFilter) return false;
+                    }
+                    return true;
+                  })
+                  .map((g) => {
+                  const active = selectedKeyword === g.keyword;
+                  const watched = isWatched(g.keyword, g.kind);
+                  const wInfo = watchInfo(g.keyword, g.kind);
+                  const inFlight =
+                    g.kind === "ad" ? adCollections[g.keyword] : null;
+                  const isRunning = inFlight?.busy ?? false;
+                  const lastLog = inFlight?.logs.length
+                    ? inFlight.logs[inFlight.logs.length - 1]
+                    : null;
+                  return (
+                    <li key={`${g.kind}::${g.keyword}`}>
+                      <div
+                        className={`group/job relative rounded-sm transition-colors ${
+                          active
+                            ? "bg-sidebar-elevated"
+                            : "hover:bg-sidebar-hover"
+                        }`}
                       >
-                        <div className="flex items-center gap-2">
-                          {/* 아바타 — 아카이브 카드와 같은 색 규칙이라
-                              사이드바 ↔ 카드가 같은 브랜드로 인식된다. */}
-                          <span className="relative shrink-0">
-                            <span
-                              aria-hidden
-                              className="grid h-7 w-7 place-items-center rounded-full text-[11px] font-black text-white"
-                              style={{
-                                background: `hsl(${brandHue(g.keyword)} 62% 55%)`,
-                              }}
-                            >
-                              {brandInitial(g.keyword)}
-                            </span>
-                            {isRunning && (
-                              <span className="absolute -right-0.5 -top-0.5 inline-block h-2 w-2 animate-pulse rounded-full bg-[var(--accent)] ring-2 ring-[var(--bg-card)]" />
-                            )}
-                            {/* tier dot — 클릭 시 A1→A2→A3→없음 cycle */}
-                            {g.kind === "ad" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedKeyword(active ? null : g.keyword);
+                            if (!active) {
+                              // Only switch tab if currently on an
+                              // incompatible one. Stay on 소재 분석 if user
+                              // is exploring there.
+                              if (g.kind !== "ad") {
+                                setTab("ads");
+                              }
+                            }
+                          }}
+                          aria-pressed={active}
+                          className="w-full rounded-sm px-2.5 py-1.5 pr-2 text-left text-xs transition-all group-hover/job:pr-[7.5rem]"
+                        >
+                          <div className="flex items-center gap-2">
+                            {/* 아바타 — 아카이브 카드와 같은 색 규칙이라
+                                사이드바 ↔ 카드가 같은 브랜드로 인식된다. */}
+                            <span className="relative shrink-0">
                               <span
-                                role="button"
-                                tabIndex={0}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void cycleTier(g.keyword);
+                                aria-hidden
+                                className="grid h-7 w-7 place-items-center rounded-sm text-xs font-semibold text-white"
+                                style={{
+                                  background: `hsl(${brandHue(g.keyword)} 62% 55%)`,
                                 }}
-                                title={
-                                  wInfo?.tier
-                                    ? `그룹 ${wInfo.tier} — 클릭해서 변경`
-                                    : "그룹 미지정 — 클릭해서 A1 지정"
-                                }
-                                className={`absolute -bottom-0.5 -right-0.5 inline-block h-3 w-3 cursor-pointer rounded-full ring-2 ring-[var(--bg-card)] transition hover:scale-125 ${
-                                  wInfo?.tier && TIER_META[wInfo.tier]
-                                    ? TIER_META[wInfo.tier].dot
-                                    : "border border-[var(--border-strong)] bg-[var(--bg-elev)]"
-                                }`}
-                              />
-                            )}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--text-primary)]">
-                            {g.keyword}
-                          </span>
-                          {watched && (
-                            <span
-                              title="매일 자동으로 다시 불러옵니다"
-                              className="shrink-0 text-[10px]"
-                            >
-                              ⭐
-                            </span>
-                          )}
-                          <span
-                            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold transition group-hover/job:opacity-0 ${
-                              isRunning || g.status === "진행 중"
-                                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                                : g.status === "대기 중"
-                                ? "bg-[var(--bg-elev)] text-[var(--text-muted)]"
-                                : g.status === "완료"
-                                ? "bg-emerald-500/15 text-emerald-700"
-                                : "bg-amber-500/15 text-amber-700"
-                            }`}
-                          >
-                            {isRunning
-                              ? `${inFlight!.progress.percent}%`
-                              : g.status === "완료"
-                              ? "✅"
-                              : g.status === "실패"
-                              ? "❌"
-                              : g.status}
-                          </span>
-                        </div>
-                        {isRunning && (
-                          <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[var(--bg-base)]">
-                            <div
-                              className="h-full bg-[var(--accent)] transition-all duration-300"
-                              style={{
-                                width: `${inFlight!.progress.percent}%`,
-                              }}
-                            />
-                          </div>
-                        )}
-                        {isRunning && lastLog && (
-                          <div className="mt-1 truncate text-[10px] text-[var(--accent)]/80">
-                            {lastLog.msg}
-                          </div>
-                        )}
-                        {/* 2줄: 상대시간 · 광고/매칭 — 절대 줄바꿈 없이 한 줄. */}
-                        <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap text-[10px] text-[var(--text-muted)]">
-                          <span className="shrink-0" title={formatTime(g.latestAt)}>
-                            {formatRelative(g.latestAt)}
-                          </span>
-                          <span className="shrink-0 text-[var(--text-muted)]/50">·</span>
-                          <span className="shrink-0 text-[var(--text-secondary)]">
-                            {g.kind === "ad" ? (
-                              <>
-                                광고 <b className="text-[var(--text-primary)]">{g.adCount}</b>
-                                {g.videoCount > 0 && (
-                                  <> · 매칭 <b className="text-[var(--text-primary)]">{g.videoCount}</b></>
-                                )}
-                              </>
-                            ) : (
-                              <>
-                                영상 <b className="text-[var(--text-primary)]">{g.videoCount}</b>
-                              </>
-                            )}
-                          </span>
-                        </div>
-                        {g.status === "실패" && g.errorMsg && (
-                          <div
-                            className="mt-1 truncate text-[10px] text-amber-600/80"
-                            title={g.errorMsg}
-                          >
-                            {humanizeErrorMsg(g.errorMsg)}
-                          </div>
-                        )}
-                      </button>
-                      {/* ===== 태그 영역 (카드 외곽 — button 밖) =====
-                          기존 태그 chip 표시 + "+ 태그" 추가 input. button
-                          중첩 방지를 위해 메인 button 밖에 위치. */}
-                      <div className="border-t border-[var(--border)] px-3 pb-2 pt-1.5">
-                        <div className="flex flex-wrap items-center gap-1">
-                          {(tagMap[g.keyword] ?? []).map((t) => {
-                            const c = tagColor(t);
-                            return (
-                              <span
-                                key={t}
-                                className={`inline-flex items-center gap-1 rounded-full ${c.bg} px-2 py-0.5 text-[10px] font-medium ${c.text}`}
                               >
-                                #{t}
-                                <button
+                                {brandInitial(g.keyword)}
+                              </span>
+                              {isRunning && (
+                                <span className="absolute -right-0.5 -top-0.5 inline-block h-2 w-2 animate-pulse rounded-full bg-accent-on-dark ring-2 ring-sidebar" />
+                              )}
+                              {/* tier dot — 클릭 시 A1→A2→A3→없음 cycle */}
+                              {g.kind === "ad" && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    removeTag(g.keyword, t);
+                                    void cycleTier(g.keyword);
                                   }}
-                                  className="hover:text-rose-700"
-                                  title="태그 제거"
-                                >
-                                  ×
-                                </button>
+                                  title={
+                                    wInfo?.tier
+                                      ? `그룹 ${wInfo.tier} — 클릭해서 변경`
+                                      : "그룹 미지정 — 클릭해서 A1 지정"
+                                  }
+                                  className={`absolute -bottom-0.5 -right-0.5 inline-block h-3 w-3 cursor-pointer rounded-full ring-2 ring-sidebar transition hover:scale-125 ${
+                                    wInfo?.tier && TIER_META[wInfo.tier]
+                                      ? TIER_META[wInfo.tier].dot
+                                      : "border border-sidebar-faint bg-sidebar-elevated"
+                                  }`}
+                                />
+                              )}
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-text">
+                              {g.keyword}
+                            </span>
+                            {watched && (
+                              <span
+                                title="매일 자동으로 다시 불러옵니다"
+                                className="shrink-0 text-sidebar-muted"
+                              >
+                                <Star size={12} strokeWidth={2} fill="currentColor" aria-hidden />
+                                <span className="sr-only">자동 추적 중</span>
                               </span>
-                            );
-                          })}
-                          {editingTagFor === g.keyword ? (
-                            <input
-                              autoFocus
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  addTag(g.keyword, tagInput);
-                                  setTagInput("");
-                                  // 연속 입력 가능하게 input 유지
-                                } else if (e.key === "Escape") {
+                            )}
+                            <span
+                              title={isRunning ? undefined : g.status}
+                              className={`shrink-0 transition group-hover/job:opacity-0 ${
+                                isRunning || g.status === "진행 중"
+                                  ? "badge badge-accent tabular-nums"
+                                  : g.status === "대기 중"
+                                  ? "badge badge-neutral"
+                                  : g.status === "완료"
+                                  ? "badge badge-success"
+                                  : g.status === "실패"
+                                  ? "badge badge-danger"
+                                  : "badge badge-warning"
+                              }`}
+                            >
+                              {isRunning ? (
+                                `${inFlight!.progress.percent}%`
+                              ) : g.status === "완료" ? (
+                                <>
+                                  <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                                  <span className="sr-only">완료</span>
+                                </>
+                              ) : g.status === "실패" ? (
+                                <>
+                                  <CircleX size={12} strokeWidth={2} aria-hidden />
+                                  <span className="sr-only">실패</span>
+                                </>
+                              ) : (
+                                g.status
+                              )}
+                            </span>
+                          </div>
+                          {isRunning && (
+                            <div className="progress mt-1.5">
+                              <div
+                                className="h-full rounded-full bg-accent-on-dark transition-all duration-300"
+                                style={{
+                                  width: `${inFlight!.progress.percent}%`,
+                                }}
+                              />
+                            </div>
+                          )}
+                          {isRunning && lastLog && (
+                            <div className="mt-1 truncate text-xs text-accent-on-dark">
+                              {lastLog.msg}
+                            </div>
+                          )}
+                          {/* 2줄: 상대시간 · 광고/매칭 — 절대 줄바꿈 없이 한 줄. */}
+                          <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-9 text-xs text-sidebar-faint">
+                            <span className="shrink-0" title={formatTime(g.latestAt)}>
+                              {formatRelative(g.latestAt)}
+                            </span>
+                            <span aria-hidden className="shrink-0">·</span>
+                            <span className="shrink-0 text-sidebar-muted">
+                              {g.kind === "ad" ? (
+                                <>
+                                  광고 <b className="font-semibold tabular-nums text-sidebar-text">{g.adCount}</b>
+                                  {g.videoCount > 0 && (
+                                    <> · 매칭 <b className="font-semibold tabular-nums text-sidebar-text">{g.videoCount}</b></>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  영상 <b className="font-semibold tabular-nums text-sidebar-text">{g.videoCount}</b>
+                                </>
+                              )}
+                            </span>
+                          </div>
+                          {g.status === "실패" && g.errorMsg && (
+                            <div
+                              className="mt-1 truncate pl-9 text-xs text-sidebar-danger"
+                              title={g.errorMsg}
+                            >
+                              {humanizeErrorMsg(g.errorMsg)}
+                            </div>
+                          )}
+                        </button>
+                        {/* ===== 태그 영역 (행 아래 — button 밖) =====
+                            기존 태그 chip 표시 + "태그" 추가 input. button
+                            중첩 방지를 위해 메인 button 밖에 위치. */}
+                        <div className="px-2.5 pb-1.5 pl-[46px]">
+                          <div className="flex flex-wrap items-center gap-1">
+                            {(tagMap[g.keyword] ?? []).map((t) => {
+                              const c = tagColor(t);
+                              return (
+                                <span key={t} className="chip h-6 gap-1 px-2">
+                                  <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeTag(g.keyword, t);
+                                    }}
+                                    className="rounded-xs text-sidebar-faint transition-colors hover:text-sidebar-danger"
+                                    title="태그 제거"
+                                    aria-label={`태그 ${t} 제거`}
+                                  >
+                                    <X size={12} strokeWidth={2} aria-hidden />
+                                  </button>
+                                </span>
+                              );
+                            })}
+                            {editingTagFor === g.keyword ? (
+                              <input
+                                autoFocus
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    addTag(g.keyword, tagInput);
+                                    setTagInput("");
+                                    // 연속 입력 가능하게 input 유지
+                                  } else if (e.key === "Escape") {
+                                    setEditingTagFor(null);
+                                    setTagInput("");
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (tagInput.trim()) {
+                                    addTag(g.keyword, tagInput);
+                                  }
                                   setEditingTagFor(null);
                                   setTagInput("");
-                                }
-                              }}
-                              onBlur={() => {
-                                if (tagInput.trim()) {
-                                  addTag(g.keyword, tagInput);
-                                }
-                                setEditingTagFor(null);
-                                setTagInput("");
-                              }}
-                              placeholder="태그 입력 → Enter"
-                              list="known-tags"
-                              className="w-24 rounded-full border border-cyan-500/40 bg-[var(--bg-elev)] px-2 py-0.5 text-[10px] text-cyan-200 outline-none placeholder:text-[var(--text-muted)]"
-                            />
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingTagFor(g.keyword);
-                                setTagInput("");
-                              }}
-                              className="rounded-full border border-dashed border-[var(--border-strong)] px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:border-cyan-500/40 hover:text-cyan-700"
-                            >
-                              + 태그
-                            </button>
-                          )}
+                                }}
+                                placeholder="태그 입력 → Enter"
+                                list="known-tags"
+                                className="field-input min-h-7 w-28 px-2 py-0.5 text-xs"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTagFor(g.keyword);
+                                  setTagInput("");
+                                }}
+                                className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-xs text-sidebar-faint transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
+                              >
+                                <Plus size={12} strokeWidth={2} aria-hidden />
+                                태그
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬
-                          (개별 absolute right-N 은 간격이 버튼 폭보다 좁아
-                          겹쳤음). 평소 숨김, hover 시 우측에 가로로 표시. */}
-                      <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 transition group-hover/job:opacity-100">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            const isBusy =
-                              (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
-                              (g.kind === "youtube" && busyYt === g.keyword);
-                            if (isBusy) return;
-                            await refreshJob(g.keyword, g.kind);
-                          }}
-                          disabled={
-                            (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
-                            (g.kind === "youtube" && busyYt === g.keyword)
-                          }
-                          title="지금 재수집"
-                          className="rounded p-1 text-[var(--text-muted)] hover:bg-emerald-500/20 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          🔄
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await toggleWatch(g.keyword, g.kind);
-                          }}
-                          title={watched ? "자동 추적 해제" : "자동 추적 켜기"}
-                          className={`rounded p-1 transition ${
-                            watched
-                              ? "text-amber-600 hover:bg-amber-500/20"
-                              : "text-[var(--text-muted)] hover:bg-amber-500/20 hover:text-amber-600"
-                          }`}
-                        >
-                          {watched ? "⭐" : "☆"}
-                        </button>
-                        {watched && (
+                        {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬.
+                            평소 숨김, hover 시 우측에 가로로 표시. */}
+                        <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/job:opacity-100 group-hover/job:opacity-100">
                           <button
+                            type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await toggleDaily(
-                                g.keyword,
-                                g.kind,
-                                !(wInfo?.daily ?? false)
-                              );
+                              const isBusy =
+                                (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
+                                (g.kind === "youtube" && busyYt === g.keyword);
+                              if (isBusy) return;
+                              await refreshJob(g.keyword, g.kind);
                             }}
-                            title={
-                              wInfo?.daily
-                                ? "매일 추적 중 (클릭 → 격일로)"
-                                : "격일 추적 중 (클릭 → 매일로)"
+                            disabled={
+                              (g.kind === "ad" && isBusyKeyword(g.keyword)) ||
+                              (g.kind === "youtube" && busyYt === g.keyword)
                             }
-                            className={`rounded px-1 py-1 text-[9px] font-semibold transition ${
-                              wInfo?.daily
-                                ? "text-amber-600 hover:bg-amber-500/20"
-                                : "text-[var(--text-muted)] hover:bg-blue-500/20 hover:text-blue-700"
+                            title="지금 재수집"
+                            aria-label="지금 재수집"
+                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-text disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await toggleWatch(g.keyword, g.kind);
+                            }}
+                            title={watched ? "자동 추적 해제" : "자동 추적 켜기"}
+                            aria-label={watched ? "자동 추적 해제" : "자동 추적 켜기"}
+                            aria-pressed={watched}
+                            className={`icon-btn-28 hover:bg-sidebar-hover ${
+                              watched
+                                ? "text-sidebar-text"
+                                : "text-sidebar-muted hover:text-sidebar-text"
                             }`}
                           >
-                            {wInfo?.daily ? "매일" : "격일"}
+                            <Star
+                              size={14}
+                              strokeWidth={1.75}
+                              fill={watched ? "currentColor" : "none"}
+                              aria-hidden
+                            />
                           </button>
-                        )}
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (
-                              !confirm(
-                                `"${g.keyword}" ${
-                                  g.kind === "ad" ? "광고 수집" : "YouTube 검색"
-                                } 결과를 삭제할까요?`
+                          {watched && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await toggleDaily(
+                                  g.keyword,
+                                  g.kind,
+                                  !(wInfo?.daily ?? false)
+                                );
+                              }}
+                              title={
+                                wInfo?.daily
+                                  ? "매일 추적 중 (클릭 → 격일로)"
+                                  : "격일 추적 중 (클릭 → 매일로)"
+                              }
+                              className={`h-7 rounded-sm px-1.5 text-xs font-semibold transition-colors hover:bg-sidebar-hover ${
+                                wInfo?.daily
+                                  ? "text-sidebar-text"
+                                  : "text-sidebar-muted hover:text-sidebar-text"
+                              }`}
+                            >
+                              {wInfo?.daily ? "매일" : "격일"}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (
+                                !confirm(
+                                  `"${g.keyword}" ${
+                                    g.kind === "ad" ? "광고 수집" : "YouTube 검색"
+                                  } 결과를 삭제할까요?`
+                                )
                               )
-                            )
-                              return;
-                            await fetch("/api/jobs", {
-                              method: "DELETE",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                keyword: g.keyword,
-                                kind: g.kind,
-                              }),
-                            });
-                            if (selectedKeyword === g.keyword)
-                              setSelectedKeyword(null);
-                            await refreshAll();
-                          }}
-                          title="이 작업 삭제"
-                          className="rounded p-1 text-[var(--text-muted)] hover:bg-rose-500/20 hover:text-rose-700"
-                        >
-                          ×
-                        </button>
+                                return;
+                              await fetch("/api/jobs", {
+                                method: "DELETE",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  keyword: g.keyword,
+                                  kind: g.kind,
+                                }),
+                              });
+                              if (selectedKeyword === g.keyword)
+                                setSelectedKeyword(null);
+                              await refreshAll();
+                            }}
+                            title="이 작업 삭제"
+                            aria-label="이 작업 삭제"
+                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-danger"
+                          >
+                            <X size={14} strokeWidth={1.75} aria-hidden />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* === Meta brand groups === sock-puppet pages collapsed under
+              their anchor brand. Click → switches to 메타 광고 tab and
+              auto-selects the brand in MetaView. Visible only when the
+              sidebar source toggle is set to 메타. */}
+          {sidebarSource === "meta" && (
+            <div className="pb-3">
+              <div className="sidebar-group-label">
+                <span className="inline-flex items-center gap-1.5">
+                  <Megaphone size={14} strokeWidth={1.75} aria-hidden />
+                  메타 광고 브랜드
+                </span>
+                <span className="tabular-nums">{metaBrandGroups.length}개</span>
+              </div>
+              {metaBrandGroups.length === 0 ? (
+                <div className="px-2.5 py-6 text-center text-xs text-sidebar-faint">
+                  메타 광고 탭 → 새 brand 입력으로 시작
+                </div>
+              ) : (
+              <ul className="space-y-0.5">
+                {metaBrandGroups
+                  .filter((g) => {
+                    // 태그 필터 — 메타 brand의 anchor keyword에 selectedTag 있어야 통과
+                    if (!selectedTag) return true;
+                    return (tagMap[g.anchor] ?? []).includes(selectedTag);
+                  })
+                  .map((g) => {
+                  const active =
+                    tab === "meta" && selectedKeyword === g.anchor;
+                  const isRunning = g.runningCount > 0;
+                  const hasError = !isRunning && g.erroredCount > 0;
+                  // Meta brand groups are always tracked — every entry here
+                  // came from an active MetaWatch (or an orphaned job we
+                  // promoted to anchor). Show a star to signal that, matching
+                  // the Google row's tracked-state visual.
+                  const watched = metaWatches.some(
+                    (w) =>
+                      w.active && (w.keyword === g.anchor || w.anchorKeyword === g.anchor)
+                  );
+                  return (
+                    <li key={`meta::${g.anchor}`}>
+                      <div
+                        className={`group/meta relative rounded-sm transition-colors ${
+                          active
+                            ? "bg-sidebar-elevated"
+                            : "hover:bg-sidebar-hover"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTab("meta");
+                            setSelectedKeyword(g.anchor);
+                          }}
+                          aria-pressed={active}
+                          className="w-full rounded-sm px-2.5 py-1.5 pr-2 text-left text-xs transition-all group-hover/meta:pr-16"
+                        >
+                          <div className="flex min-h-6 items-center gap-2">
+                            <span
+                              aria-hidden
+                              className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                                isRunning
+                                  ? "animate-pulse bg-accent-on-dark"
+                                  : hasError
+                                  ? "bg-sidebar-danger"
+                                  : g.adCount > 0 || g.pageCount > 0
+                                  ? "bg-sidebar-success"
+                                  : "bg-sidebar-faint"
+                              }`}
+                            />
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-text">
+                              {g.anchor}
+                            </span>
+                            {watched && (
+                              <Star size={12} strokeWidth={2} fill="currentColor" aria-hidden className="shrink-0 text-sidebar-muted" />
+                            )}
+                            <span
+                              className={`shrink-0 transition group-hover/meta:opacity-0 ${
+                                isRunning
+                                  ? "badge badge-accent"
+                                  : hasError
+                                  ? "badge badge-danger"
+                                  : g.adCount > 0 || g.pageCount > 0
+                                  ? "badge badge-success"
+                                  : "badge badge-neutral"
+                              }`}
+                            >
+                              {isRunning ? (
+                                <>
+                                  <LoaderCircle size={12} strokeWidth={2} aria-hidden className="animate-spin" />
+                                  <span className="sr-only">수집 중</span>
+                                </>
+                              ) : hasError ? (
+                                <>
+                                  <CircleX size={12} strokeWidth={2} aria-hidden />
+                                  <span className="sr-only">실패</span>
+                                </>
+                              ) : g.adCount > 0 || g.pageCount > 0 ? (
+                                <>
+                                  <CircleCheck size={12} strokeWidth={2} aria-hidden />
+                                  <span className="sr-only">완료</span>
+                                </>
+                              ) : (
+                                "대기"
+                              )}
+                            </span>
+                          </div>
+                          {/* 2줄: 상대시간 · 광고 N · 페이지 N — 절대 줄바꿈 없이 한 줄. */}
+                          <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap pl-4 text-xs text-sidebar-faint">
+                            <span className="shrink-0" title={g.latestAt ? formatTime(g.latestAt) : ""}>
+                              {g.latestAt ? formatRelative(g.latestAt) : "수집 전"}
+                            </span>
+                            <span aria-hidden className="shrink-0">·</span>
+                            <span className="shrink-0 text-sidebar-muted">
+                              광고 <b className="font-semibold tabular-nums text-sidebar-text">{g.adCount}</b>
+                              {g.pageWatches > 0 && (
+                                <> · 페이지 <b className="font-semibold tabular-nums text-sidebar-text">{g.pageWatches}</b></>
+                              )}
+                            </span>
+                            {g.autoCount > 0 && (
+                              <span
+                                title={`자동 발굴 ${g.autoCount}${g.manualCount > 0 ? ` · 수동 ${g.manualCount}` : ""}${g.seedCount > 0 ? ` · seed ${g.seedCount}` : ""}`}
+                                className="ml-auto shrink-0 text-sidebar-success"
+                              >
+                                auto {g.autoCount}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                        {/* ===== 태그 영역 (행 아래 — button 밖) ===== */}
+                        <div className="px-2.5 pb-1.5 pl-[26px]">
+                          <div className="flex flex-wrap items-center gap-1">
+                            {(tagMap[g.anchor] ?? []).map((t) => {
+                              const c = tagColor(t);
+                              return (
+                                <span key={t} className="chip h-6 gap-1 px-2">
+                                  <span aria-hidden className={`chip-dot ${c.dot}`} />#{t}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeTag(g.anchor, t);
+                                    }}
+                                    className="rounded-xs text-sidebar-faint transition-colors hover:text-sidebar-danger"
+                                    title="태그 제거"
+                                    aria-label={`태그 ${t} 제거`}
+                                  >
+                                    <X size={12} strokeWidth={2} aria-hidden />
+                                  </button>
+                                </span>
+                              );
+                            })}
+                            {editingTagFor === g.anchor ? (
+                              <input
+                                autoFocus
+                                value={tagInput}
+                                onChange={(e) => setTagInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    addTag(g.anchor, tagInput);
+                                    setTagInput("");
+                                  } else if (e.key === "Escape") {
+                                    setEditingTagFor(null);
+                                    setTagInput("");
+                                  }
+                                }}
+                                onBlur={() => {
+                                  if (tagInput.trim()) addTag(g.anchor, tagInput);
+                                  setEditingTagFor(null);
+                                  setTagInput("");
+                                }}
+                                placeholder="태그 입력 → Enter"
+                                list="known-tags"
+                                className="field-input min-h-7 w-28 px-2 py-0.5 text-xs"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingTagFor(g.anchor);
+                                  setTagInput("");
+                                }}
+                                className="inline-flex h-6 items-center gap-1 rounded-xs px-1.5 text-xs text-sidebar-faint transition-colors hover:bg-sidebar-hover hover:text-sidebar-text"
+                              >
+                                <Plus size={12} strokeWidth={2} aria-hidden />
+                                태그
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {/* 지금 재수집 — 구글 행의 재수집과 동일. anchor keyword 를
+                            메타 큐에 다시 넣어 stage 1 + 1.5 를 재실행한다. 실패로
+                            끝난 brand 도 새 코드 + 살아있는 프록시로 재시도 가능. */}
+                        {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬. */}
+                        <div className="absolute right-1 top-1 flex items-center gap-0.5 opacity-0 transition group-focus-within/meta:opacity-100 group-hover/meta:opacity-100">
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (isRunning) return;
+                              // 트래픽 안내 — 메타 1회 수집 ~200MB. 프록시 경유 시 그만큼 차감.
+                              // 사용자가 의식하고 누르도록 confirm. 자주 누르면
+                              // 트래픽 빠르게 소진.
+                              if (
+                                !confirm(
+                                  `"${g.anchor}" 메타 광고 재수집\n\n` +
+                                    `예상 트래픽: 약 200MB\n` +
+                                    `프록시를 쓰신다면 그만큼 차감됩니다.\n\n` +
+                                    `진행할까요?`
+                                )
+                              )
+                                return;
+                              await fetch("/api/meta/queue", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ keyword: g.anchor }),
+                              }).catch(() => {});
+                              await refreshAll();
+                            }}
+                            disabled={isRunning}
+                            title="지금 메타 다시 불러오기 (약 200MB)"
+                            aria-label="지금 메타 다시 불러오기 (약 200MB)"
+                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-text disabled:cursor-not-allowed disabled:opacity-30"
+                          >
+                            <RefreshCw size={14} strokeWidth={1.75} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (
+                                !confirm(
+                                  `"${g.anchor}" 메타 브랜드 추적을 해제할까요? (관련 키워드 ${g.keywords.length}개 모두 해제)`
+                                )
+                              )
+                                return;
+                              // Delete every MetaWatch row tied to this anchor
+                              // (brand keyword + page:* sock-puppet rows).
+                              for (const kw of g.keywords) {
+                                await fetch("/api/meta-watch", {
+                                  method: "DELETE",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({ keyword: kw }),
+                                }).catch(() => {});
+                              }
+                              if (selectedKeyword === g.anchor)
+                                setSelectedKeyword(null);
+                              await refreshAll();
+                            }}
+                            title="이 브랜드 추적 해제"
+                            aria-label="이 브랜드 추적 해제"
+                            className="icon-btn-28 text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-danger"
+                          >
+                            <X size={14} strokeWidth={1.75} aria-hidden />
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+              )}
+            </div>
           )}
         </div>
 
-        {/* === Meta brand groups === sock-puppet pages collapsed under
-            their anchor brand. Click → switches to 메타 광고 tab and
-            auto-selects the brand in MetaView. Visible only when the
-            sidebar source toggle is set to 메타. */}
-        {sidebarSource === "meta" && (
-          <div className="px-3 pb-3 pt-3">
-            <div className="mb-2 flex items-center justify-between px-1 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-              <span>📘 메타 광고 브랜드</span>
-              <span className="text-[10px] font-normal normal-case">
-                {metaBrandGroups.length}개
-              </span>
-            </div>
-            {metaBrandGroups.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-6 text-center text-xs text-[var(--text-muted)]">
-                📘 메타 광고 탭 → 새 brand 입력으로 시작
-              </div>
-            ) : (
-            <ul className="max-h-[calc(100vh-260px)] space-y-2 overflow-y-auto">
-              {metaBrandGroups
-                .filter((g) => {
-                  // 태그 필터 — 메타 brand의 anchor keyword에 selectedTag 있어야 통과
-                  if (!selectedTag) return true;
-                  return (tagMap[g.anchor] ?? []).includes(selectedTag);
-                })
-                .map((g) => {
-                const active =
-                  tab === "meta" && selectedKeyword === g.anchor;
-                const isRunning = g.runningCount > 0;
-                const hasError = !isRunning && g.erroredCount > 0;
-                // Meta brand groups are always tracked — every entry here
-                // came from an active MetaWatch (or an orphaned job we
-                // promoted to anchor). Show ⭐ to signal that, matching
-                // the Google card's tracked-state visual.
-                const watched = metaWatches.some(
-                  (w) =>
-                    w.active && (w.keyword === g.anchor || w.anchorKeyword === g.anchor)
-                );
-                return (
-                  <li key={`meta::${g.anchor}`}>
-                    <div
-                      className={`group/meta relative rounded-lg border transition ${
-                        active
-                          ? "border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/30"
-                          : isRunning
-                          ? "border-blue-500/50 bg-blue-500/5"
-                          : watched
-                          ? "border-amber-500/40 bg-amber-500/5 hover:border-amber-500/60"
-                          : "border-[var(--border)] bg-[var(--bg-elev)] hover:border-[var(--border-strong)]"
-                      }`}
-                    >
-                      <button
-                        onClick={() => {
-                          setTab("meta");
-                          setSelectedKeyword(g.anchor);
-                        }}
-                        className="w-full px-3 py-2 pr-2 text-left text-xs transition-all group-hover/meta:pr-14"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          {isRunning && (
-                            <span className="inline-block h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-blue-400" />
-                          )}
-                          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--text-primary)]">
-                            {g.anchor}
-                          </span>
-                          <span
-                            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold transition group-hover/meta:opacity-0 ${
-                              isRunning
-                                ? "bg-blue-500/20 text-blue-700"
-                                : hasError
-                                ? "bg-slate-500/20 text-amber-700"
-                                : g.adCount > 0 || g.pageCount > 0
-                                ? "bg-emerald-500/20 text-emerald-700"
-                                : "bg-slate-500/20 text-slate-700"
-                            }`}
-                          >
-                            {isRunning
-                              ? `🔄`
-                              : hasError
-                              ? `❌`
-                              : g.adCount > 0 || g.pageCount > 0
-                              ? "✅"
-                              : "대기"}
-                          </span>
-                        </div>
-                        {/* 2줄: 상대시간 · 광고 N · 페이지 N — 절대 줄바꿈 없이 한 줄. */}
-                        <div className="mt-0.5 flex items-center gap-1 overflow-hidden whitespace-nowrap text-[10px] text-[var(--text-muted)]">
-                          <span className="shrink-0" title={g.latestAt ? formatTime(g.latestAt) : ""}>
-                            {g.latestAt ? formatRelative(g.latestAt) : "수집 전"}
-                          </span>
-                          <span className="shrink-0 text-[var(--text-muted)]/50">·</span>
-                          <span className="shrink-0 text-[var(--text-secondary)]">
-                            광고 <b className="text-[var(--text-primary)]">{g.adCount}</b>
-                            {g.pageWatches > 0 && (
-                              <> · 페이지 <b className="text-[var(--text-primary)]">{g.pageWatches}</b></>
-                            )}
-                          </span>
-                          {g.autoCount > 0 && (
-                            <span
-                              title={`자동 발굴 ${g.autoCount}${g.manualCount > 0 ? ` · 수동 ${g.manualCount}` : ""}${g.seedCount > 0 ? ` · seed ${g.seedCount}` : ""}`}
-                              className="ml-auto shrink-0 rounded bg-emerald-500/12 px-1 py-0.5 text-[9px] text-emerald-700/90"
-                            >
-                              auto {g.autoCount}
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                      {/* ===== 태그 영역 (카드 외곽 — button 밖) =====
-                          기존 태그 chip 표시 + "+ 태그" 추가 input. button
-                          중첩 방지를 위해 메인 button 밖에 위치. */}
-                      <div className="border-t border-[var(--border)] px-3 pb-2 pt-1.5">
-                        <div className="flex flex-wrap items-center gap-1">
-                          {(tagMap[g.anchor] ?? []).map((t) => {
-                            const c = tagColor(t);
-                            return (
-                              <span
-                                key={t}
-                                className={`inline-flex items-center gap-1 rounded-full ${c.bg} px-2 py-0.5 text-[10px] font-medium ${c.text}`}
-                              >
-                                #{t}
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeTag(g.anchor, t);
-                                  }}
-                                  className="hover:text-rose-700"
-                                  title="태그 제거"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            );
-                          })}
-                          {editingTagFor === g.anchor ? (
-                            <input
-                              autoFocus
-                              value={tagInput}
-                              onChange={(e) => setTagInput(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  addTag(g.anchor, tagInput);
-                                  setTagInput("");
-                                } else if (e.key === "Escape") {
-                                  setEditingTagFor(null);
-                                  setTagInput("");
-                                }
-                              }}
-                              onBlur={() => {
-                                if (tagInput.trim()) addTag(g.anchor, tagInput);
-                                setEditingTagFor(null);
-                                setTagInput("");
-                              }}
-                              placeholder="태그 입력 → Enter"
-                              list="known-tags"
-                              className="w-24 rounded-full border border-cyan-500/40 bg-[var(--bg-elev)] px-2 py-0.5 text-[10px] text-cyan-200 outline-none placeholder:text-[var(--text-muted)]"
-                            />
-                          ) : (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingTagFor(g.anchor);
-                                setTagInput("");
-                              }}
-                              className="rounded-full border border-dashed border-[var(--border-strong)] px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:border-cyan-500/40 hover:text-cyan-700"
-                            >
-                              + 태그
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {/* 지금 재수집 — 구글 카드의 🔄 와 동일. anchor keyword 를
-                          메타 큐에 다시 넣어 stage 1 + 1.5 를 재실행한다. 실패로
-                          끝난 brand 도 새 코드 + 살아있는 프록시로 재시도 가능. */}
-                      {/* hover 액션 버튼 — flex 컨테이너로 묶어 gap 정렬. */}
-                      <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5 opacity-0 transition group-hover/meta:opacity-100">
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (isRunning) return;
-                            // 트래픽 안내 — 메타 1회 수집 ~200MB. 프록시 경유 시 그만큼 차감.
-                            // 사용자가 의식하고 누르도록 confirm. 자주 누르면
-                            // 트래픽 빠르게 소진.
-                            if (
-                              !confirm(
-                                `"${g.anchor}" 메타 광고 재수집\n\n` +
-                                  `📊 예상 트래픽: 약 200MB\n` +
-                                  `프록시를 쓰신다면 그만큼 차감됩니다.\n\n` +
-                                  `진행할까요?`
-                              )
-                            )
-                              return;
-                            await fetch("/api/meta/queue", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ keyword: g.anchor }),
-                            }).catch(() => {});
-                            await refreshAll();
-                          }}
-                          disabled={isRunning}
-                          title="지금 메타 다시 불러오기 (약 200MB)"
-                          className="rounded p-1 text-[var(--text-muted)] hover:bg-emerald-500/20 hover:text-emerald-700 disabled:cursor-not-allowed disabled:opacity-30"
-                        >
-                          🔄
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (
-                              !confirm(
-                                `"${g.anchor}" 메타 브랜드 추적을 해제할까요? (관련 키워드 ${g.keywords.length}개 모두 해제)`
-                              )
-                            )
-                              return;
-                            // Delete every MetaWatch row tied to this anchor
-                            // (brand keyword + page:* sock-puppet rows).
-                            for (const kw of g.keywords) {
-                              await fetch("/api/meta-watch", {
-                                method: "DELETE",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({ keyword: kw }),
-                              }).catch(() => {});
-                            }
-                            if (selectedKeyword === g.anchor)
-                              setSelectedKeyword(null);
-                            await refreshAll();
-                          }}
-                          title="이 브랜드 추적 해제"
-                          className="rounded p-1 text-[var(--text-muted)] hover:bg-rose-500/20 hover:text-rose-700"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            )}
-          </div>
-        )}
-
-        <div className="mt-auto border-t border-[#343b4c] px-3 py-4">
+        <div className="sidebar-footer">
           {(jobs.length > 0 || ads.length > 0) && (
             <div className="space-y-2">
               <button
@@ -2922,19 +3077,21 @@ export default function Home() {
                   setDeleteError(null);
                   setDeleteDone(false);
                 }}
-                className="block w-full rounded-lg border border-rose-400/40 bg-rose-400/10 px-3 py-2 text-xs font-medium text-rose-200 hover:bg-rose-400/20"
+                aria-expanded={deleteOpen}
+                className="btn btn-danger btn-sm w-full"
               >
-                🗑️ 전체 데이터 삭제
+                <Trash2 size={14} strokeWidth={1.75} aria-hidden />
+                전체 데이터 삭제
               </button>
               {deleteOpen && (
                 <form
-                  className="space-y-2 rounded-lg border border-rose-400/30 bg-rose-400/10 p-2"
+                  className="space-y-2 rounded-sm border border-sidebar-line p-2"
                   onSubmit={(event) => {
                     event.preventDefault();
                     void clearAll();
                   }}
                 >
-                  <p className="text-[11px] leading-4 text-rose-100/90">
+                  <p className="text-xs leading-4 text-sidebar-muted">
                     되돌릴 수 없습니다. 관리자 비밀번호를 입력하세요.
                   </p>
                   <input
@@ -2943,14 +3100,16 @@ export default function Home() {
                     onChange={(event) => setDeleteSecret(event.target.value)}
                     placeholder="관리자 비밀번호"
                     autoComplete="off"
-                    className="w-full rounded-md border border-rose-300/30 bg-[#171b26] px-2 py-1.5 text-xs text-white outline-none placeholder:text-slate-500 focus:border-rose-300/70"
+                    aria-label="관리자 비밀번호"
+                    className="field-input w-full text-xs"
                   />
-                  {deleteError && <p className="text-[11px] text-rose-200">{deleteError}</p>}
+                  {deleteError && <p role="alert" className="text-xs text-sidebar-danger">{deleteError}</p>}
                   <div className="flex gap-1.5">
                     <button
                       type="submit"
                       disabled={!deleteSecret.trim() || deletingAll}
-                      className="flex-1 rounded-md bg-rose-500 px-2 py-1.5 text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-busy={deletingAll}
+                      className="btn btn-sm flex-1 bg-danger text-white"
                     >
                       {deletingAll ? "삭제 중…" : "삭제 실행"}
                     </button>
@@ -2961,7 +3120,7 @@ export default function Home() {
                         setDeleteSecret("");
                         setDeleteError(null);
                       }}
-                      className="rounded-md border border-slate-500/40 px-2 py-1.5 text-[11px] font-semibold text-slate-300 hover:bg-slate-700/40"
+                      className="btn btn-secondary btn-sm"
                     >
                       취소
                     </button>
@@ -2971,107 +3130,98 @@ export default function Home() {
             </div>
           )}
           {deleteDone && (
-            <p className="mt-2 rounded-lg bg-emerald-400/10 px-2 py-1.5 text-[11px] text-emerald-200">
+            <p role="status" className="mt-2 flex items-center gap-1.5 px-1 text-xs text-sidebar-success">
+              <CircleCheck size={12} strokeWidth={2} aria-hidden />
               전체 데이터가 삭제되었습니다.
             </p>
           )}
+          <p className="local-note">
+            <span aria-hidden className="status-dot text-sidebar-success" />
+            로컬
+          </p>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-x-auto">
-        {/* 검색 헤더 — 이 도구에서 사용자가 제일 먼저 하는 행동이
-            "브랜드 하나 넣고 불러오기" 라서, 탭보다 검색을 위에 둔다. */}
-        <header className="border-b border-[var(--border)] bg-[var(--bg-card)] px-6 pb-4 pt-5">
-          <AdSearchBox
-            query={adQuery}
-            onQueryChange={setAdQuery}
-            onSearch={runAdSearch}
-            disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
-            buttonLabel={isBusyKeyword(adQuery.trim())
-              ? "불러오는 중"
-              : anyBusyAds
-              ? "추가 수집"
-              : "불러오기"}
-          />
-
-          {/* 예시 칩 — 빈 화면에서 뭘 넣어야 할지 알려주는 역할. */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="text-[var(--text-muted)]">예시</span>
-            {["올리브영", "무신사", "oliveyoung.co.kr"].map((d) => (
-              <button
-                key={d}
-                onClick={() => setAdQuery(d)}
-                className="rounded-full border border-[var(--border)] bg-[var(--bg-elev)] px-2.5 py-1 font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-              >
-                {d}
-              </button>
-            ))}
-            <label className="ml-2 flex cursor-pointer items-center gap-1.5 text-[var(--text-secondary)]">
-              <input
-                type="checkbox"
-                checked={snapshotMode}
-                onChange={(e) => setSnapshotMode(e.target.checked)}
-                className="h-3.5 w-3.5 accent-[var(--accent)]"
-              />
-              📸 1회만 (자동 갱신 안 함)
-            </label>
-          </div>
+      <div className="main-shell">
+        <header className="topbar">
+          <nav aria-label="현재 위치" className="breadcrumb">
+            <span>Success AI</span>
+            <ChevronRight size={14} strokeWidth={1.75} aria-hidden />
+            <strong aria-current="page">{tabMeta.label}</strong>
+          </nav>
+          <span className="status-chip" role="status">
+            <span
+              aria-hidden
+              className={`status-dot ${anyBusyAds ? "text-accent" : "text-success"}`}
+            />
+            {anyBusyAds ? "수집 중" : "대기 중"}
+          </span>
         </header>
 
-        {/* 소스 탭 — 무료 배포판은 구글 투명성 센터 + 메타 두 곳만 다룬다. */}
-        <div className="border-b border-[var(--border)] bg-[var(--bg-card)] px-6">
-          <div className="flex gap-1.5 pb-3">
-            {(
-              [
-                ["archive", "🗂 브랜드 아카이브", archiveBrands.length],
-                ["ads", "🟦 구글 광고", scopedAds.length],
-                ["meta", "📘 메타 광고", null],
-                ["creatives", "🎬 소재 비교", creativePool.length],
-                ["dashboard", "📊 대시보드", null],
-                ["guide", "❓ 사용법", null],
-              ] as const
-            ).map(([key, label, count]) => (
-              <button
-                key={key}
-                onClick={() => setTab(key)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
-                  tab === key
-                    ? "bg-[var(--accent)] text-white"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-elev)]"
-                }`}
-              >
-                {label}
-                {count !== null && count > 0 && (
-                  <span
-                    className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${
-                      tab === key
-                        ? "bg-white/25"
-                        : "bg-[var(--bg-elev)] text-[var(--text-muted)]"
-                    }`}
-                  >
-                    {count.toLocaleString()}
-                  </span>
-                )}
-              </button>
-            ))}
+        <main id="main-content" tabIndex={-1} className="workspace-body space-y-5 outline-none">
+          <div className="page-heading">
+            <div>
+              <h1>{tabMeta.label}</h1>
+              <p>{tabMeta.description}</p>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-5 p-6">
+          {/* 검색 툴바 — 이 도구에서 사용자가 제일 먼저 하는 행동이
+              "브랜드 하나 넣고 불러오기" 라서 페이지 제목 바로 아래 둔다. */}
+          <section className="panel p-3">
+            <AdSearchBox
+              query={adQuery}
+              onQueryChange={setAdQuery}
+              onSearch={runAdSearch}
+              disabled={!adQuery.trim() || isBusyKeyword(adQuery.trim())}
+              buttonLabel={isBusyKeyword(adQuery.trim())
+                ? "불러오는 중"
+                : anyBusyAds
+                ? "추가 수집"
+                : "불러오기"}
+            />
+
+            {/* 예시 칩 — 빈 화면에서 뭘 넣어야 할지 알려주는 역할. */}
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="text-faint">예시</span>
+              {["올리브영", "무신사", "oliveyoung.co.kr"].map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setAdQuery(d)}
+                  className="chip"
+                >
+                  {d}
+                </button>
+              ))}
+              <label className="ml-2 flex min-h-7 cursor-pointer items-center gap-1.5 text-muted">
+                <input
+                  type="checkbox"
+                  checked={snapshotMode}
+                  onChange={(e) => setSnapshotMode(e.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent)]"
+                />
+                <Camera size={14} strokeWidth={1.75} aria-hidden />
+                1회만 (자동 갱신 안 함)
+              </label>
+            </div>
+          </section>
+
           {selectedKeyword && tab !== "creatives" && (
-            <div className="flex items-center justify-between rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-4 py-2 text-sm">
-              <div className="flex items-center gap-2 text-indigo-700">
-                <span>🔍</span>
+            <div className="notice notice-accent items-center justify-between" role="status">
+              <div className="flex min-w-0 items-center gap-2">
+                <Search size={16} strokeWidth={1.75} aria-hidden className="shrink-0" />
                 <span>
-                  검색어 <b>"{selectedKeyword}"</b>의 결과만 보고 있어요
+                  검색어 <b className="font-semibold">"{selectedKeyword}"</b>의 결과만 보고 있어요
                 </span>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedKeyword(null)}
-                className="rounded-md px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-500/20"
+                className="btn btn-ghost btn-sm shrink-0 text-accent-ink"
               >
-                ✕ 전체 보기
+                <X size={14} strokeWidth={1.75} aria-hidden />
+                전체 보기
               </button>
             </div>
           )}
@@ -3084,52 +3234,59 @@ export default function Home() {
             !(tab === "ads" && adView === "cards") &&
             advertiserRanking &&
             advertiserRanking.total >= 2 && (
-              <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="text-base">🏆</span>
-                  <span className="text-sm font-semibold">
+              <section className="panel">
+                <div className="panel-header">
+                  <h2>
+                    <Trophy size={16} strokeWidth={1.75} aria-hidden />
                     내가 추적 중인 {advertiserRanking.total}개 업체 중 이
                     광고주 위치
-                  </span>
+                  </h2>
                 </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="panel-body">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {/* 소재수 순위 */}
                   <div>
                     <div className="mb-1 flex items-baseline justify-between">
-                      <span className="text-xs text-[var(--text-secondary)]">
-                        🎬 광고 소재수
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                        <Clapperboard size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                        광고 소재수
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-xs tabular-nums text-faint">
                         {advertiserRanking.adCount}개
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold tabular-nums text-amber-700">
+                      <span className="text-xl font-semibold tabular-nums text-ink">
                         {advertiserRanking.adRank}위
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-xs tabular-nums text-faint">
                         / {advertiserRanking.total}
                       </span>
                       <span
-                        className={`ml-auto text-[11px] font-semibold ${
+                        className={`ml-auto ${
                           advertiserRanking.adRankPercent >= 80
-                            ? "text-amber-600"
+                            ? "badge badge-warning"
                             : advertiserRanking.adRankPercent >= 50
-                            ? "text-emerald-600"
-                            : "text-[var(--text-muted)]"
+                            ? "badge badge-success"
+                            : "badge badge-neutral"
                         }`}
                       >
+                        {advertiserRanking.adRankPercent >= 80 ? (
+                          <Flame size={12} strokeWidth={2} aria-hidden />
+                        ) : advertiserRanking.adRankPercent >= 50 ? (
+                          <TrendingUp size={12} strokeWidth={2} aria-hidden />
+                        ) : null}
                         {advertiserRanking.adRankPercent >= 80
-                          ? "🔥 상위"
+                          ? "상위"
                           : advertiserRanking.adRankPercent >= 50
-                          ? "📈 중상위"
+                          ? "중상위"
                           : "중하위"}{" "}
                         {100 - advertiserRanking.adRankPercent + 1}%
                       </span>
                     </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--bg-elev)]">
+                    <div className="progress mt-2">
                       <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-amber-300"
+                        className="h-full rounded-full bg-accent"
                         style={{
                           width: `${advertiserRanking.adRankPercent}%`,
                         }}
@@ -3139,45 +3296,51 @@ export default function Home() {
                   {/* 가속도 순위 (analyzeDays 기준) */}
                   <div>
                     <div className="mb-1 flex items-baseline justify-between">
-                      <span className="text-xs text-[var(--text-secondary)]">
-                        🚀 가속도 (
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                        <Rocket size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                        가속도 (
                         {analyzeDays === "all"
                           ? "전체"
                           : `최근 ${analyzeDays}일`}
                         )
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-xs tabular-nums text-faint">
                         {advertiserRanking.avgAccel >= 0 ? "+" : ""}
                         {advertiserRanking.avgAccel.toLocaleString()}/일
                       </span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold tabular-nums text-emerald-700">
+                      <span className="text-xl font-semibold tabular-nums text-ink">
                         {advertiserRanking.accelRank}위
                       </span>
-                      <span className="text-xs text-[var(--text-muted)]">
+                      <span className="text-xs tabular-nums text-faint">
                         / {advertiserRanking.total}
                       </span>
                       <span
-                        className={`ml-auto text-[11px] font-semibold ${
+                        className={`ml-auto ${
                           advertiserRanking.accelRankPercent >= 80
-                            ? "text-rose-600"
+                            ? "badge badge-danger"
                             : advertiserRanking.accelRankPercent >= 50
-                            ? "text-emerald-600"
-                            : "text-[var(--text-muted)]"
+                            ? "badge badge-success"
+                            : "badge badge-neutral"
                         }`}
                       >
+                        {advertiserRanking.accelRankPercent >= 80 ? (
+                          <Flame size={12} strokeWidth={2} aria-hidden />
+                        ) : advertiserRanking.accelRankPercent >= 50 ? (
+                          <TrendingUp size={12} strokeWidth={2} aria-hidden />
+                        ) : null}
                         {advertiserRanking.accelRankPercent >= 80
-                          ? "🔥 상위"
+                          ? "상위"
                           : advertiserRanking.accelRankPercent >= 50
-                          ? "📈 중상위"
+                          ? "중상위"
                           : "중하위"}{" "}
                         {100 - advertiserRanking.accelRankPercent + 1}%
                       </span>
                     </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[var(--bg-elev)]">
+                    <div className="progress mt-2">
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-emerald-300"
+                        className="h-full rounded-full bg-accent"
                         style={{
                           width: `${advertiserRanking.accelRankPercent}%`,
                         }}
@@ -3185,10 +3348,11 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-3 text-[10px] text-[var(--text-muted)]">
+                <div className="mt-3 text-xs text-faint">
                   기준: 분석 기간(
                   {analyzeDays === "all" ? "전체" : `${analyzeDays}일`}) 내
                   본인이 추적 중인 업체들 사이에서의 순위
+                </div>
                 </div>
               </section>
             )}
@@ -3201,24 +3365,23 @@ export default function Home() {
             adView === "table" &&
             snapshotTimeline &&
             snapshotTimeline.dates.length > 0 && (
-              <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
-                <div className="mb-2 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[var(--text-secondary)]">
-                    📅 스냅샷 {snapshotTimeline.dates.length}개
-                  </span>
-                  <span className="text-[10px] text-[var(--text-muted)]">
+              <section className="panel">
+                <div className="panel-header">
+                  <h2>
+                    <Calendar size={16} strokeWidth={1.75} aria-hidden />
+                    스냅샷 {snapshotTimeline.dates.length}개
+                  </h2>
+                  <span className="text-xs tabular-nums text-muted">
                     최초: {snapshotTimeline.first} · 최신:{" "}
                     {snapshotTimeline.last}
                   </span>
                 </div>
+                <div className="panel-body">
                 <div className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
                   <button
                     onClick={() => setSinceDateFilter(null)}
-                    className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold transition ${
-                      sinceDateFilter === null
-                        ? "bg-indigo-500 text-white"
-                        : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                    }`}
+                    aria-pressed={sinceDateFilter === null}
+                    className="chip shrink-0 tabular-nums"
                   >
                     전체 ({snapshotTimeline.totalAds})
                   </button>
@@ -3232,16 +3395,13 @@ export default function Home() {
                           setSinceDateFilter(active ? null : d)
                         }
                         title={`${d} 이후 ATC에 처음 등장한 광고: ${n}개`}
-                        className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-medium transition ${
-                          active
-                            ? "bg-cyan-500/30 text-cyan-200 ring-1 ring-cyan-500/50"
-                            : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                        }`}
+                        aria-pressed={active}
+                        className="chip shrink-0 tabular-nums"
                       >
                         {i + 1}.{" "}
                         {d.replace(/^\d{4}-/, "").replace("-", "/")}
                         {n > 0 && (
-                          <span className="ml-1 text-[9px] text-emerald-600">
+                          <span className="text-success">
                             +{n}
                           </span>
                         )}
@@ -3250,11 +3410,17 @@ export default function Home() {
                   })}
                 </div>
                 {sinceDateFilter && (
-                  <div className="mt-2 text-[10px] text-cyan-700">
-                    🔍 {sinceDateFilter} 이후 ATC에 처음 등장한 광고만 보고
-                    있어요 — 같은 카드의 ✕ 클릭으로 해제
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-accent-ink">
+                    <Search size={14} strokeWidth={1.75} aria-hidden />
+                    <span>
+                      {sinceDateFilter} 이후 ATC에 처음 등장한 광고만 보고
+                      있어요 — 같은 카드의{" "}
+                      <X size={12} strokeWidth={2} aria-label="닫기" className="inline align-[-1px]" />{" "}
+                      클릭으로 해제
+                    </span>
                   </div>
                 )}
+                </div>
               </section>
             )}
 
@@ -3307,24 +3473,25 @@ export default function Home() {
           ) : tab === "ads" && selectedKeyword && adView === "cards" ? (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-1 text-xs">
+                <div className="segmented flex-wrap">
                   {(["all", "image", "video", "other", "youtube"] as const).map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setAdTypeFilter(type)}
-                      className={`rounded-lg px-3 py-1.5 font-semibold ${adTypeFilter === type ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] bg-[var(--bg-card)] text-[var(--text-secondary)]"}`}
+                      aria-pressed={adTypeFilter === type}
                     >
                       {type === "all" ? "전체" : type === "image" ? "이미지" : type === "video" ? "영상" : type === "other" ? "기타" : "YouTube"}
                     </button>
                   ))}
                 </div>
-                <button type="button" onClick={() => setAdView("table")} className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-card)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]">
+                <button type="button" onClick={() => setAdView("table")} className="btn btn-secondary btn-sm">
                   분석 표 보기
                 </button>
               </div>
               {currentCollection?.busy && (
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-xs text-[var(--text-secondary)]">
+                <div className="notice notice-accent items-center" role="status">
+                  <LoaderCircle size={16} strokeWidth={1.75} aria-hidden className="animate-spin" />
                   광고 수집 중 · {currentCollection.progress.percent}%
                 </div>
               )}
@@ -3345,7 +3512,7 @@ export default function Home() {
                 />}
               />
               {sortedAds.length > displayLimit && (
-                <button type="button" onClick={() => setDisplayLimit((limit) => limit + 200)} className="w-full rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-4 py-3 text-center text-xs font-semibold text-[var(--text-secondary)]">
+                <button type="button" onClick={() => setDisplayLimit((limit) => limit + 200)} className="btn btn-secondary w-full border-dashed">
                   광고 {displayLimit.toLocaleString()}/{sortedAds.length.toLocaleString()}개 표시 중 · 200개 더 보기
                 </button>
               )}
@@ -3355,17 +3522,17 @@ export default function Home() {
               {/* 데이터 출처 안내 — 표의 조회수를 광고 노출수로 오해하는
                   일이 실제로 잦다. 구글은 노출/비용을 공개하지 않고, 이
                   숫자는 광고 소재로 쓰인 YouTube 영상의 공개 통계다. */}
-              <div className="mv-card flex items-start gap-3 p-4">
-                <span className="text-lg leading-none">🟦</span>
-                <div className="min-w-0 flex-1 text-[12px] leading-relaxed text-[var(--text-secondary)]">
-                  <b className="text-[var(--text-primary)]">
+              <div className="notice notice-info" role="note">
+                <Info size={16} strokeWidth={1.75} aria-hidden />
+                <div className="min-w-0 flex-1 text-sm text-muted">
+                  <b className="font-semibold text-ink">
                     구글 광고 투명성 센터
                   </b>
                   에서 가져온 광고입니다. 구글은 노출수·비용을 공개하지 않아서,
                   영상 광고는 소재로 쓰인{" "}
-                  <b className="text-rose-600">▶️ YouTube 영상의 공개 통계</b>
+                  <b className="font-semibold text-ink">YouTube 영상의 공개 통계</b>
                   (조회수·좋아요·게시일)를 붙여 성과를 가늠합니다.
-                  <div className="mt-1 text-[var(--text-muted)]">
+                  <div className="mt-1 text-xs text-faint">
                     조회수는 광고 노출수가 아니라 유기적 조회까지 합쳐진
                     숫자입니다. 절대값보다 <b>브랜드 안에서의 상대 순위</b>로
                     보세요. 이미지 광고는 숫자가 비어 있는 게 정상입니다.
@@ -3373,7 +3540,7 @@ export default function Home() {
                 </div>
                 <button
                   onClick={() => setTab("guide")}
-                  className="shrink-0 rounded-lg border border-[var(--border-strong)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                  className="btn btn-secondary btn-sm shrink-0"
                 >
                   자세히
                 </button>
@@ -3412,22 +3579,22 @@ export default function Home() {
                   title="광고 = 수집된 전체 / 영상 후보 = 영상·기타 타입 / YouTube 매칭 = 영상 ID 추출 성공 / 고유 영상 = youtubeId 중복 제거"
                 >
                   광고{" "}
-                  <span className="text-lg font-bold text-amber-600">
+                  <span className="font-semibold tabular-nums text-ink">
                     {totalAds}
                   </span>
                   <span className="mx-1.5 text-[var(--text-muted)]">·</span>
                   영상 후보{" "}
-                  <span className="font-bold text-[var(--text-primary)]">
+                  <span className="font-semibold tabular-nums text-ink">
                     {totalEligible}
                   </span>
                   <span className="mx-1.5 text-[var(--text-muted)]">·</span>
                   YouTube 매칭{" "}
-                  <span className="font-bold text-emerald-600">
+                  <span className="font-semibold tabular-nums text-ink">
                     {totalMatched}
                   </span>
                   <span className="mx-1.5 text-[var(--text-muted)]">·</span>
                   고유 영상{" "}
-                  <span className="text-lg font-bold text-rose-600">
+                  <span className="font-semibold tabular-nums text-ink">
                     {totalAdVideos}
                   </span>
                 </div>
@@ -3435,10 +3602,11 @@ export default function Home() {
                     광고주/채널 필터에 일부 광고주만 뜨는 걸 버그로 오해한다. */}
                 {ads.length >= INITIAL_ADS_LIMIT && (
                   <span
-                    className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-700"
+                    className="badge badge-warning h-auto min-h-[22px] whitespace-normal py-0.5"
                     title={`첫 로딩은 최근 수집순 ${INITIAL_ADS_LIMIT}건까지만 가져옵니다. 사이드바에서 브랜드를 클릭하면 그 브랜드 전체를 불러옵니다.`}
                   >
-                    ⚠️ 최근 {INITIAL_ADS_LIMIT.toLocaleString()}건만 불러옴 —
+                    <TriangleAlert size={12} strokeWidth={2} aria-hidden className="shrink-0" />
+                    최근 {INITIAL_ADS_LIMIT.toLocaleString()}건만 불러옴 —
                     사이드바에서 브랜드를 클릭하면 전체 로드
                   </span>
                 )}
@@ -3447,23 +3615,35 @@ export default function Home() {
                     onClick={copyLinks}
                     disabled={sortedAds.length === 0}
                     title="보이는 광고의 YouTube 링크를 '브랜드 | URL' 형식으로 복사 — ad-factory refs/inbox/list.txt 에 붙여넣기"
-                    className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-50"
+                    className="btn btn-secondary btn-sm"
                   >
-                    {copiedCount !== null ? `✅ ${copiedCount}개 복사됨` : "📋 전체 YouTube 링크 복사"}
+                    {copiedCount !== null ? (
+                      <>
+                        <CircleCheck size={14} strokeWidth={1.75} aria-hidden />
+                        {copiedCount}개 복사됨
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} strokeWidth={1.75} aria-hidden />
+                        전체 YouTube 링크 복사
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={downloadCSV}
                     disabled={sortedAds.length === 0}
-                    className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-50"
+                    className="btn btn-secondary btn-sm"
                   >
-                    📥 CSV
+                    <Download size={14} strokeWidth={1.75} aria-hidden />
+                    CSV
                   </button>
                   <button
                     onClick={downloadJSON}
                     disabled={sortedAds.length === 0}
-                    className="rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-card)] disabled:opacity-50"
+                    className="btn btn-secondary btn-sm"
                   >
-                    📥 JSON
+                    <Download size={14} strokeWidth={1.75} aria-hidden />
+                    JSON
                   </button>
                 </div>
               </div>
@@ -3471,25 +3651,22 @@ export default function Home() {
               {/* 분석 기간 셀렉터 — delta/%/D+N 컬럼이 이 윈도우 기준으로
                   계산됨. 7일이 default. "전체"는 snapshot 첫~끝 사용. */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-semibold text-[var(--text-secondary)]">
-                  📅 분석 기간
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                  <Calendar size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                  분석 기간
                 </span>
-                <div className="flex rounded-lg border border-[var(--border)] bg-[var(--bg-elev)] p-0.5">
+                <div className="segmented">
                   {(["all", 7, 14, 30, 90] as const).map((d) => (
                     <button
                       key={String(d)}
                       onClick={() => setAnalyzeDays(d)}
-                      className={`rounded-md px-2.5 py-1 text-[11px] font-semibold transition ${
-                        analyzeDays === d
-                          ? "bg-indigo-500 text-white"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                      }`}
+                      aria-pressed={analyzeDays === d}
                     >
                       {d === "all" ? "전체" : `${d}일`}
                     </button>
                   ))}
                 </div>
-                <span className="text-[10px] text-[var(--text-muted)]">
+                <span className="text-xs text-faint">
                   변화·성장률 컬럼 기준
                 </span>
               </div>
@@ -3497,16 +3674,14 @@ export default function Home() {
               {/* 상태 분류 chip 필터 — classifyAd 결과 중 한 가지를 골라 필터.
                   스크린샷의 레퍼런스 대시보드 "스파이크/신규/히어로/피로도" 패턴. */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] font-semibold text-[var(--text-secondary)]">
-                  🏷 상태
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted">
+                  <Tag size={14} strokeWidth={1.75} aria-hidden className="text-faint" />
+                  상태
                 </span>
                 <button
                   onClick={() => setClassFilter("all")}
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                    classFilter === "all"
-                      ? "bg-[var(--text-primary)] text-[var(--bg-base)]"
-                      : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                  }`}
+                  aria-pressed={classFilter === "all"}
+                  className="chip"
                 >
                   전체
                 </button>
@@ -3528,13 +3703,10 @@ export default function Home() {
                         setClassFilter(active ? "all" : c)
                       }
                       title={m.tip}
-                      className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                        active
-                          ? `${m.bg} ${m.text} ring-1 ring-current`
-                          : `border border-[var(--border)] ${m.text} hover:${m.bg}`
-                      }`}
+                      aria-pressed={active}
+                      className="chip"
                     >
-                      {m.emoji} {m.label}
+                      <m.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : m.text} /> {m.label}
                     </button>
                   );
                 })}
@@ -3544,43 +3716,37 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => setFilter(filter === "hero" ? "all" : "hero")}
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    filter === "hero"
-                      ? "bg-indigo-600 text-white"
-                      : "border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 hover:bg-indigo-500/20"
-                  }`}
+                  aria-pressed={filter === "hero"}
+                  className="chip"
                 >
-                  ⭐ 주력 소재 50만+
+                  <Star size={14} strokeWidth={1.75} aria-hidden />
+                  주력 소재 50만+
                 </button>
                 <button
                   onClick={() =>
                     setFilter(filter === "growing" ? "all" : "growing")
                   }
-                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    filter === "growing"
-                      ? "bg-teal-600 text-white"
-                      : "border border-teal-500/40 bg-teal-500/10 text-teal-700 hover:bg-teal-500/20"
-                  }`}
+                  aria-pressed={filter === "growing"}
+                  className="chip"
                 >
-                  📈 상승세 10만+ 또는 일 3천+
+                  <TrendingUp size={14} strokeWidth={1.75} aria-hidden />
+                  상승세 10만+ 또는 일 3천+
                 </button>
-                <span className="ml-2 text-[11px] text-[var(--text-muted)]">
+                <span className="ml-2 text-xs text-faint">
                   조회수 밑 XXX회/일 = 게시일 기준 하루 평균 조회수
                 </span>
-                {/* 🎯 이 도메인만 토글 — Stage3 형제 brand 제거. 도메인 모드
+                {/* 이 도메인만 토글 — Stage3 형제 brand 제거. 도메인 모드
                     검색일 때만 (via 데이터 있을 때만) 표시. 재수집 안 한
                     레거시 광고는 다 빠지니까 (n) 으로 명시. */}
                 {hasDomainModeAds && (
                   <button
                     onClick={() => setDomainOnly((v) => !v)}
                     title="같은 광고주가 굴리는 다른 브랜드 광고를 숨기고, 검색한 도메인이 직접 띄운 것만 표시"
-                    className={`ml-2 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                      domainOnly
-                        ? "bg-amber-500 text-white"
-                        : "border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
-                    }`}
+                    aria-pressed={domainOnly}
+                    className="chip ml-2 tabular-nums"
                   >
-                    🎯 이 도메인만 ({domainAdsCount})
+                    <Target size={14} strokeWidth={1.75} aria-hidden />
+                    이 도메인만 ({domainAdsCount})
                   </button>
                 )}
                 {/* 조회수 대역 + 소재 나이 콤보 — 레퍼런스 도구 벤치마크.
@@ -3588,14 +3754,14 @@ export default function Home() {
                 <select
                   value={viewBand}
                   onChange={(e) => setViewBand(e.target.value)}
-                  className={`ml-2 rounded-md border px-2 py-1 text-[11px] outline-none ${
+                  className={`ml-2 h-8 rounded-sm border px-2 text-xs ${
                     viewBand
-                      ? "border-indigo-500 bg-indigo-500/10 font-semibold text-indigo-700"
-                      : "border-[var(--border-strong)] bg-[var(--bg-elev)] text-[var(--text-secondary)]"
+                      ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                      : "border-line-control bg-surface text-muted"
                   }`}
                   title="조회수 대역 필터"
                 >
-                  <option value="">👁️ 조회수 전체</option>
+                  <option value="">조회수 전체</option>
                   <option value="0:30000">~3만 (테스트)</option>
                   <option value="30000:300000">3만~30만</option>
                   <option value="300000:3000000">30만~300만 (통한 소재)</option>
@@ -3605,56 +3771,55 @@ export default function Home() {
                 <select
                   value={ageBand}
                   onChange={(e) => setAgeBand(e.target.value)}
-                  className={`rounded-md border px-2 py-1 text-[11px] outline-none ${
+                  className={`h-8 rounded-sm border px-2 text-xs ${
                     ageBand
-                      ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-700"
-                      : "border-[var(--border-strong)] bg-[var(--bg-elev)] text-[var(--text-secondary)]"
+                      ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+                      : "border-line-control bg-surface text-muted"
                   }`}
                   title="소재 나이 — 오래 살아남은 광고 = 검증된 소재"
                 >
-                  <option value="">⏳ 나이 전체</option>
+                  <option value="">나이 전체</option>
                   <option value="old:21">3주+ (살아남은 소재)</option>
                   <option value="old:60">2개월+ (검증된 소재)</option>
                 </select>
                 {/* 결과 내 검색 — 한 광고주(예: 모브랜드사)에 brand 가 여러
                     개 섞일 때 "브랜드D" / "브랜드E" 입력으로 좁힘. 제목/채널/
                     광고주명 contains 매칭. */}
-                <div className="ml-auto flex items-center gap-1">
+                <div className="relative ml-auto flex items-center gap-1">
+                  <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
                   <input
                     value={innerSearch}
                     onChange={(e) => setInnerSearch(e.target.value)}
-                    placeholder="🔍 결과 내 검색 (제목/채널/광고주)"
-                    className="w-64 rounded-full border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20"
+                    placeholder="결과 내 검색 (제목/채널/광고주)"
+                    aria-label="결과 내 검색"
+                    className="field-input min-h-8 w-64 py-1 pl-9 text-sm"
                   />
                   {innerSearch && (
                     <button
                       onClick={() => setInnerSearch("")}
                       title="검색 지우기"
-                      className="rounded-full p-1 text-[var(--text-muted)] hover:bg-rose-500/20 hover:text-rose-700"
+                      aria-label="검색 지우기"
+                      className="btn btn-ghost btn-sm btn-icon"
                     >
-                      ×
+                      <X size={14} strokeWidth={1.75} aria-hidden />
                     </button>
                   )}
                 </div>
-                <div className="ml-auto flex gap-1">
+                <div className="segmented ml-auto">
                   {(
                     ["all", "youtube", "image", "video", "other"] as const
                   ).map((t) => (
                     <button
                       key={t}
                       onClick={() => setAdTypeFilter(t)}
-                      className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition ${
-                        adTypeFilter === t
-                          ? t === "youtube"
-                            ? "bg-rose-500 text-white"
-                            : "bg-indigo-500 text-white"
-                          : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-                      }`}
+                      aria-pressed={adTypeFilter === t}
+                      className="inline-flex items-center gap-1.5"
                     >
+                      {t === "youtube" && <Clapperboard size={14} strokeWidth={1.75} aria-hidden />}
                       {t === "all"
                         ? "전체"
                         : t === "youtube"
-                        ? "🎬 YouTube"
+                        ? "YouTube"
                         : t === "image"
                         ? "이미지"
                         : t === "video"
@@ -3668,7 +3833,7 @@ export default function Home() {
               {/* Advertiser chips */}
               {advertiserGroups.length > 0 && (
                 <section className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                  <span className="text-xs font-medium text-muted">
                     광고주
                   </span>
                   {advertiserGroups.slice(0, 8).map((g) => (
@@ -3677,10 +3842,10 @@ export default function Home() {
                       href={`https://adstransparency.google.com/advertiser/${g.id}?region=KR`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full bg-[var(--bg-elev)] px-3 py-1 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                      className="chip"
                     >
                       {g.name || "(이름 없음)"}{" "}
-                      <span className="ml-1 font-semibold text-[var(--text-primary)]">
+                      <span className="font-semibold tabular-nums text-ink">
                         {g.count}
                       </span>
                     </a>
@@ -3693,7 +3858,7 @@ export default function Home() {
                   toggle 로 좁힘. 2개 이상일 때만 표시. innerSearch 와 AND. */}
               {channelChips.length >= 2 && (
                 <section className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-semibold text-[var(--text-secondary)]">
+                  <span className="text-xs font-medium text-muted">
                     채널
                   </span>
                   {channelChips.map((c) => {
@@ -3709,18 +3874,11 @@ export default function Home() {
                             return next;
                           });
                         }}
-                        className={`rounded-full px-3 py-1 text-xs transition ${
-                          active
-                            ? "bg-amber-500 text-white font-semibold"
-                            : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
-                        }`}
+                        aria-pressed={active}
+                        className="chip"
                       >
                         {c.label}{" "}
-                        <span
-                          className={`ml-1 font-semibold ${
-                            active ? "text-white" : "text-[var(--text-primary)]"
-                          }`}
-                        >
+                        <span className="font-semibold tabular-nums">
                           {c.count}
                         </span>
                       </button>
@@ -3729,9 +3887,10 @@ export default function Home() {
                   {selectedChannels.size > 0 && (
                     <button
                       onClick={() => setSelectedChannels(new Set())}
-                      className="rounded-full border border-rose-500/40 bg-rose-500/10 px-3 py-1 text-xs text-rose-700 hover:bg-rose-500/20"
+                      className="btn btn-ghost btn-sm"
                     >
-                      ✕ 채널 필터 해제 ({selectedChannels.size})
+                      <X size={14} strokeWidth={1.75} aria-hidden />
+                      채널 필터 해제 ({selectedChannels.size})
                     </button>
                   )}
                 </section>
@@ -3741,13 +3900,15 @@ export default function Home() {
                   너무 많은 썸네일 (mqdefault.jpg 수천 개) 동시 fetch 하면
                   네트워크 40초+. "더 보기" 클릭 시 +200 추가. */}
               {selectedKeyword && (
-                <div className="flex justify-end gap-1 text-xs">
-                  <button type="button" onClick={() => setAdView("cards")} className={`rounded-lg px-3 py-1.5 font-semibold ${adView === "cards" ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] text-[var(--text-secondary)]"}`}>
-                    카드 보기
-                  </button>
-                  <button type="button" onClick={() => setAdView("table")} className={`rounded-lg px-3 py-1.5 font-semibold ${adView === "table" ? "bg-[var(--accent)] text-white" : "border border-[var(--border)] text-[var(--text-secondary)]"}`}>
-                    표 보기
-                  </button>
+                <div className="flex justify-end">
+                  <div className="segmented">
+                    <button type="button" onClick={() => setAdView("cards")} aria-pressed={adView === "cards"}>
+                      카드 보기
+                    </button>
+                    <button type="button" onClick={() => setAdView("table")} aria-pressed={adView === "table"}>
+                      표 보기
+                    </button>
+                  </div>
                 </div>
               )}
               <AdSelectionToolbar
@@ -3768,20 +3929,21 @@ export default function Home() {
                 activeKeyword={selectedKeyword}
               />
               {groupedAds.length > displayLimit && (
-                <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-4 py-3 text-center text-xs text-[var(--text-muted)]">
-                  📊 광고 {displayLimit.toLocaleString()}/{groupedAds.length.toLocaleString()}개 표시 중
+                <div className="panel flex flex-wrap items-center justify-center gap-3 border-dashed px-4 py-3 text-center text-xs tabular-nums text-muted">
+                  광고 {displayLimit.toLocaleString()}/{groupedAds.length.toLocaleString()}개 표시 중
                   <button
                     onClick={() => setDisplayLimit((n) => n + 200)}
-                    className="ml-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-amber-700 hover:bg-amber-500/20"
+                    className="btn btn-secondary btn-sm"
                   >
-                    + 200개 더 보기
+                    <Plus size={14} strokeWidth={1.75} aria-hidden />
+                    200개 더 보기
                   </button>
                 </div>
               )}
             </>
           ) : null}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
@@ -3803,21 +3965,21 @@ function TabButton({
 }) {
   const accentClasses =
     accent === "amber"
-      ? "border-amber-500 text-amber-600"
+      ? "border-warning text-warning"
       : accent === "rose"
-      ? "border-rose-500 text-rose-600"
+      ? "border-danger text-danger"
       : accent === "indigo"
-      ? "border-indigo-500 text-indigo-600"
-      : "border-emerald-500 text-emerald-600";
+      ? "border-accent text-accent-ink"
+      : "border-success text-success";
   const badgeClasses =
     active && accent === "amber"
-      ? "bg-amber-500/20 text-amber-700"
+      ? "bg-warning-soft text-warning"
       : active && accent === "rose"
-      ? "bg-rose-500/20 text-rose-700"
+      ? "bg-danger-soft text-danger"
       : active && accent === "emerald"
-      ? "bg-emerald-500/20 text-emerald-700"
+      ? "bg-success-soft text-success"
       : active && accent === "indigo"
-      ? "bg-indigo-500/20 text-indigo-700"
+      ? "bg-accent-soft text-accent-ink"
       : "bg-[var(--bg-elev)] text-[var(--text-secondary)]";
   return (
     <button
@@ -3831,7 +3993,7 @@ function TabButton({
       {label}
       {!(count === 0 && total === 0) && (
         <span
-          className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] ${badgeClasses}`}
+          className={`ml-1.5 rounded-xs px-1.5 py-0.5 text-xs ${badgeClasses}`}
         >
           {count}
           {total !== count && <span className="opacity-60">/{total}</span>}
@@ -3862,36 +4024,46 @@ function LogConsole({
 }) {
   const levelClass = (l: LogLevel) =>
     l === "success"
-      ? "text-emerald-600"
+      ? "text-success"
       : l === "error"
-      ? "text-rose-600"
+      ? "text-danger"
       : l === "warn"
-      ? "text-amber-600"
+      ? "text-warning"
       : "text-[var(--text-secondary)]";
 
   return (
-    <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4">
+    <section className="panel p-5" aria-busy={busy}>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm">
           <span
+            aria-hidden
             className={`inline-block h-2 w-2 rounded-full ${
-              busy ? "animate-pulse bg-blue-400" : "bg-emerald-400"
+              busy ? "animate-pulse bg-accent" : "bg-success"
             }`}
           />
-          <span className="font-semibold">
+          <span className="inline-flex flex-wrap items-center gap-1 font-semibold">
             {busy ? "수집 중" : "완료"}
-            <span className="ml-1 text-xs text-[var(--text-muted)]">
+            <span className="ml-1 text-xs font-normal text-faint">
               · &quot;{keyword}&quot;
             </span>
-            {progress.step && ` · ${phaseLabel(progress.step)}`}
+            {progress.step && (
+              <span className="inline-flex items-center gap-1 font-normal text-muted">
+                ·
+                {(() => {
+                  const PhaseIcon = phaseIcon(progress.step);
+                  return PhaseIcon ? <PhaseIcon size={14} strokeWidth={1.75} aria-hidden /> : null;
+                })()}
+                {phaseLabel(progress.step)}
+              </span>
+            )}
           </span>
-          <span className="text-xs text-[var(--text-muted)]">
+          <span className="text-xs tabular-nums text-faint">
             {progress.percent}%
           </span>
         </div>
         <div className="flex items-center gap-2">
           {activeKeywords.length > 1 && (
-            <div className="flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+            <div className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <span>다른 진행:</span>
               {activeKeywords
                 .filter((k) => k !== keyword)
@@ -3900,7 +4072,7 @@ function LogConsole({
                   <button
                     key={k}
                     onClick={() => onSelectKeyword(k)}
-                    className="rounded bg-[var(--bg-elev)] px-2 py-0.5 hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)]"
+                    className="chip h-6"
                   >
                     {k}
                   </button>
@@ -3910,7 +4082,7 @@ function LogConsole({
           {!busy && (
             <button
               onClick={onClear}
-              className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              className="btn btn-ghost btn-sm"
             >
               로그 지우기
             </button>
@@ -3919,9 +4091,9 @@ function LogConsole({
       </div>
 
       {/* Progress bar */}
-      <div className="mb-3 h-2 overflow-hidden rounded-full bg-[var(--bg-elev)]">
+      <div className="progress mb-3">
         <div
-          className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-300"
+          className="h-full rounded-full bg-accent transition-all duration-300"
           style={{ width: `${progress.percent}%` }}
         />
       </div>
@@ -3929,7 +4101,7 @@ function LogConsole({
       {/* Log lines */}
       <div
         ref={scrollRef}
-        className="max-h-72 overflow-y-auto rounded-md bg-[var(--bg-base)] p-3 font-mono text-[11px] leading-relaxed"
+        className="max-h-72 overflow-y-auto rounded-sm border border-line bg-surface-soft p-3 font-mono text-xs leading-relaxed"
       >
         {logs.length === 0 ? (
           <div className="text-[var(--text-muted)]">로그 대기 중...</div>
@@ -3966,22 +4138,29 @@ function SortHeader({
   const active = sortKey === thisKey;
   return (
     <th
+      aria-sort={active ? (sortDir === "desc" ? "descending" : "ascending") : undefined}
       className={`px-2 py-2 ${
         align === "right" ? "text-right" : "text-left"
-      } font-semibold`}
+      } font-medium`}
     >
       <button
         onClick={() => onSort(thisKey)}
-        className={`inline-flex items-center gap-1 transition ${
+        className={`inline-flex items-center gap-1 transition-colors ${
           active
-            ? "text-[var(--text-primary)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            ? "text-ink"
+            : "text-muted hover:text-ink"
         }`}
       >
         {label}
-        <span className="text-[10px]">
-          {active ? (sortDir === "desc" ? "▼" : "▲") : "↕"}
-        </span>
+        {active ? (
+          sortDir === "desc" ? (
+            <ArrowDown size={12} strokeWidth={2} aria-hidden />
+          ) : (
+            <ArrowUp size={12} strokeWidth={2} aria-hidden />
+          )
+        ) : (
+          <ArrowUpDown size={12} strokeWidth={2} aria-hidden className="text-faint" />
+        )}
       </button>
     </th>
   );
@@ -4010,10 +4189,13 @@ function AdsTable({
 }) {
   if (groups.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-6 py-16 text-center text-sm text-[var(--text-muted)]">
+      <div className="panel empty text-sm text-muted">
+        <span className="empty-icon mb-3">
+          <LayoutList size={20} strokeWidth={1.75} aria-hidden />
+        </span>
         {activeKeyword ? (
           <>
-            <b className="text-[var(--text-secondary)]">{activeKeyword}</b>에서
+            <b className="font-semibold text-ink">{activeKeyword}</b>에서
             불러온 광고가 없어요.
             <div className="mt-2 text-xs">
               위 로그의 ATC 직접 확인 링크로 실제 공개 여부를 확인할 수 있어요.
@@ -4029,22 +4211,22 @@ function AdsTable({
     );
   }
   return (
-    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-      <div className="overflow-x-auto">
+    <section className="panel">
+      <div className="overflow-x-auto" tabIndex={0} aria-label="구글 광고 표">
         <table className="w-full text-sm">
-          <thead className="bg-[var(--bg-elev)] text-xs text-[var(--text-secondary)]">
+          <thead className="border-b border-line bg-surface-soft text-xs text-muted">
             <tr>
-              <th className="px-2 py-2 text-left font-semibold">
-                <input type="checkbox" aria-label="표에 표시된 광고 전체 선택"
+              <th className="px-2 py-2 text-left font-medium">
+                <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" aria-label="표에 표시된 광고 전체 선택"
                   checked={groups.every((group) => group.siblings.every((ad) => selectedIds.has(ad.creativeId)))}
                   onChange={(event) => onToggleGroup(groups.flatMap((group) => group.siblings.map((ad) => ad.creativeId)), event.target.checked)} />
               </th>
-              <th className="px-2 py-2 text-left font-semibold">#</th>
-              <th className="px-2 py-2 text-left font-semibold">썸네일</th>
-              <th className="px-2 py-2 text-left font-semibold">제목</th>
-              <th className="px-2 py-2 text-left font-semibold">광고</th>
-              <th className="px-2 py-2 text-left font-semibold">YouTube</th>
-              <th className="px-2 py-2 text-left font-semibold">유형</th>
+              <th className="px-2 py-2 text-left font-medium">#</th>
+              <th className="px-2 py-2 text-left font-medium">썸네일</th>
+              <th className="px-2 py-2 text-left font-medium">제목</th>
+              <th className="px-2 py-2 text-left font-medium">광고</th>
+              <th className="px-2 py-2 text-left font-medium">YouTube</th>
+              <th className="px-2 py-2 text-left font-medium">유형</th>
               <SortHeader
                 label="D+N"
                 sortKey={sortKey}
@@ -4179,13 +4361,27 @@ function DownloadButton({
           ? "받는 중… 영상 길이에 따라 10~60초"
           : "이 소재를 mp4 로 저장 (yt-dlp 필요)"
       }
-      className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-xs transition ${
+      aria-label={
+        state === "busy"
+          ? "받는 중"
+          : state === "error"
+          ? "다운로드 실패"
+          : "mp4 로 저장"
+      }
+      aria-busy={state === "busy"}
+      className={`inline-grid h-7 w-7 place-items-center rounded-sm transition-colors ${
         state === "error"
-          ? "bg-rose-500/15 text-rose-600"
-          : "text-[var(--text-muted)] hover:bg-teal-500/15 hover:text-teal-700"
+          ? "bg-danger-soft text-danger"
+          : "text-faint hover:bg-surface-soft hover:text-ink"
       } disabled:cursor-wait disabled:opacity-60`}
     >
-      {state === "busy" ? "⏳" : state === "error" ? "⚠️" : "⬇"}
+      {state === "busy" ? (
+        <Hourglass size={14} strokeWidth={1.75} aria-hidden />
+      ) : state === "error" ? (
+        <TriangleAlert size={14} strokeWidth={1.75} aria-hidden />
+      ) : (
+        <Download size={14} strokeWidth={1.75} aria-hidden />
+      )}
     </button>
   );
 }
@@ -4226,8 +4422,8 @@ function AdRow({
   const title = hasRealTitle
     ? (ad.ytTitle ?? ad.adLongHeadline ?? ad.adHeadline)!
     : ad.type === "image"
-    ? "🖼 이미지 광고 (텍스트 없음 — ATC 보기)"
-    : "📝 카피 추출 실패 — ATC 보기";
+    ? "이미지 광고 (텍스트 없음 — ATC 보기)"
+    : "카피 추출 실패 — ATC 보기";
   // Subtitle = the OTHER text we have (don't repeat what's already in title)
   const subtitleParts: string[] = [];
   if (
@@ -4242,45 +4438,47 @@ function AdRow({
   const variantCount = group.count;
 
   return (
-    <tr className={`border-t border-[var(--border)] hover:bg-[var(--bg-elev)] ${selected ? "bg-[var(--accent-soft)]" : ""}`}>
+    <tr className={`border-t border-line transition-colors ${selected ? "bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-surface-soft"}`}>
       <td className="px-2 py-1.5">
-        <input type="checkbox" aria-label={`광고 행 ${index} 선택${group.count > 1 ? ` (${group.count}개 소재)` : ""}`}
+        <input type="checkbox" className="h-4 w-4 accent-[var(--accent)]" aria-label={`광고 행 ${index} 선택${group.count > 1 ? ` (${group.count}개 소재)` : ""}`}
           checked={selected} onChange={(event) => onSelect(event.target.checked)} />
       </td>
-      <td className="px-2 py-1.5 text-[var(--text-muted)]">{index}</td>
+      <td className="px-2 py-1.5 text-xs tabular-nums text-faint">{index}</td>
       <td className="px-2 py-1.5">
         <ThumbnailCell ad={ad} />
       </td>
       <td className="max-w-md px-2 py-1.5">
         <div className="flex items-start gap-1.5">
-          <div className="line-clamp-2 text-[13px] font-medium text-[var(--text-primary)]">
+          <div className="line-clamp-2 text-sm font-medium text-[var(--text-primary)]">
             {title}
           </div>
           {variantCount > 1 && (
             <span
-              className="shrink-0 rounded-full bg-pink-500/20 px-1.5 py-0.5 text-[10px] font-bold text-pink-700"
+              className="badge badge-neutral shrink-0 tabular-nums"
               title={`이 영상이 ${variantCount}개의 광고 크리에이티브로 사용 중`}
             >
-              🎬{variantCount}
+              <Clapperboard size={12} strokeWidth={2} aria-hidden />
+              {variantCount}
             </span>
           )}
         </div>
         {ad.advertiserName && (
-          <div className="mt-0.5 truncate text-[11px] text-[var(--text-secondary)]">
-            <span className="text-[10px] text-[var(--text-muted)]">광고주:</span>{" "}
+          <div className="mt-0.5 truncate text-xs text-[var(--text-secondary)]">
+            <span className="text-xs text-[var(--text-muted)]">광고주:</span>{" "}
             <span className="font-medium">{ad.advertiserName}</span>
             {isShellAd(ad) && (
               <span
-                className="ml-1.5 inline-flex items-center rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[10px] font-bold text-cyan-700"
+                className="badge badge-neutral ml-1.5"
                 title="투명성 센터 도메인 인덱스에 안 잡히는 대행 채널 광고. YouTube 채널 업로드 목록에서 찾아낸 것."
               >
-                🐤 shell
+                <Bird size={12} strokeWidth={2} aria-hidden />
+                shell
               </span>
             )}
             {ad.ytChannel && ad.ytChannel !== ad.advertiserName && (
               <>
                 <span className="mx-1.5 text-[var(--text-muted)]">·</span>
-                <span className="text-[10px] text-[var(--text-muted)]">채널:</span>{" "}
+                <span className="text-xs text-[var(--text-muted)]">채널:</span>{" "}
                 <span className="text-[var(--text-secondary)]">
                   {ad.ytChannel}
                 </span>
@@ -4290,10 +4488,11 @@ function AdRow({
         )}
         {subtitle && (
           <div
-            className="mt-0.5 line-clamp-3 text-[11px] italic text-[var(--text-muted)]"
+            className="mt-0.5 line-clamp-3 text-xs italic text-[var(--text-muted)]"
             title={`광고 카피: ${subtitle}`}
           >
-            <span className="not-italic text-[10px]">📝</span> {subtitle}
+            <FileText size={12} strokeWidth={2} aria-hidden className="mr-1 inline align-[-1px] not-italic" />
+            {subtitle}
           </div>
         )}
       </td>
@@ -4304,26 +4503,27 @@ function AdRow({
             href={atcLink(ad)}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-amber-600 hover:text-amber-700 hover:underline"
+            className="text-xs font-medium text-accent hover:underline"
           >
             보기
           </a>
         ) : (
           <details className="group relative">
             <summary
-              className="cursor-pointer whitespace-nowrap text-xs text-amber-600 hover:text-amber-700 hover:underline"
+              className="inline-flex cursor-pointer list-none items-center gap-0.5 whitespace-nowrap text-xs font-medium text-accent hover:underline"
               title={`이 영상이 ${variantCount}개 크리에이티브로 사용 중`}
             >
-              {variantCount}개 ▾
+              {variantCount}개
+              <ChevronDown size={14} strokeWidth={1.75} aria-hidden className="transition-transform group-open:rotate-180" />
             </summary>
-            <div className="absolute right-0 z-10 mt-1 max-h-64 min-w-32 overflow-y-auto rounded-md border border-[var(--border-strong)] bg-[var(--bg-elev)] p-2 shadow-lg">
+            <div className="absolute right-0 z-10 mt-1 max-h-64 min-w-32 overflow-y-auto rounded-panel border border-line bg-surface p-1 shadow-popover">
               {group.siblings.map((s, i) => (
                 <a
                   key={s.id}
                   href={atcLink(s)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block whitespace-nowrap px-2 py-1 text-[11px] text-amber-700 hover:bg-[var(--bg-card)] hover:text-amber-200"
+                  className="block whitespace-nowrap rounded-sm px-2 py-1.5 text-xs text-ink hover:bg-surface-soft"
                 >
                   광고 #{i + 1} ({s.creativeId.slice(2, 10)}...)
                 </a>
@@ -4344,9 +4544,10 @@ function AdRow({
               target="_blank"
               rel="noopener noreferrer"
               title="YouTube에서 보기"
-              className="inline-flex items-center justify-center rounded-md bg-rose-500/15 p-1.5 text-rose-600 hover:bg-rose-500/30"
+              aria-label="YouTube에서 보기"
+              className="inline-grid h-7 w-7 place-items-center rounded-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink"
             >
-              🎬
+              <Clapperboard size={14} strokeWidth={1.75} aria-hidden />
             </a>
             {onDissect && (
               <button
@@ -4354,9 +4555,10 @@ function AdRow({
                   onDissect(ad.youtubeId!, ad.creativeId ?? null)
                 }
                 title="똑같이만들기 — 자막+컷+썸네일 자동 분해"
-                className="inline-flex items-center justify-center rounded-md bg-indigo-500/15 p-1.5 text-indigo-700 hover:bg-indigo-500/30"
+                aria-label="똑같이만들기"
+                className="inline-grid h-7 w-7 place-items-center rounded-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink"
               >
-                ✂️
+                <Scissors size={14} strokeWidth={1.75} aria-hidden />
               </button>
             )}
           </div>
@@ -4376,7 +4578,7 @@ function AdRow({
         ) : (
           <div className="text-[var(--text-muted)]">-</div>
         )}
-        <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+        <div className="mt-0.5 text-xs text-[var(--text-muted)]">
           {ad.ytPublishedAt ?? formatUnixDate(ad.firstSeen)}
         </div>
       </td>
@@ -4394,7 +4596,7 @@ function AdRow({
         )}
       </td>
       {/* 성장률 셀 — 분석 기간 내 % 변화(메인) + before→after(보조).
-          변화·성장률 중복이라 한 컬럼으로 통합. +300%↑엔 🔥. AdStat
+          변화·성장률 중복이라 한 컬럼으로 통합. +300%↑엔 Flame 아이콘. AdStat
           스냅샷 2개+ 있어야 계산 (매일 cron 누적). */}
       <td className="whitespace-nowrap px-2 py-1.5 text-right tabular-nums text-xs">
         {change.hasData ? (
@@ -4403,19 +4605,26 @@ function AdRow({
               className={
                 change.percent > 0
                   ? highlightGrowth
-                    ? "font-bold text-emerald-600"
-                    : "font-semibold text-emerald-700"
+                    ? "font-semibold text-success"
+                    : "font-semibold text-success"
                   : change.percent < 0
-                  ? "font-semibold text-rose-700"
+                  ? "font-semibold text-danger"
                   : "text-[var(--text-secondary)]"
               }
               title={`평균 ${change.avgPerDay >= 0 ? "+" : ""}${change.avgPerDay.toLocaleString()}/일 (${change.daysSpan}일)`}
             >
-              {change.percent >= 300 && "🔥 "}
+              {change.percent >= 300 && (
+                <Flame size={12} strokeWidth={2} aria-hidden className="mr-0.5 inline align-[-1px]" />
+              )}
+              {change.percent > 0 ? (
+                <TrendingUp size={12} strokeWidth={2} aria-hidden className="mr-0.5 inline align-[-1px]" />
+              ) : change.percent < 0 ? (
+                <TrendingDown size={12} strokeWidth={2} aria-hidden className="mr-0.5 inline align-[-1px]" />
+              ) : null}
               {change.percent > 0 ? "+" : ""}
               {change.percent.toFixed(1)}%
             </div>
-            <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
+            <div className="mt-0.5 text-xs text-[var(--text-muted)]">
               {formatCompactNum(change.before)} → {formatCompactNum(change.after)}
             </div>
           </>
@@ -4433,8 +4642,8 @@ function AdRow({
           <span
             className={
               highlightDaily
-                ? "font-bold text-amber-600"
-                : "text-[var(--text-secondary)]"
+                ? "font-semibold text-ink"
+                : "text-muted"
             }
             title={`${dpd.toLocaleString()}회/일`}
           >
@@ -4447,7 +4656,7 @@ function AdRow({
       {/* 상태 — classifyAd가 반환하는 분류 배지를 가로로. 최대 3개 표시. */}
       <td className="px-2 py-1.5">
         {classes.length === 0 ? (
-          <span className="text-[10px] text-[var(--text-muted)]">—</span>
+          <span className="text-xs text-[var(--text-muted)]">—</span>
         ) : (
           <div className="flex flex-wrap items-center gap-1">
             {classes.slice(0, 3).map((c) => {
@@ -4456,9 +4665,9 @@ function AdRow({
                 <span
                   key={c}
                   title={m.tip}
-                  className={`rounded-full ${m.bg} px-1.5 py-0.5 text-[10px] font-bold ${m.text}`}
+                  className={`badge ${m.bg} ${m.text}`}
                 >
-                  {m.emoji} {m.label}
+                  <m.Icon size={12} strokeWidth={2} aria-hidden /> {m.label}
                 </span>
               );
             })}
@@ -4486,7 +4695,7 @@ function ThumbnailCell({ ad }: { ad: Ad }) {
         <img
           src={ytThumbnail(ad.youtubeId)}
           alt=""
-          className="h-16 w-28 rounded object-cover"
+          className="h-16 w-28 rounded-xs object-cover"
           loading="lazy"
         />
       </a>
@@ -4498,7 +4707,7 @@ function ThumbnailCell({ ad }: { ad: Ad }) {
         href={atcLink(ad)}
         target="_blank"
         rel="noopener noreferrer"
-        className="block h-16 w-28 overflow-hidden rounded bg-[var(--bg-elev)]"
+        className="block h-16 w-28 overflow-hidden rounded-xs bg-[var(--bg-elev)]"
         title="투명성 센터에서 크게 보기"
       >
         <div
@@ -4514,7 +4723,7 @@ function ThumbnailCell({ ad }: { ad: Ad }) {
         href={atcLink(ad)}
         target="_blank"
         rel="noopener noreferrer"
-        className="block h-16 w-28 overflow-hidden rounded bg-[var(--bg-elev)]"
+        className="block h-16 w-28 overflow-hidden rounded-xs bg-[var(--bg-elev)]"
         title="투명성 센터에서 크게 보기"
       >
         <img
@@ -4527,8 +4736,12 @@ function ThumbnailCell({ ad }: { ad: Ad }) {
     );
   }
   return (
-    <div className="flex h-16 w-28 items-center justify-center rounded bg-[var(--bg-elev)] text-[var(--text-muted)]">
-      <span className="text-3xl">{ad.type === "video" ? "🎬" : "📦"}</span>
+    <div className="flex h-16 w-28 items-center justify-center rounded-xs bg-surface-sunken text-faint">
+      {ad.type === "video" ? (
+        <Clapperboard size={20} strokeWidth={1.75} aria-hidden />
+      ) : (
+        <Package size={20} strokeWidth={1.75} aria-hidden />
+      )}
     </div>
   );
 }
@@ -4541,28 +4754,31 @@ function TypeBadge({ ad }: { ad: Ad }) {
     return (
       <span
         title="리치미디어/동영상 (YouTube 매칭)"
-        className="inline-block whitespace-nowrap rounded-full bg-rose-500/20 px-2 py-0.5 text-[10px] font-semibold text-rose-700"
+        className="badge badge-neutral"
       >
-        🎬 영상
+        <Clapperboard size={12} strokeWidth={2} aria-hidden />
+        영상
       </span>
     );
   if (ad.type === "image")
     return (
-      <span className="inline-block whitespace-nowrap rounded-full bg-blue-500/20 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-        🖼 이미지
+      <span className="badge badge-neutral">
+        <ImageIcon size={12} strokeWidth={2} aria-hidden />
+        이미지
       </span>
     );
   if (ad.type === "video")
     return (
       <span
         title="직접업로드 (YouTube에 없음)"
-        className="inline-block whitespace-nowrap rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-semibold text-violet-700"
+        className="badge badge-neutral"
       >
-        📤 직업로드
+        <Upload size={12} strokeWidth={2} aria-hidden />
+        직업로드
       </span>
     );
   return (
-    <span className="inline-block whitespace-nowrap rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] font-semibold text-slate-700">
+    <span className="badge badge-neutral">
       기타
     </span>
   );
@@ -4666,8 +4882,11 @@ function CreativesView({
 
   if (pool.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-[var(--border-strong)] bg-[var(--bg-card)] px-6 py-16 text-center text-sm text-[var(--text-muted)]">
-        아직 영상 광고가 하나도 없어요.
+      <div className="panel empty text-sm text-muted">
+        <span className="empty-icon mb-3">
+          <Clapperboard size={20} strokeWidth={1.75} aria-hidden />
+        </span>
+        <h3 className="text-base font-semibold text-ink">아직 영상 광고가 하나도 없어요.</h3>
         <div className="mt-2 text-xs">
           위 검색창에 도메인이나 브랜드명을 먼저 넣어보세요. (예: 올리브영)
         </div>
@@ -4676,19 +4895,25 @@ function CreativesView({
   }
   return (
     <>
-      <section className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
-        <h2 className="mb-2 text-sm font-semibold">📈 소재 분석 (전체 누적)</h2>
-        <p className="text-xs text-[var(--text-muted)]">
+      <section className="panel">
+        <div className="panel-header">
+          <h2>
+            <TrendingUp size={16} strokeWidth={1.75} aria-hidden />
+            소재 분석 (전체 누적)
+          </h2>
+        </div>
+        <p className="panel-body text-sm text-muted">
           지금까지 불러온 <b>모든 도메인의 영상 광고를 한 화면에서</b> 봅니다.
           같은 영상은 한 줄로 묶이고, 며칠에 걸쳐 다시 불러올수록 일별 조회수가
           쌓여서 <b>상승세 · 급등 · 둔화</b>가 자동으로 붙어요. 아래{" "}
-          <b>광고주 필터</b>로 도메인 하나만 보거나, 사이드바 ⭐로 매일 자동
+          <b>광고주 필터</b>로 도메인 하나만 보거나, 사이드바{" "}
+          <Star size={12} strokeWidth={2} aria-label="별" className="inline align-[-1px]" />로 매일 자동
           갱신되게 할 수 있습니다.
         </p>
       </section>
 
       {/* 상단 지표 4개 — 레퍼런스 도구 "소재만보기" 스타일. 필터 반영 실시간. */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
         {[
           { label: "광고 캠페인", value: poolStats.campaigns, hint: "같은 영상 재사용 포함" },
           { label: "고유 영상 (dedup)", value: poolStats.unique, hint: "YouTube 영상 기준" },
@@ -4697,13 +4922,13 @@ function CreativesView({
         ].map((s) => (
           <div
             key={s.label}
-            className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3"
+            className="panel p-5"
           >
-            <div className="text-[11px] text-[var(--text-muted)]">{s.label}</div>
-            <div className="text-xl font-bold text-[var(--text-primary)]">
+            <div className="text-xs font-medium text-muted">{s.label}</div>
+            <div className="mt-1 text-xl font-semibold tabular-nums text-ink">
               {s.format ? formatCompactNum(s.value) : s.value.toLocaleString()}
             </div>
-            <div className="text-[10px] text-[var(--text-muted)]/70">{s.hint}</div>
+            <div className="mt-1 text-xs text-faint">{s.hint}</div>
           </div>
         ))}
       </div>
@@ -4713,13 +4938,14 @@ function CreativesView({
         <select
           value={poolViewBand}
           onChange={(e) => setPoolViewBand(e.target.value)}
-          className={`rounded-md border px-2 py-1 text-[11px] outline-none ${
+          aria-label="조회수 대역"
+          className={`h-8 rounded-sm border px-2 text-xs ${
             poolViewBand
-              ? "border-indigo-500 bg-indigo-500/10 font-semibold text-indigo-700"
-              : "border-[var(--border-strong)] bg-[var(--bg-elev)] text-[var(--text-secondary)]"
+              ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+              : "border-line-control bg-surface text-muted"
           }`}
         >
-          <option value="">👁️ 조회수 전체</option>
+          <option value="">조회수 전체</option>
           <option value="0:30000">~3만 (테스트)</option>
           <option value="30000:300000">3만~30만</option>
           <option value="300000:3000000">30만~300만 (통한 소재)</option>
@@ -4729,48 +4955,54 @@ function CreativesView({
         <select
           value={poolAgeBand}
           onChange={(e) => setPoolAgeBand(e.target.value)}
-          className={`rounded-md border px-2 py-1 text-[11px] outline-none ${
+          aria-label="소재 나이"
+          className={`h-8 rounded-sm border px-2 text-xs ${
             poolAgeBand
-              ? "border-emerald-500 bg-emerald-500/10 font-semibold text-emerald-700"
-              : "border-[var(--border-strong)] bg-[var(--bg-elev)] text-[var(--text-secondary)]"
+              ? "border-accent-line bg-accent-soft font-semibold text-accent-ink"
+              : "border-line-control bg-surface text-muted"
           }`}
         >
-          <option value="">⏳ 나이 전체</option>
+          <option value="">나이 전체</option>
           <option value="old:21">3주+ (살아남은 소재)</option>
           <option value="old:60">2개월+ (검증된 소재)</option>
         </select>
         <button
           onClick={() => onSort("campaigns")}
-          className={`rounded-md border px-2 py-1 text-[11px] transition ${
-            sort === "campaigns"
-              ? "border-amber-500 bg-amber-500/10 font-semibold text-amber-700"
-              : "border-[var(--border-strong)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-          }`}
+          aria-pressed={sort === "campaigns"}
+          className="chip"
           title="같은 영상이 몇 개 광고 캠페인에 재사용됐나 — 많을수록 광고주가 돈 들여 검증한 소재"
         >
-          📦 캠페인 수 많은순 {sort === "campaigns" ? (sortDir === "desc" ? "↓" : "↑") : ""}
+          <Package size={14} strokeWidth={1.75} aria-hidden />
+          캠페인 수 많은순
+          {sort === "campaigns" &&
+            (sortDir === "desc" ? (
+              <ArrowDown size={12} strokeWidth={2} aria-hidden />
+            ) : (
+              <ArrowUp size={12} strokeWidth={2} aria-hidden />
+            ))}
         </button>
-        <input
-          value={poolSearch}
-          onChange={(e) => setPoolSearch(e.target.value)}
-          placeholder="🔍 제목 / 업체명 검색..."
-          className="ml-auto w-56 rounded-full border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-1 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-        />
+        <div className="relative ml-auto">
+          <Search size={16} strokeWidth={1.75} aria-hidden className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+          <input
+            value={poolSearch}
+            onChange={(e) => setPoolSearch(e.target.value)}
+            placeholder="제목 / 업체명 검색..."
+            aria-label="제목 / 업체명 검색"
+            className="field-input min-h-8 w-56 py-1 pl-9 text-sm"
+          />
+        </div>
       </div>
 
       {/* Domain filter — opt-in scoping for this tab */}
       {domains.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-[var(--text-secondary)]">
+          <span className="text-xs font-medium text-muted">
             광고주 필터:
           </span>
           <button
             onClick={() => onDomainFilterChange(null)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-              domainFilter === null
-                ? "bg-emerald-500 text-slate-900"
-                : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-            }`}
+            aria-pressed={domainFilter === null}
+            className="chip tabular-nums"
           >
             전체 ({domains.reduce((s, d) => s + d.count, 0)})
           </button>
@@ -4780,23 +5012,20 @@ function CreativesView({
               onClick={() =>
                 onDomainFilterChange(domainFilter === d.keyword ? null : d.keyword)
               }
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                domainFilter === d.keyword
-                  ? "bg-emerald-500 text-slate-900"
-                  : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-              }`}
+              aria-pressed={domainFilter === d.keyword}
+              className="chip"
             >
               {d.keyword}{" "}
-              <span className="opacity-60">({d.count})</span>
+              <span className="tabular-nums opacity-80">({d.count})</span>
             </button>
           ))}
         </div>
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="text-sm text-[var(--text-secondary)]">
+        <div className="text-sm text-muted">
           영상{" "}
-          <span className="text-lg font-bold text-emerald-600">
+          <span className="font-semibold tabular-nums text-ink">
             {filtered.length}
           </span>
           개
@@ -4808,37 +5037,30 @@ function CreativesView({
         </div>
         <button
           onClick={() => onSort("views")}
-          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-            sort === "views"
-              ? "bg-emerald-500 text-slate-900"
-              : "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20"
-          }`}
+          aria-pressed={sort === "views"}
+          className="chip"
         >
-          📊 누적 조회수
+          <ChartNoAxesColumn size={14} strokeWidth={1.75} aria-hidden />
+          누적 조회수
         </button>
         <button
           onClick={() => onSort("daily")}
-          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-            sort === "daily"
-              ? "bg-amber-500 text-slate-900"
-              : "border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20"
-          }`}
+          aria-pressed={sort === "daily"}
+          className="chip"
         >
-          ⚡ 일평균 조회수
+          <Zap size={14} strokeWidth={1.75} aria-hidden />
+          일평균 조회수
         </button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-semibold text-[var(--text-secondary)]">
+        <span className="text-xs font-medium text-muted">
           분류:
         </span>
         <button
           onClick={() => onClassFilterChange("all")}
-          className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-            classFilter === "all"
-              ? "bg-slate-200 text-slate-900"
-              : "border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]"
-          }`}
+          aria-pressed={classFilter === "all"}
+          className="chip"
         >
           전체
         </button>
@@ -4859,35 +5081,32 @@ function CreativesView({
             <button
               key={c}
               onClick={() => onClassFilterChange(active ? "all" : c)}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition ${
-                active
-                  ? `${meta.bg} ${meta.text} ring-1 ring-current`
-                  : `border border-[var(--border)] bg-[var(--bg-elev)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]`
-              }`}
+              aria-pressed={active}
+              className="chip disabled:cursor-not-allowed disabled:opacity-50"
               disabled={count === 0}
               title={count === 0 ? `${meta.label}: 해당 없음` : meta.tip}
             >
-              {meta.emoji} {meta.label}{" "}
-              <span className="opacity-60">{count}</span>
+              <meta.Icon size={12} strokeWidth={2} aria-hidden className={active ? undefined : meta.text} /> {meta.label}{" "}
+              <span className="tabular-nums opacity-80">{count}</span>
             </button>
           );
         })}
-        <span className="ml-2 text-[10px] text-[var(--text-muted)]">
+        <span className="ml-2 text-xs text-faint">
           ※ 가속도/스파이크/피로도는 일별 스냅샷이 2개 이상 쌓여야 분류됩니다
         </span>
       </div>
 
-      <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-        <div className="overflow-x-auto">
+      <section className="panel">
+        <div className="overflow-x-auto" tabIndex={0} aria-label="소재 비교 표">
           <table className="w-full text-sm">
-            <thead className="bg-[var(--bg-elev)] text-xs text-[var(--text-secondary)]">
+            <thead className="border-b border-line bg-surface-soft text-xs text-muted">
               <tr>
-                <th className="px-2 py-2 text-left font-semibold">#</th>
-                <th className="px-2 py-2 text-left font-semibold">썸네일</th>
-                <th className="px-2 py-2 text-left font-semibold">제목</th>
-                <th className="px-2 py-2 text-left font-semibold">분류</th>
-                <th className="px-2 py-2 text-left font-semibold">광고주</th>
-                <th className="px-2 py-2 text-left font-semibold">YT</th>
+                <th className="px-2 py-2 text-left font-medium">#</th>
+                <th className="px-2 py-2 text-left font-medium">썸네일</th>
+                <th className="px-2 py-2 text-left font-medium">제목</th>
+                <th className="px-2 py-2 text-left font-medium">분류</th>
+                <th className="px-2 py-2 text-left font-medium">광고주</th>
+                <th className="px-2 py-2 text-left font-medium">YT</th>
                 <CreativesSortHeader
                   label="게시일"
                   thisKey="date"
@@ -4911,7 +5130,7 @@ function CreativesView({
                   onSort={onSort}
                   align="right"
                 />
-                <th className="px-2 py-2 text-left font-semibold">7일 추이</th>
+                <th className="px-2 py-2 text-left font-medium">7일 추이</th>
                 <CreativesSortHeader
                   label="좋아요"
                   thisKey="likes"
@@ -4929,9 +5148,9 @@ function CreativesView({
                 return (
                   <tr
                     key={ad.id}
-                    className="border-t border-[var(--border)] hover:bg-[var(--bg-elev)]"
+                    className="border-t border-line transition-colors hover:bg-surface-soft"
                   >
-                    <td className="px-2 py-1.5 text-[var(--text-muted)]">
+                    <td className="px-2 py-1.5 text-xs tabular-nums text-faint">
                       {i + 1}
                     </td>
                     <td className="px-2 py-1.5">
@@ -4939,18 +5158,19 @@ function CreativesView({
                     </td>
                     <td className="max-w-md px-2 py-1.5">
                       <div className="flex items-start gap-1.5">
-                        <div className="line-clamp-2 text-[13px] font-medium text-[var(--text-primary)]">
+                        <div className="line-clamp-2 text-sm font-medium text-[var(--text-primary)]">
                           {ad.ytTitle ?? "(제목 없음)"}
                         </div>
                         {g.count > 1 && (
-                          <span className="shrink-0 rounded-full bg-pink-500/20 px-1.5 py-0.5 text-[10px] font-bold text-pink-700">
-                            🎬{g.count}
+                          <span className="badge badge-neutral shrink-0 tabular-nums">
+                            <Clapperboard size={12} strokeWidth={2} aria-hidden />
+                            {g.count}
                           </span>
                         )}
                       </div>
                       {(ad.adHeadline || ad.adDescription) && (
                         <div
-                          className="mt-0.5 line-clamp-1 text-[11px] italic text-[var(--text-muted)]"
+                          className="mt-0.5 line-clamp-1 text-xs italic text-[var(--text-muted)]"
                           title={
                             "광고 카피: " +
                             [ad.adHeadline, ad.adDescription]
@@ -4958,7 +5178,7 @@ function CreativesView({
                               .join(" · ")
                           }
                         >
-                          <span className="not-italic text-[10px]">📝</span>{" "}
+                          <FileText size={12} strokeWidth={2} aria-hidden className="mr-1 inline align-[-1px]" />
                           {[ad.adHeadline, ad.adDescription]
                             .filter(Boolean)
                             .join(" · ")}
@@ -4968,7 +5188,7 @@ function CreativesView({
                     <td className="px-2 py-1.5">
                       <div className="flex flex-wrap gap-1">
                         {g.classes.length === 0 ? (
-                          <span className="text-[10px] text-[var(--text-muted)]">
+                          <span className="text-xs text-[var(--text-muted)]">
                             -
                           </span>
                         ) : (
@@ -4977,9 +5197,9 @@ function CreativesView({
                             return (
                               <span
                                 key={c}
-                                className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${m.bg} ${m.text}`}
+                                className={`badge ${m.bg} ${m.text}`}
                               >
-                                {m.emoji} {m.label}
+                                <m.Icon size={12} strokeWidth={2} aria-hidden /> {m.label}
                               </span>
                             );
                           })
@@ -4990,12 +5210,14 @@ function CreativesView({
                       <div className="font-medium text-[var(--text-primary)]">
                         {ad.advertiserName || "-"}
                       </div>
-                      <div className="mt-0.5 text-[10px] text-[var(--text-muted)]">
-                        🌐 {ad.keyword}
+                      <div className="mt-0.5 flex items-center gap-1 text-xs text-faint">
+                        <Globe size={12} strokeWidth={2} aria-hidden className="shrink-0" />
+                        {ad.keyword}
                       </div>
                       {ad.ytChannel && ad.ytChannel !== ad.advertiserName && (
-                        <div className="text-[10px] text-[var(--text-secondary)]">
-                          📺 {ad.ytChannel}
+                        <div className="flex items-center gap-1 text-xs text-muted">
+                          <Tv size={12} strokeWidth={2} aria-hidden className="shrink-0" />
+                          {ad.ytChannel}
                         </div>
                       )}
                     </td>
@@ -5004,9 +5226,11 @@ function CreativesView({
                         href={ytLink(ad.youtubeId!)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center rounded-md bg-rose-500/15 p-1.5 text-rose-600 hover:bg-rose-500/30"
+                        title="YouTube에서 보기"
+                        aria-label="YouTube에서 보기"
+                        className="inline-grid h-7 w-7 place-items-center rounded-sm text-muted transition-colors hover:bg-surface-soft hover:text-ink"
                       >
-                        🎬
+                        <Clapperboard size={14} strokeWidth={1.75} aria-hidden />
                       </a>
                     </td>
                     <td className="px-2 py-1.5 text-xs text-[var(--text-secondary)]">
@@ -5016,7 +5240,7 @@ function CreativesView({
                       <span
                         className={
                           sort === "views"
-                            ? "font-bold text-[var(--text-primary)]"
+                            ? "font-semibold text-[var(--text-primary)]"
                             : "text-[var(--text-primary)]"
                         }
                       >
@@ -5027,8 +5251,8 @@ function CreativesView({
                       <span
                         className={
                           sort === "daily"
-                            ? "font-bold text-amber-600"
-                            : "text-[var(--text-secondary)]"
+                            ? "font-semibold text-ink"
+                            : "text-muted"
                         }
                       >
                         {dpd.toLocaleString()}회
@@ -5069,22 +5293,29 @@ function CreativesSortHeader({
   const active = sort === thisKey;
   return (
     <th
+      aria-sort={active ? (sortDir === "desc" ? "descending" : "ascending") : undefined}
       className={`px-2 py-2 ${
         align === "right" ? "text-right" : "text-left"
-      } font-semibold`}
+      } font-medium`}
     >
       <button
         onClick={() => onSort(thisKey)}
-        className={`inline-flex items-center gap-1 transition ${
+        className={`inline-flex items-center gap-1 transition-colors ${
           active
-            ? "text-[var(--text-primary)]"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            ? "text-ink"
+            : "text-muted hover:text-ink"
         }`}
       >
         {label}
-        <span className="text-[10px]">
-          {active ? (sortDir === "desc" ? "▼" : "▲") : "↕"}
-        </span>
+        {active ? (
+          sortDir === "desc" ? (
+            <ArrowDown size={12} strokeWidth={2} aria-hidden />
+          ) : (
+            <ArrowUp size={12} strokeWidth={2} aria-hidden />
+          )
+        ) : (
+          <ArrowUpDown size={12} strokeWidth={2} aria-hidden className="text-faint" />
+        )}
       </button>
     </th>
   );
@@ -5096,12 +5327,12 @@ function CreativesSortHeader({
  */
 function Sparkline({ stats }: { stats: AdStat[] }) {
   if (stats.length === 0) {
-    return <span className="text-[10px] text-[var(--text-muted)]">-</span>;
+    return <span className="text-xs text-[var(--text-muted)]">-</span>;
   }
   if (stats.length === 1) {
     return (
       <span
-        className="text-[10px] text-[var(--text-muted)]"
+        className="text-xs text-[var(--text-muted)]"
         title="데이터 1개. 매일 검색하면 추세선이 그려져요."
       >
         스냅샷 1개
@@ -5126,8 +5357,9 @@ function Sparkline({ stats }: { stats: AdStat[] }) {
     })
     .join(" ");
   const lastDelta = values[values.length - 1] - values[values.length - 2];
-  const stroke =
-    lastDelta > 0 ? "#10b981" : lastDelta < 0 ? "#f43f5e" : "#94a3b8";
+  // 선 색은 스위트 의미색 토큰(--success / --danger / --faint)을 currentColor 로 받는다.
+  const strokeClass =
+    lastDelta > 0 ? "text-success" : lastDelta < 0 ? "text-danger" : "text-faint";
   return (
     <div
       className="flex items-center gap-1.5"
@@ -5135,20 +5367,20 @@ function Sparkline({ stats }: { stats: AdStat[] }) {
         .map((s) => `${s.capturedDate}: ${s.views.toLocaleString()}회`)
         .join("\n")}
     >
-      <svg width={W} height={H} className="overflow-visible">
+      <svg width={W} height={H} className={`overflow-visible ${strokeClass}`} aria-hidden>
         <polyline
           fill="none"
-          stroke={stroke}
+          stroke="currentColor"
           strokeWidth="1.5"
           points={pts}
         />
       </svg>
       <span
-        className={`text-[10px] tabular-nums ${
+        className={`text-xs tabular-nums ${
           lastDelta > 0
-            ? "text-emerald-600"
+            ? "text-success"
             : lastDelta < 0
-            ? "text-rose-600"
+            ? "text-danger"
             : "text-[var(--text-muted)]"
         }`}
       >
@@ -5171,16 +5403,16 @@ function VideosTable({
   onSort: (key: AdSortKey) => void;
 }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)]">
-      <div className="overflow-x-auto">
+    <section className="panel">
+      <div className="overflow-x-auto" tabIndex={0} aria-label="YouTube 영상 표">
         <table className="w-full text-sm">
-          <thead className="bg-[var(--bg-elev)] text-xs text-[var(--text-secondary)]">
+          <thead className="border-b border-line bg-surface-soft text-xs text-muted">
             <tr>
-              <th className="px-2 py-2 text-left font-semibold">#</th>
-              <th className="px-2 py-2 text-left font-semibold">제목</th>
-              <th className="px-2 py-2 text-left font-semibold">채널</th>
-              <th className="px-2 py-2 text-left font-semibold">키워드</th>
-              <th className="px-2 py-2 text-left font-semibold">유형</th>
+              <th className="px-2 py-2 text-left font-medium">#</th>
+              <th className="px-2 py-2 text-left font-medium">제목</th>
+              <th className="px-2 py-2 text-left font-medium">채널</th>
+              <th className="px-2 py-2 text-left font-medium">키워드</th>
+              <th className="px-2 py-2 text-left font-medium">유형</th>
               <SortHeader
                 label="게시일"
                 sortKey={sortKey}
@@ -5237,7 +5469,7 @@ function VideosTable({
                         <img
                           src={v.thumbnail}
                           alt=""
-                          className="h-12 w-20 shrink-0 rounded object-cover"
+                          className="h-12 w-20 shrink-0 rounded-xs object-cover"
                           loading="lazy"
                         />
                       )}
@@ -5245,7 +5477,7 @@ function VideosTable({
                         href={v.youtube}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="line-clamp-2 font-medium text-[var(--text-primary)] hover:text-rose-600"
+                        className="line-clamp-2 font-medium text-[var(--text-primary)] hover:text-danger"
                       >
                         {v.title}
                       </a>
@@ -5259,11 +5491,11 @@ function VideosTable({
                   </td>
                   <td className="px-2 py-1.5">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                      className={
                         v.type === "쇼츠"
-                          ? "bg-violet-500/20 text-violet-700"
-                          : "bg-slate-500/20 text-slate-700"
-                      }`}
+                          ? "badge badge-accent"
+                          : "badge badge-neutral"
+                      }
                     >
                       {v.type}
                     </span>

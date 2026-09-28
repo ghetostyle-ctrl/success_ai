@@ -10,39 +10,82 @@
  */
 
 import { useState } from "react";
+import {
+  Archive,
+  Camera,
+  ChevronDown,
+  CircleHelp,
+  Clapperboard,
+  Compass,
+  Download,
+  Film,
+  Hourglass,
+  LayoutDashboard,
+  LayoutList,
+  Lightbulb,
+  Megaphone,
+  Sprout,
+  Star,
+  Tag,
+  Target,
+  Trash2,
+  TrendingDown,
+  TrendingUp,
+  TriangleAlert,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 
 function Section({
   id,
   title,
+  icon: Icon,
   children,
 }: {
   id: string;
   title: string;
+  icon: LucideIcon;
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="mv-card p-5">
-      <h2 className="mb-3 text-sm font-bold text-[var(--text-primary)]">
-        {title}
-      </h2>
-      <div className="space-y-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+    <section id={id} className="panel">
+      <div className="panel-header">
+        <h2>
+          <Icon size={16} strokeWidth={1.75} aria-hidden />
+          {title}
+        </h2>
+      </div>
+      <div className="panel-body space-y-3 text-sm leading-relaxed text-[var(--text-secondary)]">
         {children}
       </div>
     </section>
   );
 }
 
+/** 본문 문장 속에서 UI 아이콘을 가리킬 때 쓰는 인라인 아이콘. */
+function InlineIcon({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
+  return (
+    <Icon
+      size={14}
+      strokeWidth={1.75}
+      aria-label={label}
+      role="img"
+      className="mx-0.5 inline align-[-2px]"
+    />
+  );
+}
+
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[11px] font-bold text-[var(--accent)]">
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-surface-soft text-xs font-semibold tabular-nums text-muted">
         {n}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-semibold text-[var(--text-primary)]">
+        <div className="text-sm font-semibold text-[var(--text-primary)]">
           {title}
         </div>
-        <div className="mt-1 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+        <div className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
           {children}
         </div>
       </div>
@@ -52,35 +95,72 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
 
 function Code({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded bg-[var(--bg-elev)] px-1.5 py-0.5 font-mono text-[12px] text-[var(--text-primary)]">
+    <code className="rounded-xs bg-[var(--bg-elev)] px-1.5 py-0.5 font-mono text-xs text-[var(--text-primary)]">
       {children}
     </code>
   );
 }
 
-function Faq({ q, children }: { q: string; children: React.ReactNode }) {
+function Faq({ q, children }: { q: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="border-b border-[var(--border)] last:border-b-0">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 py-3 text-left"
+        aria-expanded={open}
+        className="flex min-h-11 w-full items-center justify-between gap-3 py-3 text-left"
       >
-        <span className="text-[13px] font-semibold text-[var(--text-primary)]">
+        <span className="text-sm font-semibold text-[var(--text-primary)]">
           {q}
         </span>
-        <span className="shrink-0 text-[var(--text-muted)]">
-          {open ? "−" : "+"}
-        </span>
+        <ChevronDown
+          size={16}
+          strokeWidth={1.75}
+          aria-hidden
+          className={`shrink-0 text-faint transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
       {open && (
-        <div className="pb-3 text-[13px] leading-relaxed text-[var(--text-secondary)]">
+        <div className="pb-3 text-sm leading-relaxed text-[var(--text-secondary)]">
           {children}
         </div>
       )}
     </div>
   );
 }
+
+const TAB_ROWS: [LucideIcon, string, string][] = [
+  [
+    Archive,
+    "브랜드 아카이브",
+    "첫 화면. 브랜드당 카드 하나 + 최근 소재 썸네일. 훑어볼 때.",
+  ],
+  [
+    LayoutList,
+    "구글 광고",
+    "구글 투명성 센터에서 가져온 광고 표. 영상 광고는 YouTube에 올라간 소재라 조회수·채널·게시일이 같이 붙습니다. 정렬·필터·CSV·mp4 다운로드.",
+  ],
+  [
+    Megaphone,
+    "메타 광고",
+    "메타 광고 라이브러리(페이스북·인스타그램). 카피 전문과 변형(소재 A/B) 개수를 봅니다.",
+  ],
+  [
+    Clapperboard,
+    "소재 비교",
+    "브랜드를 가로질러 영상 광고만 모아서 비교. 어떤 소재가 오래 살아남았는지.",
+  ],
+  [LayoutDashboard, "대시보드", "추적 중인 브랜드 전체 현황과 추이."],
+];
+
+const BADGE_ROWS: [LucideIcon, string, string][] = [
+  [Star, "주력", "누적 50만+ 이면서 하루 평균 5천+ — 오래 밀고 있는 간판 소재"],
+  [TrendingUp, "상승세", "최근 3일 평균 증가량이 전체 평균의 1.25배 이상"],
+  [Zap, "급등", "직전 대비 180% 이상 폭증"],
+  [TrendingDown, "둔화", "최근 3일 연속 증가량 하락 — 소재가 식고 있음"],
+  [Sprout, "새 캠페인", "투명성 센터에 처음 잡힌 지 10일 이내"],
+  [Film, "새 소재", "YouTube 게시 21일 이내"],
+];
 
 export default function GuideView({
   onGoTo,
@@ -89,18 +169,9 @@ export default function GuideView({
 }) {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      {/* .mv-card 가 background 를 흰색으로 지정해서 Tailwind 그라디언트
-          유틸이 묻힌다 (흰 배경 + 흰 글씨 = 안 보임). 여기서는 카드 모양만
-          빌리고 배경은 인라인으로 직접 칠한다. */}
-      <div
-        className="rounded-[var(--radius-card)] p-6 text-white shadow-[var(--shadow-card)]"
-        style={{
-          background:
-            "linear-gradient(135deg, var(--accent), var(--accent-strong))",
-        }}
-      >
-        <h1 className="text-lg font-black">Success AI 사용법</h1>
-        <p className="mt-1.5 text-[13px] leading-relaxed text-white/85">
+      <div className="panel panel-body">
+        <h2 className="text-xl font-semibold tracking-[-0.02em] text-ink">Success AI 사용법</h2>
+        <p className="mt-1.5 max-w-[var(--prose-max)] text-sm leading-relaxed text-muted">
           경쟁 브랜드가 지금 어떤 광고를 돌리고 있는지 한 화면에서 봅니다.
           구글과 메타가 <b>법적으로 공개하게 돼 있는</b> 광고 데이터만
           읽습니다. 수집한 내용은 내 PC 파일에 저장되고 어디로도 보내지
@@ -108,13 +179,13 @@ export default function GuideView({
         </p>
       </div>
 
-      <Section id="quickstart" title="⚡ 3분 만에 시작하기">
+      <Section id="quickstart" title="3분 만에 시작하기" icon={Zap}>
         <div className="space-y-4">
           <Step n={1} title="브랜드 불러오기">
             맨 위 검색창에 <b>브랜드명</b>(<Code>올리브영</Code>) 또는{" "}
             <b>도메인</b>(<Code>oliveyoung.co.kr</Code>)을 넣고{" "}
             <b>불러오기</b>를 누릅니다. 30~90초 걸립니다.
-            <div className="mt-1.5 text-[12px] text-[var(--text-muted)]">
+            <div className="mt-1.5 text-xs text-[var(--text-muted)]">
               쉼표로 여러 개를 한 번에 넣을 수 있습니다. 도메인으로 넣으면
               그 도메인이 직접 띄운 광고를, 브랜드명으로 넣으면 광고주
               단위로 찾습니다.
@@ -123,9 +194,10 @@ export default function GuideView({
           <Step n={2} title="아카이브에서 훑기">
             <button
               onClick={() => onGoTo?.("archive")}
-              className="font-semibold text-[var(--accent)] hover:underline"
+              className="inline-flex items-center gap-1 font-semibold text-[var(--accent)] hover:underline"
             >
-              🗂 브랜드 아카이브
+              <Archive size={14} strokeWidth={1.75} aria-hidden />
+              브랜드 아카이브
             </button>
             에 브랜드 카드가 생깁니다. 카드 안 썸네일이 그 브랜드가 지금
             돌리는 소재이고, 조회수 높은 순입니다. 썸네일을 누르면 원본
@@ -134,9 +206,10 @@ export default function GuideView({
           <Step n={3} title="메타도 따로 불러오기">
             <button
               onClick={() => onGoTo?.("meta")}
-              className="font-semibold text-[var(--accent)] hover:underline"
+              className="inline-flex items-center gap-1 font-semibold text-[var(--accent)] hover:underline"
             >
-              📘 메타 광고
+              <Megaphone size={14} strokeWidth={1.75} aria-hidden />
+              메타 광고
             </button>{" "}
             탭에서 같은 브랜드를 한 번 더 불러옵니다. 메타는 한 번 훑는 데
             트래픽이 200MB쯤 들어서, 검색할 때 자동으로 같이 돌리지
@@ -144,37 +217,22 @@ export default function GuideView({
           </Step>
           <Step n={4} title="며칠 두고 다시 불러오기">
             같은 브랜드를 <b>날짜를 바꿔가며</b> 다시 불러오면 일별 조회수가
-            쌓이고, 그때부터 ⭐주력 · 📈상승세 · ⚡급등 배지가 붙습니다.
+            쌓이고, 그때부터 주력 · 상승세 · 급등 배지가 붙습니다.
             <b> 첫날에는 안 보이는 게 정상입니다.</b>
           </Step>
         </div>
       </Section>
 
-      <Section id="tabs" title="🧭 탭별로 뭘 보나">
-        <table className="w-full text-[13px]">
+      <Section id="tabs" title="탭별로 뭘 보나" icon={Compass}>
+        <table className="w-full text-sm">
           <tbody className="divide-y divide-[var(--border)]">
-            {[
-              [
-                "🗂 브랜드 아카이브",
-                "첫 화면. 브랜드당 카드 하나 + 최근 소재 썸네일. 훑어볼 때.",
-              ],
-              [
-                "🟦 구글 광고",
-                "구글 투명성 센터에서 가져온 광고 표. 영상 광고는 YouTube에 올라간 소재라 조회수·채널·게시일이 같이 붙습니다. 정렬·필터·CSV·mp4 다운로드.",
-              ],
-              [
-                "📘 메타 광고",
-                "메타 광고 라이브러리(페이스북·인스타그램). 카피 전문과 변형(소재 A/B) 개수를 봅니다.",
-              ],
-              [
-                "🎬 소재 비교",
-                "브랜드를 가로질러 영상 광고만 모아서 비교. 어떤 소재가 오래 살아남았는지.",
-              ],
-              ["📊 대시보드", "추적 중인 브랜드 전체 현황과 추이."],
-            ].map(([t, d]) => (
+            {TAB_ROWS.map(([Icon, t, d]) => (
               <tr key={t}>
-                <td className="w-40 py-2.5 pr-3 align-top font-semibold text-[var(--text-primary)]">
-                  {t}
+                <td className="w-44 py-2.5 pr-3 align-top font-semibold text-[var(--text-primary)]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Icon size={16} strokeWidth={1.75} aria-hidden className="shrink-0 text-faint" />
+                    {t}
+                  </span>
                 </td>
                 <td className="py-2.5 align-top">{d}</td>
               </tr>
@@ -183,7 +241,11 @@ export default function GuideView({
         </table>
       </Section>
 
-      <Section id="youtube" title="🟦 구글 광고 표가 YouTube 숫자를 보여주는 이유">
+      <Section
+        id="youtube"
+        title="구글 광고 표가 YouTube 숫자를 보여주는 이유"
+        icon={LayoutList}
+      >
         <p>
           구글 투명성 센터는 <b>어떤 광고를 집행했는지</b>는 공개하지만{" "}
           <b>그 광고가 몇 번 노출됐고 얼마를 썼는지는 공개하지 않습니다.</b>{" "}
@@ -193,56 +255,55 @@ export default function GuideView({
           다만 구글의 영상 광고는 대부분 <b>YouTube에 올라간 영상</b>을
           소재로 씁니다. 그래서 이 도구는 광고에 붙은 YouTube 영상 ID를
           찾아내, YouTube가 공개하는 <b>조회수·좋아요·댓글·게시일</b>을
-          가져와 붙입니다. 표의 조회수와 <Code>회/일</Code>, ⭐📈⚡📉 배지는
-          전부 여기서 나옵니다.
+          가져와 붙입니다. 표의 조회수와 <Code>회/일</Code>, 주력 · 상승세 ·
+          급등 · 둔화 배지는 전부 여기서 나옵니다.
         </p>
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-[12px] leading-relaxed">
-          <b className="text-amber-700">그래서 주의할 점</b>
-          <ul className="mt-1.5 list-disc space-y-1 pl-4">
-            <li>
-              조회수는 <b>광고 노출수가 아닙니다.</b> 유기적 조회와 광고 노출이
-              합쳐진 숫자입니다. 절대값보다 <b>브랜드 안에서의 상대 순위</b>로
-              보세요.
-            </li>
-            <li>
-              이미지 광고나 YouTube에 없는 소재는 숫자가 비어 있습니다.
-              고장이 아닙니다.
-            </li>
-            <li>
-              <Code>YOUTUBE_API_KEY</Code> 가 없으면 이 숫자가 전부 비고,
-              배지도 안 붙습니다.
-            </li>
-          </ul>
+        <div className="notice notice-warning" role="note">
+          <TriangleAlert size={16} strokeWidth={1.75} aria-hidden />
+          <div className="min-w-0 flex-1 text-xs leading-relaxed">
+            <b className="font-semibold">그래서 주의할 점</b>
+            <ul className="mt-1.5 list-disc space-y-1 pl-4 text-ink">
+              <li>
+                조회수는 <b>광고 노출수가 아닙니다.</b> 유기적 조회와 광고 노출이
+                합쳐진 숫자입니다. 절대값보다 <b>브랜드 안에서의 상대 순위</b>로
+                보세요.
+              </li>
+              <li>
+                이미지 광고나 YouTube에 없는 소재는 숫자가 비어 있습니다.
+                고장이 아닙니다.
+              </li>
+              <li>
+                <Code>YOUTUBE_API_KEY</Code> 가 없으면 이 숫자가 전부 비고,
+                배지도 안 붙습니다.
+              </li>
+            </ul>
+          </div>
         </div>
       </Section>
 
-      <Section id="badges" title="🏷 배지 읽는 법">
-        <table className="w-full text-[13px]">
+      <Section id="badges" title="배지 읽는 법" icon={Tag}>
+        <table className="w-full text-sm">
           <tbody className="divide-y divide-[var(--border)]">
-            {[
-              ["⭐ 주력", "누적 50만+ 이면서 하루 평균 5천+ — 오래 밀고 있는 간판 소재"],
-              ["📈 상승세", "최근 3일 평균 증가량이 전체 평균의 1.25배 이상"],
-              ["⚡ 급등", "직전 대비 180% 이상 폭증"],
-              ["📉 둔화", "최근 3일 연속 증가량 하락 — 소재가 식고 있음"],
-              ["🌱 새 캠페인", "투명성 센터에 처음 잡힌 지 10일 이내"],
-              ["🎞 새 소재", "YouTube 게시 21일 이내"],
-            ].map(([b, d]) => (
+            {BADGE_ROWS.map(([Icon, b, d]) => (
               <tr key={b}>
-                <td className="w-28 py-2.5 pr-3 align-top font-semibold text-[var(--text-primary)]">
-                  {b}
+                <td className="w-32 py-2.5 pr-3 align-top">
+                  <span className="badge badge-neutral">
+                    <Icon size={12} strokeWidth={2} aria-hidden />
+                    {b}
+                  </span>
                 </td>
                 <td className="py-2.5 align-top">{d}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="text-[12px] text-[var(--text-muted)]">
-          ⭐📈⚡📉 는 일별 스냅샷이 2~3개 쌓여야 계산됩니다. 하루 한 번씩
-          며칠 돌려야 의미가 생깁니다.
+        <p className="text-xs text-[var(--text-muted)]">
+          주력 · 상승세 · 급등 · 둔화는 일별 스냅샷이 2~3개 쌓여야 계산됩니다.
+          하루 한 번씩 며칠 돌려야 의미가 생깁니다.
         </p>
       </Section>
 
-      <Section id="faq" title="❓ 자주 묻는 질문">
+      <Section id="faq" title="자주 묻는 질문" icon={CircleHelp}>
         <div className="-my-3">
           <Faq q="수집이 실패하고 '봇 차단' 또는 /sorry/ 가 떠요">
             구글이 이 IP를 봇으로 보고 막은 겁니다. 짧은 시간에 많이 긁으면
@@ -272,7 +333,8 @@ export default function GuideView({
           </Faq>
 
           <Faq q="배지가 첫날엔 안 보여요. 고장인가요?">
-            정상입니다. ⭐📈⚡📉 는 <b>조회수가 시간에 따라 어떻게 변했는지</b>로
+            정상입니다. 주력 · 상승세 · 급등 · 둔화 배지는{" "}
+            <b>조회수가 시간에 따라 어떻게 변했는지</b>로
             판정하기 때문에, 비교할 어제 데이터가 있어야 계산됩니다. 같은
             브랜드를 다음 날 한 번 더 불러오면 그때부터 붙기 시작합니다.
           </Faq>
@@ -281,8 +343,11 @@ export default function GuideView({
             구글 투명성 센터는 <b>광고주(법인) 단위</b>로 광고를 묶습니다.
             한 회사가 여러 브랜드를 운영하면 전부 딸려옵니다.
             <div className="mt-1.5">
-              도메인으로 검색한 뒤 표 위의 <b>🎯 이 도메인만</b> 을 켜면, 그
-              도메인이 직접 띄운 광고만 남습니다.
+              도메인으로 검색한 뒤 표 위의{" "}
+              <b className="inline-flex items-center gap-0.5">
+                <InlineIcon icon={Target} label="과녁" />이 도메인만
+              </b>{" "}
+              을 켜면, 그 도메인이 직접 띄운 광고만 남습니다.
             </div>
           </Faq>
 
@@ -300,7 +365,14 @@ export default function GuideView({
             뒀습니다.
           </Faq>
 
-          <Faq q="⬇ 를 눌렀더니 'yt-dlp 가 설치돼 있지 않습니다' 가 떠요">
+          <Faq
+            q={
+              <>
+                <InlineIcon icon={Download} label="다운로드" />를 눌렀더니
+                &apos;yt-dlp 가 설치돼 있지 않습니다&apos; 가 떠요
+              </>
+            }
+          >
             소재 mp4 다운로드는 <Code>yt-dlp</Code> 라는 외부 프로그램을
             씁니다.
             <div className="mt-1.5">
@@ -334,8 +406,10 @@ export default function GuideView({
             나가지 않습니다. 전부 프로젝트 폴더의 <Code>dev.db</Code> 파일
             하나에 저장됩니다. 이 앱은 내 PC에서만 돌고 로그인도 없습니다.
             데이터를 지우려면 사이드바 맨 아래{" "}
-            <b>🗑️ 전체 데이터 삭제</b> 를 누르거나 <Code>dev.db</Code> 파일을
-            지우면 됩니다.
+            <b className="inline-flex items-center gap-0.5">
+              <InlineIcon icon={Trash2} label="휴지통" />전체 데이터 삭제
+            </b>{" "}
+            를 누르거나 <Code>dev.db</Code> 파일을 지우면 됩니다.
           </Faq>
 
           <Faq q="이거 써도 법적으로 괜찮나요?">
@@ -347,7 +421,7 @@ export default function GuideView({
         </div>
       </Section>
 
-      <Section id="tips" title="💡 잘 쓰는 법">
+      <Section id="tips" title="잘 쓰는 법" icon={Lightbulb}>
         <ul className="list-disc space-y-2 pl-4">
           <li>
             <b>하루 한 번, 같은 시간에</b> 돌리세요. 스냅샷 간격이 일정해야
@@ -358,7 +432,10 @@ export default function GuideView({
             걸립니다.
           </li>
           <li>
-            <b>⏳ 나이 필터</b>로 3주+ / 2개월+ 만 보면, 오래 살아남은 =
+            <b className="inline-flex items-center gap-0.5">
+              <InlineIcon icon={Hourglass} label="모래시계" />나이 필터
+            </b>
+            로 3주+ / 2개월+ 만 보면, 오래 살아남은 =
             성과가 검증된 소재만 추려집니다. 레퍼런스로 쓸 땐 이쪽이
             유용합니다.
           </li>
@@ -367,13 +444,13 @@ export default function GuideView({
             있습니다. 추적 대상이 많아지면 필터로 쓰세요.
           </li>
           <li>
-            📸 <b>1회만</b> 체크는 “이 브랜드 한 번만 보고 말 것”일 때
+            <InlineIcon icon={Camera} label="카메라" /> <b>1회만</b> 체크는 “이 브랜드 한 번만 보고 말 것”일 때
             쓰세요. 자동 갱신 대상에서 빠져 트래픽을 아낍니다.
           </li>
         </ul>
       </Section>
 
-      <div className="pb-4 text-center text-[11px] text-[var(--text-muted)]">
+      <div className="pb-4 text-center text-xs text-[var(--text-muted)]">
         Success AI · MIT License · 공개 광고 데이터 기반
       </div>
     </div>

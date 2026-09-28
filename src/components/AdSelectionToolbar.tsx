@@ -116,39 +116,39 @@ export function AdSelectionToolbar({ selectedAds, visibleCount, visibleLabel, on
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-3 text-xs">
-        <strong className="mr-auto text-[var(--text-primary)]">선택 {selectedAds.length}개 / {visibleLabel ?? `표시 ${visibleCount}개`}</strong>
-        <button type="button" onClick={onSelectAll} disabled={visibleCount === 0} className="rounded-lg border border-[var(--border-strong)] px-3 py-1.5 disabled:opacity-40">표시된 광고 전체 선택</button>
-        <button type="button" onClick={onClear} disabled={selectedAds.length === 0} className="rounded-lg border border-[var(--border-strong)] px-3 py-1.5 disabled:opacity-40">선택 해제</button>
-        <button type="button" onClick={() => void copySelected()} disabled={selectedAds.length === 0} className="rounded-lg border border-[var(--border-strong)] px-3 py-1.5 disabled:opacity-40">선택 링크 복사</button>
-        <button type="button" onClick={() => void openSend()} disabled={selectedAds.length === 0 || selectedAds.length > 100} className="rounded-lg bg-[var(--accent)] px-3 py-1.5 font-semibold text-white disabled:opacity-40">AD FACTORY로 보내기</button>
-        {selectedAds.length > 100 && <span className="text-amber-700">한 번에 최대 100개까지 보낼 수 있습니다.</span>}
+      <div className="panel flex flex-wrap items-center gap-2 px-4 py-3 text-xs">
+        <strong className="mr-auto text-sm font-semibold tabular-nums text-ink">선택 {selectedAds.length}개 / {visibleLabel ?? `표시 ${visibleCount}개`}</strong>
+        <button type="button" onClick={onSelectAll} disabled={visibleCount === 0} className="btn btn-secondary btn-sm">표시된 광고 전체 선택</button>
+        <button type="button" onClick={onClear} disabled={selectedAds.length === 0} className="btn btn-secondary btn-sm">선택 해제</button>
+        <button type="button" onClick={() => void copySelected()} disabled={selectedAds.length === 0} className="btn btn-secondary btn-sm">선택 링크 복사</button>
+        <button type="button" onClick={() => void openSend()} disabled={selectedAds.length === 0 || selectedAds.length > 100} className="btn btn-primary btn-sm">AD FACTORY로 보내기</button>
+        {selectedAds.length > 100 && <span className="text-warning">한 번에 최대 100개까지 보낼 수 있습니다.</span>}
       </div>
-      {message && <p role="status" className="rounded-lg bg-[var(--bg-card)] px-4 py-2 text-xs text-[var(--text-secondary)]">{message}</p>}
+      {message && <p role="status" className="notice notice-info">{message}</p>}
       {showSend && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="presentation" onClick={() => !pending && setShowSend(false)}>
-          <div role="dialog" aria-modal="true" aria-label="AD FACTORY로 광고 보내기" onClick={(event) => event.stopPropagation()} className="w-full max-w-md space-y-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay)] p-4" role="presentation" onClick={() => !pending && setShowSend(false)}>
+          <div role="dialog" aria-modal="true" aria-label="AD FACTORY로 광고 보내기" onClick={(event) => event.stopPropagation()} className="w-full max-w-md space-y-5 rounded-dialog border border-line bg-surface p-6 shadow-dialog-lg">
             <div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">AD FACTORY로 보내기</h3>
-              <p className="mt-1 text-sm text-[var(--text-secondary)]">선택한 광고 {selectedAds.length}개를 프로젝트 자료에 저장합니다.</p>
+              <h3 className="text-xl font-semibold tracking-[-0.02em] text-ink">AD FACTORY로 보내기</h3>
+              <p className="mt-1 text-sm text-muted">선택한 광고 {selectedAds.length}개를 프로젝트 자료에 저장합니다.</p>
             </div>
-            <label className="block text-sm font-semibold text-[var(--text-primary)]">저장할 프로젝트
-              <select value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={pending || projects.length === 0} className="mt-2 w-full rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-2">
+            <label className="block text-sm font-semibold text-ink">저장할 프로젝트
+              <select value={projectId} onChange={(event) => setProjectId(event.target.value)} disabled={pending || projects.length === 0} className="field-input mt-1.5 w-full font-normal">
                 {projects.length === 0 && <option value="">프로젝트가 없습니다</option>}
                 {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
               </select>
             </label>
-            <div className="space-y-2 border-t border-[var(--border)] pt-4">
-              <label htmlFor="new-factory-project" className="block text-sm font-semibold text-[var(--text-primary)]">새 프로젝트 만들기</label>
+            <div className="space-y-1.5 border-t border-line pt-4">
+              <label htmlFor="new-factory-project" className="block text-sm font-semibold text-ink">새 프로젝트 만들기</label>
               <div className="flex gap-2">
-                <input id="new-factory-project" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="내 상품 또는 광고 프로젝트 이름" disabled={pending} className="min-w-0 flex-1 rounded-lg border border-[var(--border-strong)] bg-[var(--bg-elev)] px-3 py-2 text-sm" />
-                <button type="button" onClick={() => void createProject()} disabled={pending || newProjectName.trim().length < 2} className="rounded-lg border border-[var(--border-strong)] px-3 py-2 text-xs disabled:opacity-40">만들기</button>
+                <input id="new-factory-project" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="내 상품 또는 광고 프로젝트 이름" disabled={pending} className="field-input min-w-0 flex-1" />
+                <button type="button" onClick={() => void createProject()} disabled={pending || newProjectName.trim().length < 2} className="btn btn-secondary">만들기</button>
               </div>
             </div>
-            {message && <p role="alert" className="text-xs text-rose-600">{message}</p>}
-            <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setShowSend(false)} disabled={pending} className="rounded-lg border border-[var(--border-strong)] px-4 py-2 text-sm">취소</button>
-              <button type="button" onClick={() => void sendSelected()} disabled={pending || !projectId} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-bold text-white disabled:opacity-40">{pending ? "처리 중…" : `${selectedAds.length}개 저장`}</button>
+            {message && <p role="alert" className="notice notice-error">{message}</p>}
+            <div className="flex flex-wrap justify-end gap-2 border-t border-line pt-4">
+              <button type="button" onClick={() => setShowSend(false)} disabled={pending} className="btn btn-secondary">취소</button>
+              <button type="button" onClick={() => void sendSelected()} disabled={pending || !projectId} aria-busy={pending} className="btn btn-primary">{pending ? "처리 중…" : `${selectedAds.length}개 저장`}</button>
             </div>
           </div>
         </div>

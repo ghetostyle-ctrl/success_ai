@@ -13,7 +13,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="h-full antialiased">
+    <html lang="ko" data-app="successai" className="h-full antialiased">
       <head>
         {/* 시스템 폰트 사용 — 웹폰트 CDN(1.5MB, 41 chunks)이 첫 paint 의
             가장 큰 병목. 한국 사용자 OS 기본 폰트 (Apple SD Gothic Neo /
@@ -21,7 +21,7 @@ export default function RootLayout({
       </head>
       <body
         className="min-h-full flex flex-col"
-        style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
+        style={{ background: "var(--canvas)", color: "var(--ink)" }}
       >
         {children}
       </body>
