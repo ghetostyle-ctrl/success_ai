@@ -16,7 +16,7 @@
   .\install.ps1 -YouTubeApiKey "AIza..."
 
   # 아무 데서나 (자동 클론)
-  irm https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 | iex
+  iwr https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 -OutFile "$env:TEMP\install.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\install.ps1"
 #>
 param(
   [string]$YouTubeApiKey = "",

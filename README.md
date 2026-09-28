@@ -47,7 +47,7 @@ README.md의 "Claude Code 사용자" 섹션을 따라서
 PowerShell 을 열고 한 줄:
 
 ```powershell
-irm https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 | iex
+iwr https://raw.githubusercontent.com/ghetostyle-ctrl/success_ai/main/install.ps1 -OutFile "$env:TEMP\install.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\install.ps1"
 ```
 
 또는 직접 클론한 뒤:
