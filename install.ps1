@@ -101,5 +101,5 @@ if (-not (Get-Command yt-dlp -ErrorAction SilentlyContinue)) {
 
 Write-Host "`n설치 완료. 실행 방법:" -ForegroundColor Green
 Write-Host "  1) 바탕화면의 'Success AI 실행' 아이콘 더블클릭   ← 제일 쉬움"
-Write-Host "  2) 또는  cd $ProjectDir ; .\start.ps1   →  http://localhost:3000"
+Write-Host "  2) 또는  cd $ProjectDir ; .\start.ps1   →  http://localhost:3001"
 Write-Host "매일 자동 수집 등록:  .\schedule-daily.ps1"
