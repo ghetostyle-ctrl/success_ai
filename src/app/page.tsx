@@ -382,33 +382,39 @@ const CLASSIFICATION_META: Record<
 type Tab = "archive" | "ads" | "meta" | "creatives" | "dashboard" | "guide";
 
 // 사이드바 nav · 브레드크럼 · 페이지 제목이 함께 쓰는 탭 이름과 아이콘.
-const TAB_META: Record<Tab, { label: string; description: string; Icon: LucideIcon }> = {
+const TAB_META: Record<Tab, { eyebrow: string; label: string; description: string; Icon: LucideIcon }> = {
   archive: {
+    eyebrow: "레퍼런스 수집",
     label: "브랜드 아카이브",
     description: "불러온 브랜드를 카드로 모아 보고, 브랜드별 광고로 들어갑니다.",
     Icon: Archive,
   },
   ads: {
+    eyebrow: "레퍼런스 수집",
     label: "구글 광고",
     description: "구글 광고 투명성 센터의 광고와 YouTube 영상 공개 통계를 함께 봅니다.",
     Icon: LayoutList,
   },
   meta: {
+    eyebrow: "레퍼런스 수집",
     label: "메타 광고",
     description: "메타 광고 라이브러리에서 수집한 브랜드별 광고를 봅니다.",
     Icon: Megaphone,
   },
   creatives: {
+    eyebrow: "분석",
     label: "소재 비교",
     description: "수집한 광고 소재를 조회수와 상태 분류로 비교합니다.",
     Icon: Clapperboard,
   },
   dashboard: {
+    eyebrow: "분석",
     label: "대시보드",
     description: "기간별 수집 현황과 광고 추이를 한눈에 봅니다.",
     Icon: LayoutDashboard,
   },
   guide: {
+    eyebrow: "도움말",
     label: "사용법",
     description: "Success AI로 광고 레퍼런스를 모으고 보는 방법입니다.",
     Icon: CircleHelp,
@@ -3119,8 +3125,8 @@ export default function Home() {
             S
           </span>
           <div className="min-w-0">
-            <div className="text-[15px] font-semibold leading-5 tracking-[-0.02em] text-sidebar-text">Success AI</div>
-            <small className="block truncate text-xs text-sidebar-muted max-[760px]:hidden">광고 레퍼런스를 모으는 곳</small>
+            <div className="sidebar-brand-name">Success AI</div>
+            <small className="sidebar-brand-sub max-[760px]:hidden">광고 레퍼런스를 모으는 곳</small>
           </div>
           <span className="status-chip status-chip-sidebar" role="status">
             <span
@@ -3131,7 +3137,7 @@ export default function Home() {
           </span>
         </div>
 
-        <div className="mb-5">
+        <div className="switcher">
           <label htmlFor="app-switcher" className="sr-only">
             앱 선택
           </label>
@@ -3141,34 +3147,35 @@ export default function Home() {
               className="switcher-trigger"
               aria-label="앱 선택"
             >
-              <span className="app-avatar app-avatar-successai h-7 w-7">S</span>
+              <span className="app-avatar app-avatar-lg app-avatar-successai">S</span>
               <span className="min-w-0 flex-1">
-                <strong className="block truncate text-sm font-semibold leading-5 text-sidebar-text">Success AI 광고수집기</strong>
-                <small className="block truncate text-xs leading-5 text-sidebar-muted">구글·메타 광고 레퍼런스 수집</small>
+                <strong className="switcher-name">Success AI 광고수집기</strong>
+                <small className="switcher-sub">구글·메타 광고 레퍼런스 수집</small>
               </span>
               <ChevronsUpDown size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-sidebar-faint" />
             </summary>
             <div className="switcher-menu">
+              <p className="switcher-menu-title">AD 스위트</p>
               <a className="switcher-item" href="http://127.0.0.1:3000/">
-                <span className="app-avatar app-avatar-trendwatch h-6 w-6">K</span>
+                <span className="app-avatar app-avatar-sm app-avatar-trendwatch">K</span>
                 <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm font-semibold leading-5">키워드워처</strong>
-                  <small className="block truncate text-xs leading-4 text-sidebar-muted">검색량·시장 트렌드 추적</small>
+                  <strong className="switcher-name">키워드워처</strong>
+                  <small className="switcher-sub">검색량·시장 트렌드 추적</small>
                 </span>
               </a>
               <a className="switcher-item" href="/" aria-current="page">
-                <span className="app-avatar app-avatar-successai h-6 w-6">S</span>
+                <span className="app-avatar app-avatar-sm app-avatar-successai">S</span>
                 <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm font-semibold leading-5">Success AI 광고수집기</strong>
-                  <small className="block truncate text-xs leading-4 text-sidebar-muted">구글·메타 광고 레퍼런스 수집</small>
+                  <strong className="switcher-name">Success AI 광고수집기</strong>
+                  <small className="switcher-sub">구글·메타 광고 레퍼런스 수집</small>
                 </span>
                 <Check size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-accent-on-dark" />
               </a>
               <a className="switcher-item" href="http://127.0.0.1:4317/">
-                <span className="app-avatar app-avatar-adfactory h-6 w-6">A</span>
+                <span className="app-avatar app-avatar-sm app-avatar-adfactory">A</span>
                 <span className="min-w-0 flex-1">
-                  <strong className="block truncate text-sm font-semibold leading-5">AD FACTORY</strong>
-                  <small className="block truncate text-xs leading-4 text-sidebar-muted">광고 설계·제작·배포 자동화</small>
+                  <strong className="switcher-name">AD FACTORY</strong>
+                  <small className="switcher-sub">광고 설계·제작·배포 자동화</small>
                 </span>
               </a>
             </div>
@@ -3254,6 +3261,7 @@ export default function Home() {
         <main id="main-content" tabIndex={-1} className="workspace-body space-y-5 outline-none">
           <div className="page-heading">
             <div>
+              <p className="eyebrow">{tabMeta.eyebrow}</p>
               <h1>{tabMeta.label}</h1>
               <p>{tabMeta.description}</p>
             </div>

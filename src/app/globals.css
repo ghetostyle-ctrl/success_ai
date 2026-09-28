@@ -199,6 +199,26 @@ th {
     font-size: var(--text-base);
     font-weight: 600;
   }
+  /* v3 §11: 세 앱이 같은 픽셀 위치에 오도록 px 로 고정 (html 14px 라
+     rem 기반 Tailwind 유틸은 다른 앱과 어긋난다). 블록 높이 24+2+20.8. */
+  .sidebar-brand-name {
+    color: var(--sidebar-text);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 24px;
+    letter-spacing: -0.02em;
+  }
+  .sidebar-brand-sub {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--sidebar-muted);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20.8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .sidebar-group-label {
     display: flex;
     align-items: center;
@@ -215,9 +235,13 @@ th {
     border-top: 1px solid var(--sidebar-line);
   }
 
+  /* 브랜드(끝 y=66.8) + 20 → 카드 top y≈87, 카드 60 + 20 → 첫 메뉴 y≈167 */
+  .switcher {
+    margin-bottom: 20px;
+  }
   .switcher-trigger {
     display: flex;
-    min-height: 52px;
+    min-height: 60px;
     cursor: pointer;
     list-style: none;
     align-items: center;
@@ -252,6 +276,35 @@ th {
     background: var(--sidebar);
     box-shadow: var(--shadow-pop);
   }
+  .switcher-menu-title {
+    padding: 6px 8px 4px;
+    color: var(--sidebar-muted);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .switcher-name {
+    display: block;
+    overflow: hidden;
+    color: var(--sidebar-text);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20.8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .switcher-sub {
+    display: block;
+    overflow: hidden;
+    color: var(--sidebar-muted);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 18px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .switcher-item {
     display: flex;
     min-height: 44px;
@@ -276,6 +329,15 @@ th {
     color: var(--on-accent);
     font-size: var(--text-xs);
     font-weight: 600;
+  }
+  .app-avatar-lg {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+  .app-avatar-sm {
+    width: 24px;
+    height: 24px;
   }
   .app-avatar-adfactory {
     background: var(--app-color-adfactory);
@@ -438,6 +500,18 @@ th {
     color: var(--muted);
     font-size: var(--text-xs);
     font-weight: 500;
+  }
+  /* v3 §11: 페이지 머리 eyebrow 12px/500 (AD FACTORY·키워드와처와 같음). 줄높이 19.2px 고정 → h1 top y=103
+     (헤더 56 + 본문 padding 24 + 19.2 + 4). */
+  .page-heading .eyebrow {
+    margin: 0 0 4px;
+    max-width: none;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 19.2px;
+    letter-spacing: normal;
+    text-transform: none;
   }
 
   /* ---- 프리미티브 -------------------------------------------------- */
